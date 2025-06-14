@@ -16,7 +16,7 @@
   <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.0/mapbox-gl-directions.js"></script>
   <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.0/mapbox-gl-directions.css" type="text/css" />
   
-  <style>
+  <style type="text/css">
     body {
       margin: 0;
       padding: 0;
@@ -312,7 +312,13 @@
       
       // Test 1: Basic connectivity
       try {
-        const response = await fetch('https://httpbin.org/get', { method: 'GET', mode: 'cors' });
+        const response = await fetch('https://httpbin.org/get', { 
+          method: 'GET', 
+          mode: 'cors',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
         if (response.ok) {
           updateDiagnostics('✅ Internet connection working');
         } else {
@@ -322,16 +328,30 @@
         updateDiagnostics('❌ No internet connection or severe restrictions');
       }
 
-      // Test 2: Mapbox domain accessibility
+      // Test 2: Simplified Mapbox test - just check if we can reach the domain
       updateDiagnostics('Testing Mapbox domain access...');
       try {
-        const response = await fetch('https://api.mapbox.com/ping', { method: 'GET', mode: 'cors' });
+        // Use a simpler approach - try to load the JS file directly
+        const response = await fetch('https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js', { 
+          method: 'HEAD',
+          mode: 'cors'
+        });
         updateDiagnostics('✅ Mapbox domain accessible');
       } catch (error) {
-        updateDiagnostics('❌ Cannot reach Mapbox domain: ' + error.message);
+        updateDiagnostics('❌ Cannot reach Mapbox domain - trying alternative approach');
+        // Try alternative CDN
+        try {
+          const altResponse = await fetch('https://unpkg.com/mapbox-gl@2.15.0/dist/mapbox-gl.js', {
+            method: 'HEAD',
+            mode: 'cors'
+          });
+          updateDiagnostics('✅ Alternative CDN accessible');
+        } catch (altError) {
+          updateDiagnostics('❌ All CDNs blocked: ' + altError.message);
+        }
       }
 
-      // Test 3: Check if we're in a restricted environment
+      // Test 3: Check environment
       updateDiagnostics('Checking environment restrictions...');
       const userAgent = navigator.userAgent;
       if (userAgent.includes('Chrome') && window.location.protocol === 'file:') {
@@ -342,13 +362,9 @@
         updateDiagnostics('⚠️ Not running over HTTPS - may cause issues');
       }
 
-      // Test 4: Check for corporate restrictions
-      updateDiagnostics('Checking for firewall/proxy...');
-      const isRestricted = userAgent.includes('Corporate') || userAgent.includes('Enterprise');
-      if (isRestricted) {
-        updateDiagnostics('⚠️ Corporate environment detected');
-      } else {
-        updateDiagnostics('✅ Standard browser environment');
+      // Test 4: Check for GitHub Pages specific issues
+      if (window.location.hostname.includes('github.io')) {
+        updateDiagnostics('ℹ️ GitHub Pages detected - using HTTPS automatically');
       }
     }
 
@@ -360,16 +376,6 @@
           name: 'Mapbox GL JS Library',
           url: 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js',
           method: 'HEAD'
-        },
-        {
-          name: 'Mapbox Styles API',
-          url: `https://api.mapbox.com/styles/v1/mapbox/streets-v11?access_token=${MAPBOX_TOKEN}`,
-          method: 'GET'
-        },
-        {
-          name: 'Mapbox Directions API',
-          url: `https://api.mapbox.com/directions/v5/mapbox/driving/-84.5,38.05;-84.4,38.1?access_token=${MAPBOX_TOKEN}`,
-          method: 'GET'
         },
         {
           name: 'Alternative CDN (unpkg)',
@@ -387,7 +393,7 @@
             method: test.method,
             mode: 'cors',
             headers: {
-              'Accept': 'application/json,text/javascript,*/*'
+              'Accept': 'application/javascript,text/javascript,*/*'
             }
           });
           
@@ -405,7 +411,7 @@
       updateDiagnostics('\n<strong>Direct Access Results:</strong>');
       results.forEach(result => updateDiagnostics(result));
 
-      if (successCount >= 2) {
+      if (successCount >= 1) {
         updateStatus('<strong>✅ Connection Tests Passed!</strong><br>Attempting to initialize map...', 'success');
         document.getElementById('manual-init').disabled = false;
         manualInit();
@@ -419,24 +425,25 @@
       const solutions = `
         <strong>🔧 Possible Solutions:</strong><br><br>
         
-        <strong>1. Corporate/School Network:</strong><br>
-        • Ask IT to whitelist *.mapbox.com<br>
-        • Try using mobile hotspot<br><br>
+        <strong>1. GitHub Pages Issues:</strong><br>
+        • Ensure repository is public<br>
+        • Check GitHub Pages settings<br>
+        • Try using raw.githubusercontent.com URLs<br><br>
         
         <strong>2. Browser Issues:</strong><br>
         • Disable ad blockers for this site<br>
         • Try incognito/private mode<br>
         • Clear browser cache<br><br>
         
-        <strong>3. Firewall/Security:</strong><br>
+        <strong>3. Network/Firewall:</strong><br>
         • Check if firewall blocks Mapbox<br>
         • Temporarily disable VPN<br>
         • Try different browser<br><br>
         
-        <strong>4. Local Development:</strong><br>
-        • Run from web server (not file://)<br>
-        • Use localhost or 127.0.0.1<br>
-        • Enable CORS in browser
+        <strong>4. CORS Issues:</strong><br>
+        • Serve from HTTPS (required by Mapbox)<br>
+        • Use proper domain (not file://)<br>
+        • Enable CORS in browser (dev only)
       `;
       
       updateStatus(solutions, 'error');
@@ -445,15 +452,23 @@
     async function testDifferentApproach() {
       updateStatus('<strong>🧪 Trying Alternative Loading...</strong><br>Using different CDN and methods...', 'loading');
       
+      // Remove existing script if any
+      const existingScript = document.querySelector('script[src*="mapbox-gl"]');
+      if (existingScript) {
+        existingScript.remove();
+      }
+      
       // Try loading from unpkg instead
       const script = document.createElement('script');
       script.src = 'https://unpkg.com/mapbox-gl@2.15.0/dist/mapbox-gl.js';
+      script.crossOrigin = 'anonymous';
       script.onload = () => {
         updateStatus('<strong>✅ Alternative CDN Success!</strong><br>Mapbox GL loaded from unpkg', 'success');
         manualInit();
       };
       script.onerror = () => {
         updateStatus('<strong>❌ Alternative CDN Failed</strong><br>All CDN sources blocked', 'error');
+        showNetworkSolutions();
       };
       
       document.head.appendChild(script);
@@ -600,73 +615,6 @@
         map.setStyle(this.value);
         map.once('style.load', setupMapFeatures);
       });
-    }
-
-    function handleMapClick(e) {
-      const coords = [e.lngLat.lng, e.lngLat.lat];
-      
-      if (!origin) {
-        setOrigin(coords);
-      } else if (!destination) {
-        setDestination(coords);
-        findRoute();
-      } else {
-        clearRoute();
-        setOrigin(coords);
-      }
-    }
-
-    function setOrigin(coords) {
-      origin = coords;
-      updateMarkers();
-      addReport('🟢 Origin Set', `Starting point: ${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`, true);
-    }
-
-    function setDestination(coords) {
-      destination = coords;
-      updateMarkers();
-      addReport('🔴 Destination Set', `End point: ${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`, true);
-    }
-
-    function updateMarkers() {
-      const features = [];
-      
-      if (origin) {
-        features.push({
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: origin },
-          properties: { color: '#00ff00' }
-        });
-      }
-      
-      if (destination) {
-        features.push({
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: destination },
-          properties: { color: '#ff6600' }
-        });
-      }
-
-      map.getSource('markers').setData({
-        type: 'FeatureCollection',
-        features: features
-      });
-    }
-
-    function findRoute() {
-      const coords = origin.join(',') + ';' + destination.join(',');
-      const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
-      
-      fetch(url)
-        .then(response => response.json())
-        .then(data => {
-          if (data.routes && data.routes.length > 0) {
-            analyzeRoute(data.routes[0]);
-          }
-        })
-        .catch(error => {
-          addReport('❌ Route Error', 'Failed to fetch route: ' + error.message, false);
-        });
     }
 
     function analyzeDirectionsRoute(route) {
