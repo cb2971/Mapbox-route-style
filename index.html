@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Demo: Route finding with the Directions API and Turf.js</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+   
+  <!-- Import Mapbox GL JS -->
+  <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.js"></script>
+  <link  href="https://api.tiles.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.css"  rel="stylesheet"  />
+   
+  <!-- Import Mapbox GL Directions -->
+  <script src="mapbox-gl-directions.js"></script>
+  <link  rel="stylesheet"  href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.0/mapbox-gl-directions.css"  type="text/css"/>
+
+  <!-- Directin Line -->
+  <script type="text/javascript" src="script.js"></script>
+   
+  <!-- Import Turf & Polyline -->
+  <script src="https://npmcdn.com/@turf/turf/turf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mapbox-polyline/1.1.1/polyline.js"></script>
+   
+  <style>
+    
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Open Sans', sans-serif;
+    }
+     
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+    }
+     
+
+    .sidebar {
+      position: absolute;
+      margin: 20px 20px 30px 20px;
+      width: 10%;
+      top: 0;
+      bottom: 0;
+      padding: 20px;
+      background-color: #fff;
+      overflow-y: scroll;
+    }
+     
+    .card {
+      font-size: small;
+      border-bottom: solid #d3d3d3 2px;
+      margin-bottom: 6px;
+    }
+     
+    .card-header {
+      font-weight: bold;
+      padding: 6px;
+    }
+     
+    .no-route {
+      background-color: #d3d3d3;
+      color: #f00;
+    }
+     
+    .obstacle-found {
+      background-color: #d3d3d3;
+      color: #fff;
+    }
+     
+    .route-found {
+      background-color: #33a532;
+      color: #fff;
+    }
+     
+    .card-details {
+      padding: 3px 6px;
+    }
+
+    #custom-route {
+      position: absolute;
+      background-color: #ffffff;
+      width: 240px;
+      height: 65px;
+      right: 50px;
+      top: 137px;
+      padding: 10px 10px;
+      border-radius: 5px;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+      font: 14px Helvetica Neue,Arial,Helvetica,sans-serif;
+    }
+
+    #routeWidth {
+      /*margin-bottom: 5px;*/
+      margin-top: 5px;
+      border: 0px;
+      border-bottom: 1px solid black;
+    }
+
+    #routeColor {
+    	background-color: #f0f8ff00;
+    	border: 0px;
+    	margin-bottom: 5px;
+    }
+  </style>
+</head>
+ 
+<body>
+  <div id="map"></div>
+  <div class="sidebar">
+
+  <div id="reports"></div>
+    
+  <div id="menu">
+    <input id="ckxnmjiti0rvm14pby8w9si99" type="radio" name="rtoggle" value="Classic_Vintage" checked="checked">
+    <label for="ckxnmjiti0rvm14pby8w9si99">Classic_Vintage</label>
+    <input id="ckxnnmex53n1b14m07t6sum48" type="radio" name="rtoggle" value="Classic_Standard">
+    <label for="ckxnnmex53n1b14m07t6sum48">Classic_Standard</label>
+    <input id="ckxov33jj3le314ueu15gl6yh" type="radio" name="rtoggle" value="Dark_Digital">
+    <label for="ckxov33jj3le314ueu15gl6yh">Dark_Digital</label>
+    <input id="ckxmhuc4k2gxm14s0eq1htzns" type="radio" name="rtoggle" value="Dark_Monochrome">
+    <label for="cckxmhuc4k2gxm14s0eq1htzns">Dark_Monochrome</label>
+    <input id="ckxs1bfov2cay14mnx6nvrzxt" type="radio" name="rtoggle" value="Dark_Night Mode">
+    <label for="ckxs1bfov2cay14mnx6nvrzxt">Dark_Night Mode</label>
+    <input id="ckwgtu6ly20cr15qiy9i2ftsz" type="radio" name="rtoggle" value="Light_Engraved">
+    <label for="ckwgtu6ly20cr15qiy9i2ftsz">Light_Engraved</label>
+    <input id="ckxntkwjq4flv14ld7uisp5b1" type="radio" name="rtoggle" value="Light_High Contrast">
+    <label for="ckxntkwjq4flv14ld7uisp5b1">Light_High Contrast</label>
+    <input id="ckxouv50s02lw14r2jiyvnvxh" type="radio" name="rtoggle" value="Light_Pencil Sketch">
+    <label for="ckxouv50s02lw14r2jiyvnvxh">Light_Pencil Sketch</label>
+    <input id="ckxtl08qj2gb215p8y2blzxur" type="radio" name="rtoggle" value="Pastel_Blue">
+    <label for="ckxtl08qj2gb215p8y2blzxur">Pastel_Blue</label>
+    <input id="ckxtkuk8l10zj14pk8irf7owt" type="radio" name="rtoggle" value="Pastel_Cool">
+    <label for="ckxtkuk8l10zj14pk8irf7owt">Pastel_Cool</label>
+    <input id="ckxtl2a2s0yot14nw9pbn2733" type="radio" name="rtoggle" value="Pastel_Pink">
+    <label for="ckxtl2a2s0yot14nw9pbn2733">Pastel_Pink</label>
+    <input id="ckxtl35nk4hsb15mry8rwlg4l" type="radio" name="rtoggle" value="Pastel_Yellow">
+    <label for="ckxtl35nk4hsb15mry8rwlg4l">Pastel_Yellow</label>
+    <input id="ckxmjckme2if514s0v3xq4vxy" type="radio" name="rtoggle" value="Satellite">
+    <label for="ckxmjckme2if514s0v3xq4vxy">Satellite</label>
+    <input id="ckxrnuq691z6h14mnuy5jpk5c" type="radio" name="rtoggle" value="Topography_Colorful">
+    <label for="ckxrnuq691z6h14mnuy5jpk5c">Topography_Colorful</label>
+    <input id="ckxnp39kb5eyw14oaan01mkp0" type="radio" name="rtoggle" value="Topography_Globe">
+    <label for="ckxnp39kb5eyw14oaan01mkp0">Topography_Globe</label>
+    <input id="ckxnkf6rs60r214uc0j42vbj4" type="radio" name="rtoggle" value="Topography_Outdoor">
+    <label for="ckxnkf6rs60r214uc0j42vbj4">Topography_Outdoor</label>
+    <input id="ckxnqwyww0sri14p9skglgshs" type="radio" name="rtoggle" value="Topography_Subtle">
+    <label for="ckxnqwyww0sri14p9skglgshs">Topography_Subtle</label>
+    <input id="ckxno9jbk3nn714s6vjah6fwb" type="radio" name="rtoggle" value="Topography_Vintage">
+    <label for="ckxno9jbk3nn714s6vjah6fwb">Topography_Vintage</label>
+    <input id="ckxovchyg4tfj14s6d7u559tj" type="radio" name="rtoggle" value="Unique_Comic Book 1">
+    <label for="ckxovchyg4tfj14s6d7u559tj">Unique_Comic Book 1</label>
+    <input id="ckxov6vgm66g214o064dp3vda" type="radio" name="rtoggle" value="Unique_Comic Book 2">
+    <label for="ckxov6vgm66g214o064dp3vda">Unique_Comic Book 2</label>
+    <input id="ckxove5sy174l15mq6h82hwxk" type="radio" name="rtoggle" value="Unique_Dusty Western">
+    <label for="ckxove5sy174l15mq6h82hwxk">Unique_Dusty Western</label>
+    <input id="ckxrrtfqk0oir15my0y9tpjvj" type="radio" name="rtoggle" value="Unique_Colorful">
+    <label for="ckxrrtfqk0oir15my0y9tpjvj">Unique_Colorful</label>
+    <input id="ckxoup98z4sv514m0q988ltie" type="radio" name="rtoggle" value="Unique_Picture Book">
+    <label for="ckxoup98z4sv514m0q988ltie">Unique_Picture Book</label>
+    <input id="ckxov1ris0n2415p4e9gn8oxu" type="radio" name="rtoggle" value="Unique_Treasure Map">
+    <label for="ckxov1ris0n2415p4e9gn8oxu">Unique_Treasure Map</label>
+    <input id="ckxous4km02k114m523qh0k9y" type="radio" name="rtoggle" value="Unique_Woodcut">
+    <label for="ckxous4km02k114m523qh0k9y">Unique_Woodcut</label>
+  </div>
+  </div>
+  <div id="custom-route">
+    <label>Choose color:</label>
+    <input type="color" name="routeColor" id="routeColor" value="#ff0000">
+    <br>
+    <label>Type Width:</label>
+    <input type="text" name="routeWidth" id="routeWidth" value="13">
+  </div>
+
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoiY2IyOSIsImEiOiJja3E4OHo3anowZGx1Mm9tcXF3ZmhyaWtwIn0.IQ5rY622AU9GOETrqa9NBw';
+    const map = new mapboxgl.Map({
+      container: 'map', // Specify the container ID
+      style: 'mapbox://styles/cb29/ckxnmjiti0rvm14pby8w9si99', // Specify which map style to use
+      center: [-84.5, 38.05], // Specify the starting position [lng, lat]
+      zoom: 11 // Specify the starting zoom
+    });  
+   
+    const layerList = document.getElementById('menu');
+    const inputs = layerList.getElementsByTagName('input');
+
+    for (const input of inputs) {
+      input.onclick = (layer) => {
+        const layerId = layer.target.id;
+        map.setStyle('mapbox://styles/cb29/' + layerId);
+        map.on('style.load', function(){
+        	addDirectionsLayers();
+          boxLayers();
+        });
+      };
+    }
+     
+    const directions = new MapboxDirections({
+      accessToken: mapboxgl.accessToken,
+      unit: 'metric',
+      profile: 'mapbox/driving',
+      alternatives: false,
+      geometries: 'geojson',
+      controls: { instructions: false },
+      flyTo: false,
+      geocoder: {
+        mapboxgl:mapboxgl,
+        reverseGeocode: true
+      }
+    });
+     
+    map.addControl(directions, 'top-right');
+    map.scrollZoom.enable();
+      
+      
+    <!-- Add zoom and rotation-->
+    map.addControl(new mapboxgl.NavigationControl());  
+     
+    const clearances = {
+      type: 'FeatureCollection',
+      features: [
+        {
+        type: 'Feature',
+        geometry: {
+        type: 'Point',
+        coordinates: [-84.47426, 38.06673]
+        },
+        properties: {
+        clearance: "13' 2"
+        }
+        },
+        {
+        type: 'Feature',
+        geometry: {
+        type: 'Point',
+        coordinates: [-84.47208, 38.06694]
+        },
+        properties: {
+        clearance: "13' 7"
+        }
+        },
+        {
+        type: 'Feature',
+        geometry: {
+        type: 'Point',
+        coordinates: [-84.60485, 38.12184]
+        },
+        properties: {
+        clearance: "13' 7"
+        }
+        },
+        {
+        type: 'Feature',
+        geometry: {
+        type: 'Point',
+        coordinates: [-84.61905, 37.87504]
+        },
+        properties: {
+        clearance: "12' 0"
+        }
+        },
+        {
+        type: 'Feature',
+        geometry: {
+        type: 'Point',
+        coordinates: [-84.55946, 38.30213]
+        },
+        properties: {
+        clearance: "13' 6"
+        }
+        },
+        {
+        type: 'Feature',
+        geometry: {
+        type: 'Point',
+        coordinates: [-84.27235, 38.04954]
+        },
+        properties: {
+        clearance: "13' 6"
+        }
+        },
+        {
+        type: 'Feature',
+        geometry: {
+        type: 'Point',
+        coordinates: [-84.27264, 37.82917]
+        },
+        properties: {
+        clearance: "11' 6"
+        }
+        }
+      ]
+    };
+     
+    const obstacle = turf.buffer(clearances, 0.25, { units: 'kilometers' });
+    let bbox = [0, 0, 0, 0];
+    let polygon = turf.bboxPolygon(bbox);
+
+    function boxLayers(){
+
+      if (!map.getLayer('clearances')){
+        map.addLayer({
+        id: 'clearances',
+        type: 'fill',
+        source: {
+        type: 'geojson',
+        data: obstacle
+        },
+        layout: {},
+        paint: {
+        'fill-color': '#f03b20',
+        'fill-opacity': 0.5,
+        'fill-outline-color': '#f03b20'
+        }
+        });
+      }
+
+      if (!map.getSource('theRoute')){
+        map.addSource('theRoute', {
+        type: 'geojson',
+        data: {
+        type: 'Feature'
+        }
+        });  
+      } 
+      
+      if (!map.getLayer('theRoute')){
+        var color;
+        var width;
+
+        if (color_cache == null){
+          color = '#cccccc';
+        }
+        else{
+          color = color_cache;
+        }
+
+        if (width_cache == null){
+          width = 13;
+        }
+        else{
+          width = width_cache;
+        }
+
+
+        map.addLayer({
+        id: 'theRoute',
+        type: 'line',
+        source: 'theRoute',
+        layout: {
+        'line-join': 'round',
+        'line-cap': 'round'
+        },
+        paint: {
+        'line-color': color,
+        'line-opacity': 1,
+        'line-width': width,
+        'line-blur': 0.5
+        }
+        });
+      }
+       
+      // Source and layer for the bounding box
+
+      if(!map.getSource('theBox')){
+        map.addSource('theBox', {
+        type: 'geojson',
+        data: {
+        type: 'Feature'
+        }
+        });        
+      }
+
+      if (!map.getLayer('theBox')){
+        map.addLayer({
+        id: 'theBox',
+        type: 'fill',
+        source: 'theBox',
+        layout: {},
+        paint: {
+        'fill-color': '#FFC300',
+        'fill-opacity': 0.5,
+        'fill-outline-color': '#FFC300'
+        }
+        });
+      }
+    }
+
+    map.on('load', () => {
+      boxLayers();
+    });
+     
+
+
+    directionFunctions();
+
+    var color_cache = null;
+    var selectedColor = document.getElementById('routeColor');
+    selectedColor.onchange = function(){
+      if (map.getLayer('theRoute')){
+        map.setPaintProperty('theRoute', 'line-color', selectedColor.value);
+        // map.setPaintProperty('theRoute', 'line-width', parseFloat(selectedWidth.value));
+        color_cache = selectedColor.value;
+      }
+    }
+
+    var width_cache = null;
+    var selectedWidth = document.getElementById('routeWidth');
+    selectedWidth.onchange = function(){
+      if (map.getLayer('theRoute')){
+        map.setPaintProperty('theRoute', 'line-width', parseFloat(selectedWidth.value));
+        width_cache = parseFloat(selectedWidth.value);
+      }
+    }
+
+
+    function directionFunctions(){
+      let counter = 0;
+      const maxAttempts = 50;
+      let emoji = '';
+      let collision = '';
+      let detail = '';
+      const reports = document.getElementById('reports');
+       
+      function addCard(id, element, clear, detail) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        // Add the response to the individual report created above
+        const heading = document.createElement('div');
+        // Set the class type based on clear value
+        heading.className =
+        clear === true
+        ? 'card-header route-found'
+        : 'card-header obstacle-found';
+        heading.innerHTML =
+        id === 0
+        ? `${emoji} The route ${collision}`
+        : `${emoji} Route ${id} ${collision}`;
+         
+        const details = document.createElement('div');
+        details.className = 'card-details';
+        details.innerHTML = `This ${detail} obstacles.`;
+         
+        card.appendChild(heading);
+        card.appendChild(details);
+        element.insertBefore(card, element.firstChild);
+      }
+       
+      function noRoutes(element) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        // Add the response to the individual report created above
+        const heading = document.createElement('div');
+        heading.className = 'card-header no-route';
+        emoji = '🛑';
+        heading.innerHTML = `${emoji} Ending search.`;
+         
+        // Add details to the individual report
+        const details = document.createElement('div');
+        details.className = 'card-details';
+        details.innerHTML = `No clear route found in ${counter} tries.`;
+         
+        card.appendChild(heading);
+        card.appendChild(details);
+        element.insertBefore(card, element.firstChild);
+      }
+
+      directions.on('clear', () => {
+        map.setLayoutProperty('theRoute', 'visibility', 'none');
+        map.setLayoutProperty('theBox', 'visibility', 'none');
+         
+        counter = 0;
+        reports.innerHTML = '';
+      });
+       
+      directions.on('route', (event) => {
+        // Hide the route and box by setting the opacity to zero
+        map.setLayoutProperty('theRoute', 'visibility', 'none');
+        map.setLayoutProperty('theBox', 'visibility', 'none');
+         
+        if (counter >= maxAttempts) {
+          noRoutes(reports);
+        } else {
+          // Make each route visible
+          for (const route of event.route) {
+
+            // Make each route visible
+            map.setLayoutProperty('theRoute', 'visibility', 'visible');
+            map.setLayoutProperty('theBox', 'visibility', 'visible');
+             
+            // Get GeoJSON LineString feature of route
+            const routeLine = polyline.toGeoJSON(route.geometry);
+            console.log(routeLine);
+
+            // Create a bounding box around this route
+            // The app will find a random point in the new bbox
+            bbox = turf.bbox(routeLine);
+            polygon = turf.bboxPolygon(bbox);
+             
+            // Update the data for the route
+            // This will update the route line on the map
+            map.getSource('theRoute').setData(routeLine);
+             
+            // Update the box
+            map.getSource('theBox').setData(polygon);
+             
+            const clear = turf.booleanDisjoint(obstacle, routeLine);
+             
+            if (clear === true) {
+              collision = 'does not intersect any obstacles!';
+              detail = `takes ${(route.duration / 60).toFixed(
+              0
+              )} minutes and avoids`;
+              emoji = '✔️';
+
+              if (color_cache == null){
+                switch (map.getStyle().name){
+                  case 'Classic_Vintage':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Classic_Standard':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Dark_Digital':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Dark_Monochrome':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Dark_Night Mode':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Light_Engraved':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Light_High Contrast':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Light_Pencil Sketch':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Pastel_Blue':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Pastel_Cool':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Pastel_Pink':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Pastel_Yellow':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Satellite':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Topography_Colorful':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Topography_Globe':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Topography_Outdoor':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Topography_Subtle':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Topography_Vintage':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Unique_Comic Book 1':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Unique_Comic Book 2':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Unique_Dusty Western':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Unique_Colorful':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Unique_Picture Book':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Unique_Treasure Map':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Unique_Woodcut':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  default:
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                }
+              }
+
+
+              // map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+              // Hide the box
+              map.setLayoutProperty('theBox', 'visibility', 'none');
+              // Reset the counter
+              counter = 0;
+            } else {
+              // Collision occurred, so increment the counter
+              counter = counter + 1;
+              // As the attempts increase, expand the search area
+              // by a factor of the attempt count
+              polygon = turf.transformScale(polygon, counter * 0.01);
+              bbox = turf.bbox(polygon);
+              collision = 'is bad.';
+              detail = `takes ${(route.duration / 60).toFixed(0)} minutes and hits`;
+              emoji = '⚠️';
+              if (color_cache == null){
+                switch (map.getStyle().name){
+                  case 'Classic_Vintage':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Classic_Standard':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Dark_Digital':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Dark_Monochrome':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Dark_Night Mode':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Light_Engraved':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Light_High Contrast':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Light_Pencil Sketch':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Pastel_Blue':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Pastel_Cool':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Pastel_Pink':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Pastel_Yellow':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Satellite':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Topography_Colorful':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Topography_Globe':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Topography_Outdoor':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Topography_Subtle':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Topography_Vintage':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Unique_Comic Book 1':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Unique_Comic Book 2':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Unique_Dusty Western':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Unique_Colorful':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Unique_Picture Book':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Unique_Treasure Map':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  case 'Unique_Woodcut':
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                  default:
+                    map.setPaintProperty('theRoute', 'line-color', '#ff0000');
+                    break;
+                }
+              }
+              // map.setPaintProperty('theRoute', 'line-color', '#de2d26');
+               
+              // Add a randomly selected waypoint to get a new route from the Directions API
+              const randomWaypoint = turf.randomPoint(1, { bbox: bbox });
+              directions.setWaypoint(0,randomWaypoint['features'][0].geometry.coordinates);
+            }
+            // Add a new report section to the sidebar
+            addCard(counter, reports, clear, detail);
+          }
+        }
+      });      
+    }
+ 
+
+  </script>
+</body>
+</html>
