@@ -460,7 +460,10 @@
       <div class="input-group">
         <label>🔵 Waypoints:</label>
         <input type="text" id="waypoint-input" placeholder="Enter intermediate stop">
-        <button onclick="addWaypoint()" style="margin-top: 5px; font-size: 12px; height: 30px;">➕ Add Waypoint</button>
+        <div style="display: flex; gap: 5px; margin-top: 5px;">
+          <button onclick="addWaypoint()" style="flex: 1; font-size: 12px; height: 30px;">➕ Add Waypoint</button>
+          <button onclick="toggleWaypointMode()" id="waypoint-mode-btn" style="flex: 1; font-size: 12px; height: 30px;">📍 Click Map</button>
+        </div>
         
         <div id="waypoint-list" class="waypoint-list" style="margin-top: 10px; display: none;">
           <!-- Waypoints will be added here dynamically -->
@@ -588,6 +591,7 @@
 
     // Single point selection state
     let isSettingOrigin = true;
+    let isAddingWaypoint = false;
 
     // Route structure
     function createEmptyRoute(id = null) {
@@ -806,7 +810,7 @@
         type: 'circle',
         source: `waypoints-${routeId}`,
         paint: {
-          'circle-radius': 12,
+          'circle-radius': 2,
           'circle-color': ['get', 'color'],
           'circle-stroke-color': '#ffffff',
           'circle-stroke-width': 2,
@@ -991,6 +995,12 @@
       const route = routes.get(currentRouteId);
       if (!route) return;
       
+      // Handle waypoint clicking mode
+      if (isAddingWaypoint) {
+        addWaypointFromMap(coords);
+        return;
+      }
+      
       if (isSettingOrigin) {
         route.origin = coords;
         reverseGeocode(coords, 'origin');
@@ -1105,7 +1115,77 @@
       }
     }
 
-    async function addWaypoint() {
+    async function addWaypointFromMap(coords) {
+      if (!currentRouteId) return;
+      const route = routes.get(currentRouteId);
+      if (!route) return;
+
+      try {
+        // Try to get a place name for the coordinates
+        const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${coords[0]},${coords[1]}.json?access_token=${MAPBOX_TOKEN}&limit=1`);
+        const data = await response.json();
+        
+        let placeName = `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`;
+        if (data.features && data.features.length > 0) {
+          placeName = data.features[0].place_name;
+        }
+        
+        route.waypoints.push({
+          coordinates: coords,
+          name: placeName,
+          id: Date.now()
+        });
+        
+        updateWaypointsList();
+        updateWaypoints();
+        updateRouteList();
+        updateStatus('<strong>✅ Waypoint Added!</strong><br>' + placeName, 'success');
+        
+        // Exit waypoint mode after adding
+        isAddingWaypoint = false;
+        updateWaypointModeButton();
+        
+      } catch (error) {
+        // Fallback to coordinates if geocoding fails
+        const placeName = `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`;
+        route.waypoints.push({
+          coordinates: coords,
+          name: placeName,
+          id: Date.now()
+        });
+        
+        updateWaypointsList();
+        updateWaypoints();
+        updateRouteList();
+        updateStatus('<strong>✅ Waypoint Added!</strong><br>' + placeName, 'success');
+        
+        // Exit waypoint mode after adding
+        isAddingWaypoint = false;
+        updateWaypointModeButton();
+      }
+    }
+
+    function toggleWaypointMode() {
+      isAddingWaypoint = !isAddingWaypoint;
+      updateWaypointModeButton();
+      
+      if (isAddingWaypoint) {
+        updateStatus('<strong>🔵 Waypoint Mode</strong><br>Click map to add waypoint', 'loading');
+      } else {
+        updateStatus('<strong>✅ Ready</strong><br>Waypoint mode disabled', 'success');
+      }
+    }
+
+    function updateWaypointModeButton() {
+      const btn = document.getElementById('waypoint-mode-btn');
+      if (isAddingWaypoint) {
+        btn.textContent = '❌ Cancel';
+        btn.style.backgroundColor = '#dc3545';
+      } else {
+        btn.textContent = '📍 Click Map';
+        btn.style.backgroundColor = '#007bff';
+      }
+    }
       if (!currentRouteId) return;
       const route = routes.get(currentRouteId);
       if (!route) return;
