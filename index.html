@@ -4,13 +4,6 @@
   <meta charset="utf-8" />
   <title>Route Finder with Multiple Routes</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-   
-  <!-- Load Mapbox GL JS -->
-  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
-  
-  <!-- Load Turf.js -->
-  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
   
   <style type="text/css">
     body {
@@ -25,6 +18,12 @@
       top: 0;
       bottom: 0;
       width: 100%;
+      background-color: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #666;
     }
      
     .sidebar {
@@ -74,13 +73,6 @@
       left: 380px;
     }
      
-    .card {
-      font-size: small;
-      border-bottom: solid #d3d3d3 2px;
-      margin-bottom: 10px;
-      padding-bottom: 10px;
-    }
-     
     .card-header {
       font-weight: bold;
       padding: 6px;
@@ -113,24 +105,6 @@
       border: 1px solid #ccc;
       border-radius: 4px;
       box-sizing: border-box;
-    }
-
-    .route-controls {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      margin-top: 10px;
-    }
-
-    .route-controls input[type="color"] {
-      width: 40px;
-      height: 30px;
-      padding: 0;
-      border: none;
-    }
-
-    .route-controls input[type="number"] {
-      width: 60px;
     }
 
     .status-message {
@@ -179,13 +153,6 @@
       cursor: not-allowed;
     }
 
-    .small-btn {
-      width: auto;
-      padding: 5px 10px;
-      margin: 2px;
-      font-size: 12px;
-    }
-
     .diagnostic-info {
       background-color: #f8f9fa;
       border: 1px solid #dee2e6;
@@ -207,187 +174,30 @@
       font-size: 13px;
     }
 
-    .zoom-controls {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
+    .error-display {
+      background-color: #ffebee;
+      border: 1px solid #f8bbd9;
+      border-radius: 5px;
+      padding: 15px;
+      margin: 15px 0;
+      color: #c62828;
     }
 
-    .zoom-controls button {
-      width: 50px;
-      height: 40px;
-      font-size: 18px;
-      font-weight: bold;
-    }
-
-    .waypoint-list {
-      max-height: 200px;
-      overflow-y: auto;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background-color: #f9f9f9;
-    }
-
-    .waypoint-item {
-      display: flex;
-      align-items: center;
-      padding: 8px;
-      border-bottom: 1px solid #eee;
-      background-color: white;
-      margin: 2px;
-      border-radius: 3px;
-    }
-
-    .waypoint-item:last-child {
-      border-bottom: none;
-    }
-
-    .waypoint-number {
-      width: 25px;
-      height: 25px;
-      border-radius: 50%;
-      background-color: #007bff;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: bold;
-      margin-right: 10px;
-      flex-shrink: 0;
-    }
-
-    .waypoint-text {
-      flex: 1;
-      font-size: 12px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .waypoint-controls {
-      display: flex;
-      gap: 5px;
-      flex-shrink: 0;
-    }
-
-    .waypoint-controls button {
-      width: 25px;
-      height: 25px;
-      padding: 0;
-      font-size: 12px;
-      margin: 0;
-    }
-
-    /* Route Management Styles */
-    .route-tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      margin-bottom: 15px;
-      border-bottom: 2px solid #dee2e6;
-      padding-bottom: 10px;
-    }
-
-    .route-tab {
-      padding: 8px 12px;
-      border: 1px solid #dee2e6;
-      border-radius: 4px 4px 0 0;
-      background-color: #f8f9fa;
-      cursor: pointer;
-      font-size: 12px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      min-width: 80px;
-      justify-content: center;
-    }
-
-    .route-tab.active {
-      background-color: #007bff;
-      color: white;
-      border-color: #007bff;
-    }
-
-    .route-tab .color-indicator {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      border: 1px solid rgba(0,0,0,0.2);
-    }
-
-    .route-tab .close-btn {
-      margin-left: 5px;
-      background: none;
-      border: none;
-      color: inherit;
-      cursor: pointer;
-      padding: 0;
-      width: auto;
-      height: auto;
-      font-size: 14px;
-      font-weight: bold;
-    }
-
-    .route-tab .close-btn:hover {
-      background-color: rgba(255,255,255,0.2);
-      border-radius: 50%;
-    }
-
-    .route-list {
-      max-height: 300px;
-      overflow-y: auto;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background-color: #f9f9f9;
-      margin-top: 10px;
-    }
-
-    .route-list-item {
-      display: flex;
-      align-items: center;
-      padding: 10px;
-      border-bottom: 1px solid #eee;
-      background-color: white;
-      margin: 2px;
-      border-radius: 3px;
-    }
-
-    .route-list-item:last-child {
-      border-bottom: none;
-    }
-
-    .route-info {
-      flex: 1;
-      font-size: 12px;
-    }
-
-    .route-name {
-      font-weight: bold;
-      margin-bottom: 2px;
-    }
-
-    .route-status {
-      color: #666;
-      font-size: 11px;
-    }
-
-    .visibility-btn {
-      width: 30px;
-      height: 30px;
-      padding: 0;
-      font-size: 14px;
-      margin: 0;
-    }
-
-    .visibility-btn.hidden {
-      background-color: #6c757d;
+    .safari-warning {
+      background-color: #fff3e0;
+      border: 1px solid #ffcc02;
+      border-radius: 5px;
+      padding: 15px;
+      margin: 15px 0;
+      color: #e65100;
     }
   </style>
 </head>
  
 <body>
-  <div id="map"></div>
+  <div id="map">
+    📍 Map will load here once libraries are ready...
+  </div>
   
   <div class="toggle-btn sidebar-visible" id="toggle-btn" onclick="toggleSidebar()">
     ☰
@@ -395,250 +205,66 @@
   
   <div class="sidebar" id="sidebar">
     <div id="status-message" class="status-message status-loading">
-      <strong>🔄 Loading...</strong><br>
-      Initializing map...
+      <strong>🔄 Initializing...</strong><br>
+      Loading mapping libraries...
     </div>
 
-    <!-- Route Management Section -->
+    <div class="safari-warning">
+      <strong>🦁 Safari Users:</strong><br>
+      If the map doesn't load, please try:<br>
+      • Check Safari's security settings<br>
+      • Allow loading external content<br>
+      • Try Chrome or Firefox as alternative
+    </div>
+
     <div class="control-panel">
-      <div class="card-header">🗺️ Route Management</div>
-      
-      <div class="route-tabs" id="route-tabs">
-        <!-- Route tabs will be dynamically generated -->
-      </div>
-      
-      <button onclick="createNewRoute()">➕ New Route</button>
-      
-      <div class="route-list" id="route-list" style="display: none;">
-        <!-- Route list items will be dynamically generated -->
-      </div>
-      
-      <button onclick="toggleRouteList()" id="route-list-toggle" style="display: none;">📋 Show All Routes</button>
-    </div>
-
-    <!-- Current Route Controls -->
-    <div class="control-panel" id="current-route-panel">
-      <div class="card-header" id="current-route-header">🎯 Current Route</div>
-      
-      <div class="input-group">
-        <label>🟢 Starting Point:</label>
-        <input type="text" id="origin-input" placeholder="Enter address or place name">
-        <button onclick="geocodeOrigin()" style="margin-top: 5px; font-size: 12px; height: 30px;">📍 Find Location</button>
-      </div>
-      
-      <div class="input-group">
-        <label>🔴 Destination:</label>
-        <input type="text" id="destination-input" placeholder="Enter address or place name">
-        <button onclick="geocodeDestination()" style="margin-top: 5px; font-size: 12px; height: 30px;">📍 Find Location</button>
-      </div>
-      
-      <div class="input-group">
-        <label>🔵 Waypoints:</label>
-        <input type="text" id="waypoint-input" placeholder="Enter intermediate stop">
-        <div style="display: flex; gap: 5px; margin-top: 5px;">
-          <button onclick="addWaypoint()" style="flex: 1; font-size: 12px; height: 30px;">➕ Add Waypoint</button>
-          <button onclick="toggleWaypointMode()" id="waypoint-mode-btn" style="flex: 1; font-size: 12px; height: 30px;">📍 Click Map</button>
-        </div>
-        
-        <div id="waypoint-list" class="waypoint-list" style="margin-top: 10px; display: none;">
-          <!-- Waypoints will be added here dynamically -->
-        </div>
-      </div>
-      
-      <div class="input-group">
-        <label>🚗 Travel Mode:</label>
-        <select id="profile-select">
-          <option value="driving">🚗 Driving</option>
-          <option value="walking">🚶 Walking</option>
-          <option value="cycling">🚴 Cycling</option>
-        </select>
-      </div>
-      
-      <button onclick="findRoute()">🗺️ Find Route</button>
-      <button onclick="clearCurrentRoute()">🗑️ Clear Route</button>
-      
-      <div class="route-controls">
-        <label>Color:</label>
-        <input type="color" id="routeColor" value="#ff0000" onchange="updateCurrentRouteStyle()">
-        <label>Width:</label>
-        <input type="number" id="routeWidth" value="8" min="1" max="20" onchange="updateCurrentRouteStyle()">
-      </div>
-    </div>
-
-    <!-- Map Controls -->
-    <div class="control-panel">
-      <div class="zoom-controls">
-        <button onclick="zoomIn()">+</button>
-        <button onclick="zoomOut()">-</button>
-        <button onclick="fitToData()" style="width: auto; flex: 1; font-size: 14px;">📍 Fit to Points</button>
-      </div>
-      
-      <div class="zoom-controls">
-        <button onclick="toggleCenterMode()" id="center-mode-btn" style="width: auto; flex: 1; font-size: 14px;">🎯 Set Center</button>
-        <button onclick="toggleCenterIcon()" id="center-icon-btn" style="width: 50px; font-size: 14px;">👁️</button>
-      </div>
-      
-      <div class="input-group" style="margin-top: 10px;">
-        <label style="font-size: 12px;">Custom Center (lat, lng):</label>
-        <input type="text" id="center-input" placeholder="38.0500, -84.5000" style="font-size: 12px;">
-        <button onclick="setCenterFromInput()" style="margin-top: 5px; font-size: 12px; height: 30px;">📍 Apply Center</button>
-        <button onclick="clearCustomCenter()" style="margin-top: 5px; font-size: 12px; height: 30px;">❌ Clear Center</button>
-      </div>
-    </div>
-
-    <!-- Map Styles -->
-    <div class="control-panel">
-      <div class="input-group">
-        <label><strong>Default Map Styles:</strong></label>
-        <select id="styleSelector" onchange="changeMapStyle()">
-          <option value="mapbox://styles/mapbox/streets-v11">📍 Streets</option>
-          <option value="mapbox://styles/mapbox/outdoors-v11">🌲 Outdoors</option>
-          <option value="mapbox://styles/mapbox/light-v10">☀️ Light</option>
-          <option value="mapbox://styles/mapbox/dark-v10">🌙 Dark</option>
-          <option value="mapbox://styles/mapbox/satellite-v9">🛰️ Satellite</option>
-          <option value="mapbox://styles/mapbox/satellite-streets-v11">🗺️ Satellite Streets</option>
-        </select>
-      </div>
-      
-      <div class="input-group">
-        <label><strong>Your Custom Styles:</strong></label>
-        <select id="customStyleSelector" onchange="changeMapStyle('custom')">
-          <option value="">Select custom style...</option>
-          <option value="mapbox://styles/cb29/ckxnnmex53n1b14m07t6sum48">🎨 Classic Standard</option>
-          <option value="mapbox://styles/cb29/ckxnmjiti0rvm14pby8w9si99">🎨 Classic Vintage</option>
-          <option value="mapbox://styles/cb29/ckxov33jj3le314ueu15gl6yh">🎨 Dark Digital</option>
-          <option value="mapbox://styles/cb29/ckxmhuc4k2gxm14s0eq1htzns">🎨 Dark Monochrome</option>
-          <option value="mapbox://styles/cb29/ckxs1bfov2cay14mnx6nvrzxt">🎨 Dark Night Mode</option>
-          <option value="mapbox://styles/cb29/ckwgtu6ly20cr15qiy9i2ftsz">🎨 Light Engraved</option>
-          <option value="mapbox://styles/cb29/ckxntkwjq4flv14ld7uisp5b1">🎨 Light High Contrast</option>
-          <option value="mapbox://styles/cb29/ckxouv50s02lw14r2jiyvnvxh">🎨 Light Pencil Sketch</option>
-          <option value="mapbox://styles/cb29/ckxtl08qj2gb215p8y2blzxur">🎨 Pastel Blue</option>
-          <option value="mapbox://styles/cb29/ckxtlkuk8l10zj14pk8irf7owt">🎨 Pastel Cool</option>
-          <option value="mapbox://styles/cb29/ckxtl2a2s0yot14nw9pbn2733">🎨 Pastel Pink</option>
-          <option value="mapbox://styles/cb29/ckxtl35nk4hsb15mry8rwlg4l">🎨 Pastel Yellow</option>
-          <option value="mapbox://styles/cb29/ckxmjckme2if514s0v3xq4vxy">🎨 Satellite Streets</option>
-          <option value="mapbox://styles/cb29/ckxrnuq691z6h14mnuy5jpk5c">🎨 Topography Colorful</option>
-          <option value="mapbox://styles/cb29/ckxnp39kb5eyw14oaan01mkp0">🎨 Topography Globe</option>
-          <option value="mapbox://styles/cb29/ckxnkf6rs60r214uc0j42vbj4">🎨 Topography Outdoor</option>
-          <option value="mapbox://styles/cb29/ckxnqwyww0sri14p9skglgshs">🎨 Topography Subtle</option>
-          <option value="mapbox://styles/cb29/ckxno9jbk3nn714s6vjah6fwb">🎨 Topography Vintage</option>
-          <option value="mapbox://styles/cb29/ckxrrtfqk0oir15my0y9tpjvj">🎨 Unique Colorful</option>
-          <option value="mapbox://styles/cb29/ckxovchyg4tfj14s6d7u559tj">🎨 Unique Comic Book 1</option>
-          <option value="mapbox://styles/cb29/ckxov6vgm66g214o064dp3vda">🎨 Unique Comic Book 2</option>
-          <option value="mapbox://styles/cb29/ckxove5sy174l15mq6h82hwxk">🎨 Unique Dusty Western</option>
-          <option value="mapbox://styles/cb29/ckxoup98z4sv514m0q988ltie">🎨 Unique Picture Book</option>
-          <option value="mapbox://styles/cb29/ckxov1ris0n2415p4e9gn8oxu">🎨 Unique Treasure Map</option>
-          <option value="mapbox://styles/cb29/ckxous4km02k114m523qh0k9y">🎨 Unique Woodcut</option>
-        </select>
-      </div>
+      <div class="card-header">📋 System Status</div>
+      <button onclick="testBasicFunctionality()" id="test-btn">🧪 Test Basic Functions</button>
+      <button onclick="loadMapboxLibraries()" id="load-btn">📥 Load Map Libraries</button>
+      <button onclick="initializeMap()" id="init-btn" disabled>🗺️ Initialize Map</button>
+      <button onclick="testNetworkAccess()" id="network-btn">🌐 Test Network</button>
     </div>
 
     <div class="network-test">
-      <strong>🔍 Debug Info:</strong>
-      <div id="diagnostic-results" class="diagnostic-info">Starting...</div>
+      <strong>🔍 System Information:</strong>
+      <div id="diagnostic-results" class="diagnostic-info">
+        Browser: <span id="browser-info">Detecting...</span><br>
+        JavaScript: <span id="js-status">Testing...</span><br>
+        Network: <span id="network-status">Testing...</span><br>
+        Libraries: <span id="library-status">Not loaded</span>
+      </div>
     </div>
 
-    <button onclick="initializeMap()">🔄 Try Initialize Map</button>
-    <button onclick="debugStatus()">🔍 Debug Status</button>
+    <div id="error-display" class="error-display" style="display: none;">
+      <strong>❌ Error Details:</strong>
+      <div id="error-content"></div>
+    </div>
 
-    <div id="reports"></div>
+    <div class="control-panel">
+      <div class="card-header">ℹ️ Instructions</div>
+      <p><strong>1. Test Basic Functions</strong> - Verify JavaScript works</p>
+      <p><strong>2. Load Map Libraries</strong> - Download required libraries</p>
+      <p><strong>3. Initialize Map</strong> - Start the mapping application</p>
+      <p><strong>4. Test Network</strong> - Check external connections</p>
+    </div>
   </div>
 
   <script>
-    // Your Mapbox access token
-    const MAPBOX_TOKEN = 'pk.eyJ1IjoiY2IyOSIsImEiOiJja3E4OHo3anowZGx1Mm9tcXF3ZmhyaWtwIn0.IQ5rY622AU9GOETrqa9NBw';
-
+    console.log('=== SCRIPT STARTING ===');
+    
     // Global variables
-    let map = null;
-    let customCenter = null;
-    let isSettingCenter = false;
-    let showCenterIcon = true;
-    let nextRouteId = 1;
-    let currentRouteId = null;
-    let routes = new Map();
-    let routeListVisible = false;
-    let isSettingOrigin = true;
-    let isAddingWaypoint = false;
+    let mapboxLibrariesLoaded = false;
+    let mapInitialized = false;
+    let networkAccessible = false;
 
-    // Route colors for new routes
-    const routeColors = [
-      '#ff0000', '#00ff00', '#0066ff', '#ff6600', '#ff00ff', 
-      '#00ffff', '#ffff00', '#990000', '#009900', '#000099'
-    ];
-
-    // Route structure
-    function createEmptyRoute(id = null) {
-      return {
-        id: id || nextRouteId++,
-        name: `Route ${id || nextRouteId - 1}`,
-        origin: null,
-        destination: null,
-        waypoints: [],
-        profile: 'driving',
-        color: routeColors[(id || nextRouteId - 1) % routeColors.length],
-        width: 8,
-        routeData: null,
-        visible: true,
-        status: 'empty'
-      };
-    }
-
-    // Obstacle data
-    const clearances = {
-      type: 'FeatureCollection',
-      features: [
-        {
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: [-84.47426, 38.06673] },
-          properties: { clearance: "13' 2\"" }
-        },
-        {
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: [-84.47208, 38.06694] },
-          properties: { clearance: "13' 7\"" }
-        },
-        {
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: [-84.60485, 38.12184] },
-          properties: { clearance: "13' 7\"" }
-        },
-        {
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: [-84.61905, 37.87504] },
-          properties: { clearance: "12' 0\"" }
-        },
-        {
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: [-84.55946, 38.30213] },
-          properties: { clearance: "13' 6\"" }
-        },
-        {
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: [-84.27235, 38.04954] },
-          properties: { clearance: "13' 6\"" }
-        },
-        {
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: [-84.27264, 37.82917] },
-          properties: { clearance: "11' 6\"" }
-        }
-      ]
-    };
-
-    function logDebug(message) {
+    // Basic logging function
+    function logStatus(message) {
       console.log(message);
-      const debugEl = document.getElementById('diagnostic-results');
-      if (debugEl) {
-        debugEl.innerHTML += message + '<br>';
-        debugEl.scrollTop = debugEl.scrollHeight;
+      const diagnosticEl = document.getElementById('diagnostic-results');
+      if (diagnosticEl) {
+        diagnosticEl.innerHTML += '<br>' + message;
+        diagnosticEl.scrollTop = diagnosticEl.scrollHeight;
       }
-      // Also try to show in status if debug element isn't working
-      try {
-        const statusEl = document.getElementById('status-message');
-        if (statusEl && !debugEl) {
-          statusEl.innerHTML += '<br>' + message;
-        }
-      } catch (e) {}
     }
 
     function updateStatus(message, type) {
@@ -647,150 +273,210 @@
         statusEl.className = 'status-message status-' + type;
         statusEl.innerHTML = message;
       }
-      console.log('Status: ' + message);
+      console.log('STATUS: ' + message);
     }
 
-    function debugStatus() {
-      logDebug('=== DEBUG STATUS ===');
-      logDebug('Mapbox GL exists: ' + (typeof mapboxgl !== 'undefined'));
-      logDebug('Map instance: ' + (map ? 'exists' : 'null'));
-      logDebug('Document ready: ' + document.readyState);
-      logDebug('Routes count: ' + routes.size);
-      logDebug('Current route: ' + currentRouteId);
-      logDebug('=== END DEBUG ===');
+    function showError(error) {
+      const errorEl = document.getElementById('error-display');
+      const errorContent = document.getElementById('error-content');
+      if (errorEl && errorContent) {
+        errorContent.innerHTML = error;
+        errorEl.style.display = 'block';
+      }
+      console.error('ERROR: ' + error);
+    }
+
+    function testBasicFunctionality() {
+      logStatus('=== Testing Basic Functionality ===');
+      
+      try {
+        // Test JavaScript features
+        document.getElementById('js-status').textContent = 'Working ✅';
+        
+        // Test browser detection
+        const browserInfo = navigator.userAgent.includes('Safari') ? 'Safari 🦁' : 
+                           navigator.userAgent.includes('Chrome') ? 'Chrome 🟢' :
+                           navigator.userAgent.includes('Firefox') ? 'Firefox 🦊' : 'Unknown';
+        document.getElementById('browser-info').textContent = browserInfo;
+        
+        // Test DOM manipulation
+        updateStatus('<strong>✅ Basic Functions Working!</strong><br>JavaScript and DOM access confirmed', 'success');
+        
+        // Enable next step
+        document.getElementById('load-btn').disabled = false;
+        
+        logStatus('✅ Basic functionality test passed');
+        return true;
+        
+      } catch (error) {
+        showError('Basic functionality test failed: ' + error.message);
+        return false;
+      }
+    }
+
+    function loadMapboxLibraries() {
+      logStatus('=== Loading Mapbox Libraries ===');
+      updateStatus('<strong>📥 Loading Libraries...</strong><br>Downloading Mapbox GL JS...', 'loading');
+      
+      try {
+        // Load Mapbox GL JS
+        const script = document.createElement('script');
+        script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
+        script.crossOrigin = 'anonymous';
+        
+        script.onload = function() {
+          logStatus('✅ Mapbox GL JS loaded');
+          
+          // Load CSS
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
+          link.crossOrigin = 'anonymous';
+          
+          link.onload = function() {
+            logStatus('✅ Mapbox GL CSS loaded');
+            loadTurfLibrary();
+          };
+          
+          link.onerror = function() {
+            showError('Failed to load Mapbox GL CSS');
+          };
+          
+          document.head.appendChild(link);
+        };
+        
+        script.onerror = function() {
+          showError('Failed to load Mapbox GL JS - check network connection and Safari security settings');
+          updateStatus('<strong>❌ Library Load Failed</strong><br>Check Safari security settings', 'error');
+        };
+        
+        document.head.appendChild(script);
+        
+      } catch (error) {
+        showError('Library loading error: ' + error.message);
+      }
+    }
+
+    function loadTurfLibrary() {
+      logStatus('Loading Turf.js library...');
+      
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/@turf/turf@6/turf.min.js';
+      script.crossOrigin = 'anonymous';
+      
+      script.onload = function() {
+        logStatus('✅ Turf.js loaded');
+        mapboxLibrariesLoaded = true;
+        document.getElementById('library-status').textContent = 'Loaded ✅';
+        document.getElementById('init-btn').disabled = false;
+        updateStatus('<strong>✅ Libraries Loaded!</strong><br>Ready to initialize map', 'success');
+      };
+      
+      script.onerror = function() {
+        showError('Failed to load Turf.js library');
+      };
+      
+      document.head.appendChild(script);
     }
 
     function initializeMap() {
-      logDebug('Starting map initialization...');
-      updateStatus('<strong>🗺️ Initializing...</strong><br>Creating map instance...', 'loading');
-      
-      if (typeof mapboxgl === 'undefined') {
-        logDebug('❌ Mapbox GL not found');
-        updateStatus('<strong>❌ Mapbox GL Missing</strong><br>Library failed to load', 'error');
+      if (!mapboxLibrariesLoaded) {
+        showError('Libraries not loaded yet - click "Load Map Libraries" first');
         return;
       }
       
-      logDebug('✅ Mapbox GL found');
+      logStatus('=== Initializing Map ===');
+      updateStatus('<strong>🗺️ Creating Map...</strong><br>Setting up Mapbox instance...', 'loading');
       
-      mapboxgl.accessToken = MAPBOX_TOKEN;
-      
-      map = new mapboxgl.Map({
-        container: 'map',
-        style: 'mapbox://styles/mapbox/streets-v11',
-        center: [-84.5, 38.05],
-        zoom: 10
-      });
-      
-      map.on('load', function() {
-        logDebug('✅ Map loaded!');
-        updateStatus('<strong>✅ Ready!</strong><br>Click map or enter addresses', 'success');
-        setupMapFeatures();
+      try {
+        if (typeof mapboxgl === 'undefined') {
+          throw new Error('Mapbox GL not available');
+        }
         
-        // Create first route
-        createNewRoute();
-      });
-      
-      map.on('error', function(e) {
-        logDebug('❌ Map error: ' + (e.error ? e.error.message : 'unknown'));
-        updateStatus('<strong>❌ Map Error</strong><br>Failed to load', 'error');
-      });
-      
-      map.on('click', handleMapClick);
+        // Set access token
+        mapboxgl.accessToken = 'pk.eyJ1IjoiY2IyOSIsImEiOiJja3E4OHo3anowZGx1Mm9tcXF3ZmhyaWtwIn0.IQ5rY622AU9GOETrqa9NBw';
+        
+        // Create map
+        const map = new mapboxgl.Map({
+          container: 'map',
+          style: 'mapbox://styles/mapbox/streets-v11',
+          center: [-84.5, 38.05],
+          zoom: 10
+        });
+        
+        map.on('load', function() {
+          logStatus('✅ Map initialized successfully!');
+          updateStatus('<strong>🎉 Map Ready!</strong><br>Mapping application is now functional', 'success');
+          mapInitialized = true;
+          
+          // Clear the placeholder text
+          document.getElementById('map').innerHTML = '';
+        });
+        
+        map.on('error', function(e) {
+          throw new Error('Map error: ' + (e.error ? e.error.message : 'unknown'));
+        });
+        
+      } catch (error) {
+        showError('Map initialization failed: ' + error.message);
+        updateStatus('<strong>❌ Map Failed</strong><br>' + error.message, 'error');
+      }
     }
 
-    function setupMapFeatures() {
-      // Add obstacles
-      const obstacle = turf.buffer(clearances, 0.25, { units: 'kilometers' });
+    function testNetworkAccess() {
+      logStatus('=== Testing Network Access ===');
+      updateStatus('<strong>🌐 Testing Network...</strong><br>Checking external connections...', 'loading');
       
-      map.addSource('obstacles', {
-        type: 'geojson',
-        data: obstacle
-      });
-
-      map.addLayer({
-        id: 'obstacles',
-        type: 'fill',
-        source: 'obstacles',
-        paint: {
-          'fill-color': '#ff0000',
-          'fill-opacity': 0.3
-        }
-      });
-      
-      // Add center point source
-      map.addSource('center-point', {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: [] }
-      });
-
-      map.addLayer({
-        id: 'center-point-symbol',
-        type: 'symbol',
-        source: 'center-point',
-        layout: {
-          'text-field': '⊕',
-          'text-size': 20,
-          'text-allow-overlap': true,
-          'text-ignore-placement': true
-        },
-        paint: {
-          'text-color': '#ff0000',
-          'text-halo-color': '#ffffff',
-          'text-halo-width': 2
-        }
-      });
-      
-      logDebug('✅ Map features setup complete');
+      // Test fetch to Mapbox API
+      fetch('https://api.mapbox.com/styles/v1/mapbox/streets-v11?access_token=pk.eyJ1IjoiY2IyOSIsImEiOiJja3E4OHo3anowZGx1Mm9tcXF3ZmhyaWtwIn0.IQ5rY622AU9GOETrqa9NBw')
+        .then(response => {
+          if (response.ok) {
+            logStatus('✅ Network access confirmed');
+            document.getElementById('network-status').textContent = 'Connected ✅';
+            networkAccessible = true;
+            updateStatus('<strong>✅ Network OK!</strong><br>External services accessible', 'success');
+          } else {
+            throw new Error('HTTP ' + response.status);
+          }
+        })
+        .catch(error => {
+          logStatus('❌ Network test failed: ' + error.message);
+          document.getElementById('network-status').textContent = 'Failed ❌';
+          showError('Network access failed: ' + error.message + '<br>Check internet connection and Safari security settings');
+          updateStatus('<strong>❌ Network Issue</strong><br>Cannot reach external services', 'error');
+        });
     }
 
-    // Route Management Functions
-    function createNewRoute() {
-      const newRoute = createEmptyRoute();
-      routes.set(newRoute.id, newRoute);
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const toggleBtn = document.getElementById('toggle-btn');
       
-      // Add map sources for this route
-      addRouteToMap(newRoute.id);
-      
-      // Switch to new route
-      switchToRoute(newRoute.id);
-      
-      updateRouteTabs();
-      updateRouteList();
-      
-      logDebug(`Created new route ${newRoute.id}`);
+      if (sidebar.classList.contains('hidden')) {
+        sidebar.classList.remove('hidden');
+        toggleBtn.classList.remove('sidebar-hidden');
+        toggleBtn.classList.add('sidebar-visible');
+      } else {
+        sidebar.classList.add('hidden');
+        toggleBtn.classList.remove('sidebar-visible');
+        toggleBtn.classList.add('sidebar-hidden');
+      }
     }
 
-    function addRouteToMap(routeId) {
-      const route = routes.get(routeId);
-      if (!route || !map) return;
+    // Auto-start basic functionality test
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM Content Loaded');
+      setTimeout(testBasicFunctionality, 500);
+    });
 
-      // Add route line source
-      map.addSource(`route-${routeId}`, {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: [] }
-      });
+    // Also try on window load
+    window.addEventListener('load', function() {
+      console.log('Window Load Event');
+      if (!document.getElementById('js-status').textContent.includes('✅')) {
+        testBasicFunctionality();
+      }
+    });
 
-      map.addLayer({
-        id: `route-${routeId}`,
-        type: 'line',
-        source: `route-${routeId}`,
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 
-          'line-color': route.color, 
-          'line-width': route.width,
-          'line-opacity': route.visible ? 1 : 0
-        }
-      });
-
-      // Add waypoints source
-      map.addSource(`waypoints-${routeId}`, {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: [] }
-      });
-
-      map.addLayer({
-        id: `waypoints-${routeId}`,
-        type: 'circle',
-        source: `waypoints-${routeId}`,
-        paint: {
-          '
+    console.log('=== SCRIPT LOADED ===');
+  </script>
+</body>
+</html>
