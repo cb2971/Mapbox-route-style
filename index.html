@@ -282,6 +282,18 @@
         <button onclick="fitToData()" style="width: auto; flex: 1; font-size: 14px;">📍 Fit to Points</button>
       </div>
       
+      <div class="zoom-controls">
+        <button onclick="toggleCenterMode()" id="center-mode-btn" style="width: auto; flex: 1; font-size: 14px;">🎯 Set Center</button>
+        <button onclick="toggleCenterIcon()" id="center-icon-btn" style="width: 50px; font-size: 14px;">👁️</button>
+      </div>
+      
+      <div class="input-group" style="margin-top: 10px;">
+        <label style="font-size: 12px;">Custom Center (lat, lng):</label>
+        <input type="text" id="center-input" placeholder="38.0500, -84.5000" style="font-size: 12px;">
+        <button onclick="setCenterFromInput()" style="margin-top: 5px; font-size: 12px; height: 30px;">📍 Apply Center</button>
+        <button onclick="clearCustomCenter()" style="margin-top: 5px; font-size: 12px; height: 30px;">❌ Clear Center</button>
+      </div>
+      
       <div class="route-controls">
         <label>Color:</label>
         <input type="color" id="routeColor" value="#ff0000" onchange="updateRouteStyle()">
@@ -356,6 +368,9 @@
     let origin = null;
     let destination = null;
     let isSettingOrigin = true;
+    let customCenter = null;
+    let isSettingCenter = false;
+    let showCenterIcon = true;
 
     // Obstacle data
     const clearances = {
@@ -549,6 +564,30 @@
           }
         });
         
+        // Add center point source
+        map.addSource('center-point', {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: [] }
+        });
+
+        // Add center point symbol layer (registration mark)
+        map.addLayer({
+          id: 'center-point-symbol',
+          type: 'symbol',
+          source: 'center-point',
+          layout: {
+            'text-field': '⊕',
+            'text-size': 20,
+            'text-allow-overlap': true,
+            'text-ignore-placement': true
+          },
+          paint: {
+            'text-color': '#ff0000',
+            'text-halo-color': '#ffffff',
+            'text-halo-width': 2
+          }
+        });
+        
         logDebug('✅ All features setup complete');
         
       } catch (error) {
@@ -558,6 +597,19 @@
 
     function handleMapClick(e) {
       const coords = [e.lngLat.lng, e.lngLat.lat];
+      
+      if (isSettingCenter) {
+        // Setting custom center point
+        customCenter = coords;
+        document.getElementById('center-input').value = `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`;
+        updateCenterPoint();
+        map.setCenter(coords);
+        isSettingCenter = false;
+        updateCenterModeButton();
+        logDebug('✅ Custom center set: ' + coords.join(', '));
+        updateStatus('<strong>✅ Center Set!</strong><br>All zoom operations will center here', 'success');
+        return;
+      }
       
       if (isSettingOrigin) {
         origin = coords;
@@ -811,6 +863,8 @@
               map.getSource('waypoints').setData(waypointData);
               logDebug('✅ Waypoint data restored');
             }
+            // Restore center point
+            updateCenterPoint();
             updateRouteStyle();
           } catch (error) {
             logDebug('⚠️ Error restoring data: ' + error.message);
@@ -843,16 +897,130 @@
 
     function zoomIn() {
       if (map) {
-        map.zoomIn();
-        logDebug('Zoomed in to level: ' + map.getZoom().toFixed(1));
+        if (customCenter) {
+          map.zoomTo(map.getZoom() + 1, { center: customCenter });
+          logDebug('Zoomed in to level: ' + (map.getZoom() + 1).toFixed(1) + ' (custom center)');
+        } else {
+          map.zoomIn();
+          logDebug('Zoomed in to level: ' + map.getZoom().toFixed(1));
+        }
       }
     }
 
     function zoomOut() {
       if (map) {
-        map.zoomOut();
-        logDebug('Zoomed out to level: ' + map.getZoom().toFixed(1));
+        if (customCenter) {
+          map.zoomTo(map.getZoom() - 1, { center: customCenter });
+          logDebug('Zoomed out to level: ' + (map.getZoom() - 1).toFixed(1) + ' (custom center)');
+        } else {
+          map.zoomOut();
+          logDebug('Zoomed out to level: ' + map.getZoom().toFixed(1));
+        }
       }
+    }
+
+    function toggleCenterMode() {
+      isSettingCenter = !isSettingCenter;
+      updateCenterModeButton();
+      
+      if (isSettingCenter) {
+        updateStatus('<strong>🎯 Center Mode Active</strong><br>Click map to set custom center point', 'loading');
+        logDebug('Center mode activated - click map to set center');
+      } else {
+        updateStatus('<strong>🎯 Center Mode Off</strong><br>Back to normal map interaction', 'success');
+        logDebug('Center mode deactivated');
+      }
+    }
+
+    function updateCenterModeButton() {
+      const btn = document.getElementById('center-mode-btn');
+      if (isSettingCenter) {
+        btn.textContent = '❌ Cancel';
+        btn.style.backgroundColor = '#dc3545';
+      } else {
+        btn.textContent = '🎯 Set Center';
+        btn.style.backgroundColor = '#007bff';
+      }
+    }
+
+    function toggleCenterIcon() {
+      showCenterIcon = !showCenterIcon;
+      const btn = document.getElementById('center-icon-btn');
+      
+      if (showCenterIcon) {
+        btn.textContent = '👁️';
+        btn.style.backgroundColor = '#007bff';
+        if (map && map.getLayer('center-point-symbol')) {
+          map.setLayoutProperty('center-point-symbol', 'visibility', 'visible');
+        }
+        logDebug('Center icon visible');
+      } else {
+        btn.textContent = '🚫';
+        btn.style.backgroundColor = '#6c757d';
+        if (map && map.getLayer('center-point-symbol')) {
+          map.setLayoutProperty('center-point-symbol', 'visibility', 'none');
+        }
+        logDebug('Center icon hidden');
+      }
+    }
+
+    function setCenterFromInput() {
+      const input = document.getElementById('center-input').value.trim();
+      if (!input) {
+        updateStatus('<strong>❌ No Coordinates</strong><br>Please enter lat, lng coordinates', 'error');
+        return;
+      }
+      
+      try {
+        const parts = input.split(',').map(p => parseFloat(p.trim()));
+        if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) {
+          throw new Error('Invalid format');
+        }
+        
+        const [lat, lng] = parts;
+        
+        // Validate coordinate ranges
+        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+          throw new Error('Coordinates out of range');
+        }
+        
+        customCenter = [lng, lat]; // Mapbox uses [lng, lat]
+        updateCenterPoint();
+        map.flyTo({ center: customCenter, zoom: map.getZoom() });
+        
+        updateStatus('<strong>✅ Center Applied!</strong><br>Custom center point set from coordinates', 'success');
+        logDebug(`✅ Center set from input: ${lat}, ${lng}`);
+        
+      } catch (error) {
+        updateStatus('<strong>❌ Invalid Coordinates</strong><br>Use format: lat, lng (e.g., 38.0500, -84.5000)', 'error');
+        logDebug('❌ Invalid coordinate input: ' + input);
+      }
+    }
+
+    function clearCustomCenter() {
+      customCenter = null;
+      document.getElementById('center-input').value = '';
+      updateCenterPoint();
+      updateStatus('<strong>✅ Center Cleared</strong><br>Back to standard map behavior', 'success');
+      logDebug('Custom center cleared');
+    }
+
+    function updateCenterPoint() {
+      if (!map || !map.getSource('center-point')) return;
+      
+      const features = [];
+      if (customCenter) {
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: customCenter },
+          properties: {}
+        });
+      }
+      
+      map.getSource('center-point').setData({
+        type: 'FeatureCollection',
+        features: features
+      });
     }
 
     function fitToData() {
