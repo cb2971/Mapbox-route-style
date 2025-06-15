@@ -486,9 +486,15 @@
 
     function logDebug(message) {
       console.log(message);
-      const debugEl = document.getElementById('diagnostic-results');
-      debugEl.innerHTML += message + '<br>';
-      debugEl.scrollTop = debugEl.scrollHeight;
+      try {
+        const debugEl = document.getElementById('diagnostic-results');
+        if (debugEl) {
+          debugEl.innerHTML += message + '<br>';
+          debugEl.scrollTop = debugEl.scrollHeight;
+        }
+      } catch (error) {
+        console.error('Error logging debug message:', error);
+      }
     }
 
     function updateStatus(message, type = 'loading') {
@@ -498,30 +504,47 @@
     }
 
     function debugStatus() {
-      logDebug('=== DEBUG STATUS ===');
-      logDebug('Window.mapboxgl exists: ' + (typeof window.mapboxgl !== 'undefined'));
-      logDebug('mapboxgl exists: ' + (typeof mapboxgl !== 'undefined'));
-      
-      if (typeof mapboxgl !== 'undefined') {
-        logDebug('Mapbox GL version: ' + (mapboxgl.version || 'unknown'));
-        logDebug('Access token set: ' + (!!mapboxgl.accessToken));
+      try {
+        logDebug('=== DEBUG STATUS ===');
+        logDebug('Window.mapboxgl exists: ' + (typeof window.mapboxgl !== 'undefined'));
+        logDebug('mapboxgl exists: ' + (typeof mapboxgl !== 'undefined'));
+        
+        if (typeof mapboxgl !== 'undefined') {
+          logDebug('Mapbox GL version: ' + (mapboxgl.version || 'unknown'));
+          logDebug('Access token set: ' + (!!mapboxgl.accessToken));
+        }
+        
+        logDebug('Map instance exists: ' + (!!map));
+        if (map) {
+          logDebug('Map loaded: ' + map.loaded());
+        }
+        
+        logDebug('Document ready state: ' + document.readyState);
+        logDebug('Current URL: ' + window.location.href);
+        
+        // Check for JavaScript errors
+        if (window.console && console.error) {
+          logDebug('Console available for error checking');
+        }
+        
+        // Check if all required functions exist
+        const requiredFunctions = ['updateStatus', 'setupMapFeatures', 'updateWaypoints'];
+        requiredFunctions.forEach(funcName => {
+          logDebug(`Function ${funcName} exists: ` + (typeof window[funcName] === 'function'));
+        });
+        
+        logDebug('=== END DEBUG ===');
+      } catch (error) {
+        console.error('Error in debugStatus:', error);
+        logDebug('❌ Error in debug status: ' + error.message);
       }
-      
-      logDebug('Map instance exists: ' + (!!map));
-      if (map) {
-        logDebug('Map loaded: ' + map.loaded());
-      }
-      
-      logDebug('Document ready state: ' + document.readyState);
-      logDebug('Current URL: ' + window.location.href);
-      logDebug('=== END DEBUG ===');
     }
 
     function initializeMap() {
-      logDebug('=== STARTING MAP INITIALIZATION ===');
-      updateStatus('<strong>🗺️ Initializing Map...</strong><br>Setting up Mapbox instance...', 'loading');
-      
       try {
+        logDebug('=== STARTING MAP INITIALIZATION ===');
+        updateStatus('<strong>🗺️ Initializing Map...</strong><br>Setting up Mapbox instance...', 'loading');
+        
         // Check if Mapbox GL is available
         if (typeof mapboxgl === 'undefined') {
           throw new Error('Mapbox GL is not loaded - please click "Try Initialize Map"');
@@ -545,30 +568,50 @@
         logDebug('✅ Map instance created, waiting for load...');
         
         map.on('load', function() {
-          logDebug('✅ Map loaded successfully!');
-          updateStatus('<strong>✅ Map Ready!</strong><br>Enter addresses or click map to set waypoints', 'success');
-          setupMapFeatures();
+          try {
+            logDebug('✅ Map loaded successfully!');
+            updateStatus('<strong>✅ Map Ready!</strong><br>Enter addresses or click map to set waypoints', 'success');
+            setupMapFeatures();
+          } catch (error) {
+            logDebug('❌ Error in map load handler: ' + error.message);
+            updateStatus('<strong>❌ Setup Error</strong><br>' + error.message, 'error');
+          }
         });
         
         map.on('error', function(e) {
-          const errorMsg = e.error ? e.error.message : 'Unknown map error';
-          logDebug('❌ Map error: ' + errorMsg);
-          updateStatus('<strong>❌ Map Error</strong><br>' + errorMsg, 'error');
+          try {
+            const errorMsg = e.error ? e.error.message : 'Unknown map error';
+            logDebug('❌ Map error: ' + errorMsg);
+            updateStatus('<strong>❌ Map Error</strong><br>' + errorMsg, 'error');
+          } catch (error) {
+            console.error('Error handling map error:', error);
+          }
         });
         
         // Add click handler
-        map.on('click', handleMapClick);
+        map.on('click', function(e) {
+          try {
+            handleMapClick(e);
+          } catch (error) {
+            logDebug('❌ Error in map click handler: ' + error.message);
+          }
+        });
         
         // Timeout check
         setTimeout(() => {
-          if (map && !map.loaded()) {
-            logDebug('⏱️ Map still loading after 10 seconds...');
-            updateStatus('<strong>⏱️ Map Loading...</strong><br>This may take a moment...', 'loading');
+          try {
+            if (map && !map.loaded()) {
+              logDebug('⏱️ Map still loading after 10 seconds...');
+              updateStatus('<strong>⏱️ Map Loading...</strong><br>This may take a moment...', 'loading');
+            }
+          } catch (error) {
+            logDebug('❌ Error in timeout check: ' + error.message);
           }
         }, 10000);
         
       } catch (error) {
         logDebug('❌ Initialization failed: ' + error.message);
+        console.error('Map initialization error:', error);
         updateStatus('<strong>❌ Failed to Initialize</strong><br>' + error.message + '<br>Try the "Try Initialize Map" button', 'error');
       }
     }
@@ -1278,36 +1321,63 @@
 
     // Initialize when page loads
     window.addEventListener('load', function() {
-      logDebug('Page loaded, checking Mapbox GL...');
-      
-      // Check if Mapbox GL is available immediately
-      if (typeof mapboxgl === 'undefined') {
-        logDebug('❌ Mapbox GL not found, will try alternative loading');
-        updateStatus('<strong>❌ Mapbox GL Not Loaded</strong><br>Click "Try Initialize Map" button', 'error');
-        return;
+      try {
+        logDebug('=== PAGE LOAD EVENT ===');
+        logDebug('Page loaded, checking Mapbox GL...');
+        
+        // Check if Mapbox GL is available immediately
+        if (typeof mapboxgl === 'undefined') {
+          logDebug('❌ Mapbox GL not found, will try alternative loading');
+          updateStatus('<strong>❌ Mapbox GL Not Loaded</strong><br>Click "Try Initialize Map" button', 'error');
+          return;
+        }
+        
+        logDebug('✅ Mapbox GL found, starting initialization');
+        debugStatus();
+        
+        // Start initialization immediately
+        setTimeout(() => {
+          initializeMap();
+        }, 100);
+        
+      } catch (error) {
+        logDebug('❌ Error in window load handler: ' + error.message);
+        updateStatus('<strong>❌ Load Error</strong><br>' + error.message, 'error');
       }
-      
-      logDebug('✅ Mapbox GL found, starting initialization');
-      debugStatus();
-      
-      // Start initialization immediately
-      initializeMap();
     });
 
     // Also try immediate initialization if DOM is already ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', function() {
-        logDebug('DOM ready');
-        if (typeof mapboxgl !== 'undefined') {
-          setTimeout(initializeMap, 100);
+    document.addEventListener('DOMContentLoaded', function() {
+      try {
+        logDebug('=== DOM CONTENT LOADED ===');
+        if (document.readyState === 'loading') {
+          logDebug('DOM still loading...');
+        } else {
+          logDebug('DOM ready, checking for Mapbox GL...');
+          if (typeof mapboxgl !== 'undefined') {
+            logDebug('Mapbox GL available, will initialize after page load');
+          } else {
+            logDebug('Mapbox GL not yet available');
+          }
         }
-      });
-    } else {
-      // DOM is already ready
-      logDebug('DOM already ready');
-      if (typeof mapboxgl !== 'undefined') {
+      } catch (error) {
+        logDebug('❌ Error in DOMContentLoaded: ' + error.message);
+      }
+    });
+
+    // Immediate check when script loads
+    try {
+      logDebug('=== SCRIPT INITIALIZATION ===');
+      logDebug('Script loaded, document state: ' + document.readyState);
+      logDebug('Mapbox GL available: ' + (typeof mapboxgl !== 'undefined'));
+      
+      // If everything is ready, try initialization
+      if (document.readyState === 'complete' && typeof mapboxgl !== 'undefined') {
+        logDebug('Everything ready, initializing immediately');
         setTimeout(initializeMap, 100);
       }
+    } catch (error) {
+      console.error('Script initialization error:', error);
     }
   </script>
 </body>
