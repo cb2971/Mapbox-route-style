@@ -5,16 +5,12 @@
   <title>Route Finder with Obstacle Avoidance</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
    
-  <!-- Try loading Mapbox GL JS with explicit CORS settings -->
+  <!-- Load Mapbox GL JS -->
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js" crossorigin="anonymous"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
   
   <!-- Load Turf.js -->
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
-  
-  <!-- Load Mapbox GL Directions Plugin -->
-  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.0/mapbox-gl-directions.js"></script>
-  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.0/mapbox-gl-directions.css" type="text/css" />
   
   <style type="text/css">
     body {
@@ -76,43 +72,48 @@
       padding: 3px 6px;
     }
 
-    #custom-route {
-      position: absolute;
+    .control-panel {
       background-color: #ffffff;
-      width: 260px;
-      height: 80px;
-      right: 50px;
-      top: 20px;
       padding: 15px;
       border-radius: 5px;
       box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
-      font: 14px Helvetica Neue,Arial,Helvetica,sans-serif;
-      z-index: 1000;
-    }
-
-    #routeWidth {
-      margin-top: 5px;
-      border: 1px solid #ccc;
-      border-radius: 3px;
-      padding: 5px;
-      width: 60px;
-    }
-
-    #routeColor {
-      margin-bottom: 5px;
-      width: 40px;
-      height: 25px;
-    }
-
-    .map-style-selector {
       margin-bottom: 20px;
     }
 
-    .map-style-selector select {
+    .input-group {
+      margin-bottom: 10px;
+    }
+
+    .input-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .input-group input, .input-group select {
       width: 100%;
       padding: 8px;
       border: 1px solid #ccc;
       border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    .route-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .route-controls input[type="color"] {
+      width: 40px;
+      height: 30px;
+      padding: 0;
+      border: none;
+    }
+
+    .route-controls input[type="number"] {
+      width: 60px;
     }
 
     .instructions {
@@ -187,6 +188,11 @@
       margin: 10px 0;
       font-size: 13px;
     }
+
+    .mapboxgl-popup-content {
+      padding: 10px;
+      max-width: 200px;
+    }
   </style>
 </head>
  
@@ -202,24 +208,58 @@
     <div class="instructions">
       <strong>🛣️ Route Finder with Obstacle Avoidance</strong><br><br>
       <strong>Features:</strong><br>
-      • <strong>Search boxes</strong> for origin/destination<br>
-      • <strong>Profile switcher</strong> (Traffic/Driving/Walking/Cycling)<br>
-      • <strong>Zoom controls</strong> (+/-) on map<br>
+      • <strong>Manual route planning</strong> with geocoding<br>
+      • <strong>Click-to-place</strong> waypoints on map<br>
       • <strong>Real-time obstacle detection</strong><br>
       • <strong>Multiple map styles</strong><br>
-      • <strong>Visual clearance warnings</strong><br><br>
+      • <strong>Visual clearance warnings</strong><br>
+      • <strong>Route customization</strong><br><br>
       <strong>Usage:</strong><br>
-      1. Use search boxes to enter locations<br>
-      2. Or click map to set origin/destination<br>
-      3. Choose travel profile (driving/walking/etc.)<br>
-      4. System analyzes routes for safety
+      1. Enter addresses or click map to set points<br>
+      2. Choose travel profile (driving/walking/etc.)<br>
+      3. Click "Find Route" to analyze<br>
+      4. System checks for safety obstacles
     </div>
 
-    <div class="map-style-selector">
-      <label><strong>Map Style:</strong></label>
-      <select id="styleSelector" disabled>
-        <option value="">Loading styles...</option>
-      </select>
+    <div class="control-panel">
+      <div class="input-group">
+        <label>🟢 Starting Point:</label>
+        <input type="text" id="origin-input" placeholder="Enter address or click map">
+      </div>
+      
+      <div class="input-group">
+        <label>🔴 Destination:</label>
+        <input type="text" id="destination-input" placeholder="Enter address or click map">
+      </div>
+      
+      <div class="input-group">
+        <label>🚗 Travel Mode:</label>
+        <select id="profile-select">
+          <option value="driving-traffic">🚗 Driving (Traffic)</option>
+          <option value="driving">🚙 Driving (No Traffic)</option>
+          <option value="walking">🚶 Walking</option>
+          <option value="cycling">🚴 Cycling</option>
+        </select>
+      </div>
+      
+      <button id="find-route-btn" onclick="findRoute()">🗺️ Find Route</button>
+      <button id="clear-route-btn" onclick="clearRoute()">🗑️ Clear Route</button>
+      
+      <div class="route-controls">
+        <label>Color:</label>
+        <input type="color" id="routeColor" value="#ff0000">
+        <label>Width:</label>
+        <input type="number" id="routeWidth" value="8" min="1" max="20">
+      </div>
+    </div>
+
+    <div class="control-panel">
+      <div class="input-group">
+        <label><strong>Map Style:</strong></label>
+        <select id="styleSelector">
+          <option value="">Loading styles...</option>
+        </select>
+      </div>
     </div>
 
     <div class="network-test">
@@ -229,18 +269,8 @@
 
     <button id="manual-init" onclick="manualInit()" disabled>🔄 Retry Initialization</button>
     <button id="test-different-approach" onclick="testDifferentApproach()">🧪 Try Alternative Loading</button>
-    <button id="direct-mapbox-test" onclick="testDirectMapbox()">📡 Test Direct Mapbox Access</button>
 
     <div id="reports"></div>
-  </div>
-
-  <div id="custom-route" style="display: none;">
-    <label><strong>Route Customization:</strong></label><br>
-    <label>Color:</label>
-    <input type="color" name="routeColor" id="routeColor" value="#ff0000">
-    <br>
-    <label>Width:</label>
-    <input type="number" name="routeWidth" id="routeWidth" value="8" min="1" max="20">
   </div>
 
   <script>
@@ -248,11 +278,7 @@
     let map;
     let origin = null;
     let destination = null;
-    let counter = 0;
-    const maxAttempts = 50;
-    
-    // Global variable to track the directions control
-    let directionsControl = null;
+    let isSettingOrigin = true;
 
     // Your Mapbox access token
     const MAPBOX_TOKEN = 'pk.eyJ1IjoiY2IyOSIsImEiOiJja3E4OHo3anowZGx1Mm9tcXF3ZmhyaWtwIn0.IQ5rY622AU9GOETrqa9NBw';
@@ -313,14 +339,11 @@
     async function runNetworkDiagnostics() {
       updateDiagnostics('Testing basic internet connectivity...');
       
-      // Test 1: Basic connectivity
       try {
         const response = await fetch('https://httpbin.org/get', { 
           method: 'GET', 
           mode: 'cors',
-          headers: {
-            'Accept': 'application/json'
-          }
+          headers: { 'Accept': 'application/json' }
         });
         if (response.ok) {
           updateDiagnostics('✅ Internet connection working');
@@ -331,10 +354,8 @@
         updateDiagnostics('❌ No internet connection or severe restrictions');
       }
 
-      // Test 2: Simplified Mapbox test - just check if we can reach the domain
       updateDiagnostics('Testing Mapbox domain access...');
       try {
-        // Use a simpler approach - try to load the JS file directly
         const response = await fetch('https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js', { 
           method: 'HEAD',
           mode: 'cors'
@@ -342,126 +363,27 @@
         updateDiagnostics('✅ Mapbox domain accessible');
       } catch (error) {
         updateDiagnostics('❌ Cannot reach Mapbox domain - trying alternative approach');
-        // Try alternative CDN
-        try {
-          const altResponse = await fetch('https://unpkg.com/mapbox-gl@2.15.0/dist/mapbox-gl.js', {
-            method: 'HEAD',
-            mode: 'cors'
-          });
-          updateDiagnostics('✅ Alternative CDN accessible');
-        } catch (altError) {
-          updateDiagnostics('❌ All CDNs blocked: ' + altError.message);
-        }
       }
 
-      // Test 3: Check environment
       updateDiagnostics('Checking environment restrictions...');
       const userAgent = navigator.userAgent;
-      if (userAgent.includes('Chrome') && window.location.protocol === 'file:') {
-        updateDiagnostics('⚠️ Running from file:// - may cause CORS issues');
+      if (window.location.hostname.includes('github.io')) {
+        updateDiagnostics('ℹ️ GitHub Pages detected - using HTTPS automatically');
       } else if (window.location.protocol === 'https:') {
         updateDiagnostics('✅ Running over HTTPS');
       } else {
         updateDiagnostics('⚠️ Not running over HTTPS - may cause issues');
       }
-
-      // Test 4: Check for GitHub Pages specific issues
-      if (window.location.hostname.includes('github.io')) {
-        updateDiagnostics('ℹ️ GitHub Pages detected - using HTTPS automatically');
-      }
-    }
-
-    async function testDirectMapbox() {
-      updateStatus('<strong>📡 Testing Direct Mapbox Access...</strong><br>Multiple connection tests running...', 'loading');
-      
-      const tests = [
-        {
-          name: 'Mapbox GL JS Library',
-          url: 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js',
-          method: 'HEAD'
-        },
-        {
-          name: 'Alternative CDN (unpkg)',
-          url: 'https://unpkg.com/mapbox-gl@2.15.0/dist/mapbox-gl.js',
-          method: 'HEAD'
-        }
-      ];
-
-      let successCount = 0;
-      let results = [];
-
-      for (const test of tests) {
-        try {
-          const response = await fetch(test.url, { 
-            method: test.method,
-            mode: 'cors',
-            headers: {
-              'Accept': 'application/javascript,text/javascript,*/*'
-            }
-          });
-          
-          if (response.ok) {
-            results.push(`✅ ${test.name}: Success (${response.status})`);
-            successCount++;
-          } else {
-            results.push(`❌ ${test.name}: Failed (${response.status})`);
-          }
-        } catch (error) {
-          results.push(`❌ ${test.name}: ${error.message}`);
-        }
-      }
-
-      updateDiagnostics('\n<strong>Direct Access Results:</strong>');
-      results.forEach(result => updateDiagnostics(result));
-
-      if (successCount >= 1) {
-        updateStatus('<strong>✅ Connection Tests Passed!</strong><br>Attempting to initialize map...', 'success');
-        document.getElementById('manual-init').disabled = false;
-        manualInit();
-      } else {
-        updateStatus('<strong>❌ Connection Tests Failed</strong><br>Network restrictions detected', 'error');
-        showNetworkSolutions();
-      }
-    }
-
-    function showNetworkSolutions() {
-      const solutions = `
-        <strong>🔧 Possible Solutions:</strong><br><br>
-        
-        <strong>1. GitHub Pages Issues:</strong><br>
-        • Ensure repository is public<br>
-        • Check GitHub Pages settings<br>
-        • Try using raw.githubusercontent.com URLs<br><br>
-        
-        <strong>2. Browser Issues:</strong><br>
-        • Disable ad blockers for this site<br>
-        • Try incognito/private mode<br>
-        • Clear browser cache<br><br>
-        
-        <strong>3. Network/Firewall:</strong><br>
-        • Check if firewall blocks Mapbox<br>
-        • Temporarily disable VPN<br>
-        • Try different browser<br><br>
-        
-        <strong>4. CORS Issues:</strong><br>
-        • Serve from HTTPS (required by Mapbox)<br>
-        • Use proper domain (not file://)<br>
-        • Enable CORS in browser (dev only)
-      `;
-      
-      updateStatus(solutions, 'error');
     }
 
     async function testDifferentApproach() {
       updateStatus('<strong>🧪 Trying Alternative Loading...</strong><br>Using different CDN and methods...', 'loading');
       
-      // Remove existing script if any
       const existingScript = document.querySelector('script[src*="mapbox-gl"]');
       if (existingScript) {
         existingScript.remove();
       }
       
-      // Try loading from unpkg instead
       const script = document.createElement('script');
       script.src = 'https://unpkg.com/mapbox-gl@2.15.0/dist/mapbox-gl.js';
       script.crossOrigin = 'anonymous';
@@ -471,7 +393,6 @@
       };
       script.onerror = () => {
         updateStatus('<strong>❌ Alternative CDN Failed</strong><br>All CDN sources blocked', 'error');
-        showNetworkSolutions();
       };
       
       document.head.appendChild(script);
@@ -481,21 +402,17 @@
       try {
         updateStatus('<strong>🗺️ Initializing Map...</strong><br>Creating Mapbox instance...', 'loading');
         
-        // Check if Mapbox GL is available
         if (typeof mapboxgl === 'undefined') {
           throw new Error('Mapbox GL JS library not loaded');
         }
 
-        // Set access token
         mapboxgl.accessToken = MAPBOX_TOKEN;
         
-        // Create map
         map = new mapboxgl.Map({
           container: 'map',
           style: 'mapbox://styles/mapbox/streets-v11',
           center: [-84.5, 38.05],
           zoom: 11,
-          // Add these options to help with loading
           preserveDrawingBuffer: true,
           antialias: true
         });
@@ -504,15 +421,16 @@
           updateStatus('<strong>✅ Map Loaded Successfully!</strong><br>Ready for route planning', 'success');
           setupMapFeatures();
           populateStyleSelector();
-          document.getElementById('custom-route').style.display = 'block';
         });
 
         map.on('error', function(e) {
           console.error('Map error:', e);
-          updateStatus('<strong>❌ Map Error:</strong><br>' + e.error.message, 'error');
+          updateStatus('<strong>❌ Map Error:</strong><br>' + (e.error ? e.error.message : 'Unknown error'), 'error');
         });
 
-        // Add timeout for loading
+        // Add click handler for setting waypoints
+        map.on('click', handleMapClick);
+
         setTimeout(() => {
           if (!map.loaded()) {
             updateStatus('<strong>⏱️ Map Loading Timeout</strong><br>Taking longer than expected...', 'error');
@@ -527,123 +445,96 @@
 
     function setupMapFeatures() {
       try {
-        // Only add navigation controls if they don't already exist
-        const hasNavControls = map._controls.some(control => 
-          control instanceof mapboxgl.NavigationControl
-        );
-        if (!hasNavControls) {
-          map.addControl(new mapboxgl.NavigationControl());
-        }
+        // Add navigation controls
+        map.addControl(new mapboxgl.NavigationControl());
         
-        // Remove existing directions control completely
-        if (directionsControl) {
-          try {
-            map.removeControl(directionsControl);
-            directionsControl = null;
-          } catch (e) {
-            console.log('Directions control already removed or not found');
-          }
-        }
-        
-        // Create a fresh directions control
-        try {
-          directionsControl = new MapboxDirections({
-            accessToken: MAPBOX_TOKEN,
-            unit: 'imperial',
-            profile: 'mapbox/driving-traffic',
-            alternatives: false,
-            geometries: 'geojson',
-            controls: { instructions: false },
-            flyTo: false
-          });
-          
-          map.addControl(directionsControl, 'top-left');
-          
-          // Listen for route events from directions control
-          directionsControl.on('route', function(event) {
-            if (event.route && event.route.length > 0) {
-              analyzeDirectionsRoute(event.route[0]);
-            }
-          });
-          
-          directionsControl.on('clear', function() {
-            clearRoute();
-          });
-          
-          // Handle directions errors gracefully
-          directionsControl.on('error', function(e) {
-            console.warn('Directions error (non-critical):', e);
-            // Don't show error for minor directions issues
-          });
-          
-        } catch (directionsError) {
-          console.error('Failed to add directions control:', directionsError);
-          updateDiagnostics(`⚠️ Directions control failed to load: ${directionsError.message}`);
-        }
-        
-        // Add obstacles with error checking
+        // Add obstacles
         if (typeof turf !== 'undefined') {
-          try {
-            const obstacle = turf.buffer(clearances, 0.25, { units: 'kilometers' });
-            
-            // Remove existing obstacle layers/sources if they exist
-            if (map.getLayer('obstacles-fill')) {
-              map.removeLayer('obstacles-fill');
-            }
-            if (map.getSource('obstacles')) {
-              map.removeSource('obstacles');
-            }
-            
-            map.addSource('obstacles', {
-              type: 'geojson',
-              data: obstacle
-            });
-
-            map.addLayer({
-              id: 'obstacles-fill',
-              type: 'fill',
-              source: 'obstacles',
-              paint: {
-                'fill-color': '#f03b20',
-                'fill-opacity': 0.5
-              }
-            });
-          } catch (obstacleError) {
-            console.error('Failed to add obstacles:', obstacleError);
-            updateDiagnostics(`⚠️ Obstacle layer failed: ${obstacleError.message}`);
-          }
-        } else {
-          updateDiagnostics(`⚠️ Turf.js not available for obstacle analysis`);
-        }
-
-        // Setup route layer for our custom analysis
-        try {
-          // Remove existing route analysis layers/sources if they exist
-          if (map.getLayer('route-analysis-layer')) {
-            map.removeLayer('route-analysis-layer');
-          }
-          if (map.getSource('route-analysis')) {
-            map.removeSource('route-analysis');
-          }
+          const obstacle = turf.buffer(clearances, 0.25, { units: 'kilometers' });
           
-          map.addSource('route-analysis', {
+          map.addSource('obstacles', {
             type: 'geojson',
-            data: { type: 'FeatureCollection', features: [] }
+            data: obstacle
           });
 
           map.addLayer({
-            id: 'route-analysis-layer',
-            type: 'line',
-            source: 'route-analysis',
-            layout: { 'line-join': 'round', 'line-cap': 'round' },
-            paint: { 'line-color': '#ff0000', 'line-width': 8, 'line-opacity': 0.8 }
+            id: 'obstacles-fill',
+            type: 'fill',
+            source: 'obstacles',
+            paint: {
+              'fill-color': '#f03b20',
+              'fill-opacity': 0.5
+            }
           });
-        } catch (routeLayerError) {
-          console.error('Failed to add route analysis layer:', routeLayerError);
-          updateDiagnostics(`⚠️ Route analysis layer failed: ${routeLayerError.message}`);
+
+          // Add clearance points with popups
+          map.addSource('clearance-points', {
+            type: 'geojson',
+            data: clearances
+          });
+
+          map.addLayer({
+            id: 'clearance-points',
+            type: 'circle',
+            source: 'clearance-points',
+            paint: {
+              'circle-radius': 8,
+              'circle-color': '#ff0000',
+              'circle-stroke-color': '#ffffff',
+              'circle-stroke-width': 2
+            }
+          });
+
+          // Add popup on click
+          map.on('click', 'clearance-points', function(e) {
+            new mapboxgl.Popup()
+              .setLngLat(e.lngLat)
+              .setHTML(`<strong>⚠️ Low Clearance</strong><br>Height: ${e.features[0].properties.clearance}`)
+              .addTo(map);
+          });
+
+          map.on('mouseenter', 'clearance-points', function() {
+            map.getCanvas().style.cursor = 'pointer';
+          });
+
+          map.on('mouseleave', 'clearance-points', function() {
+            map.getCanvas().style.cursor = '';
+          });
         }
 
-        // Setup route customization (only once)
+        // Setup route layers
+        map.addSource('route-line', {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: [] }
+        });
+
+        map.addLayer({
+          id: 'route-line',
+          type: 'line',
+          source: 'route-line',
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: { 'line-color': '#ff0000', 'line-width': 8, 'line-opacity': 0.8 }
+        });
+
+        // Setup markers
+        map.addSource('waypoints', {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: [] }
+        });
+
+        map.addLayer({
+          id: 'waypoints',
+          type: 'circle',
+          source: 'waypoints',
+          paint: {
+            'circle-radius': 10,
+            'circle-color': ['get', 'color'],
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-width': 3
+          }
+        });
+
+        // Setup route customization
         setupRouteCustomization();
         
         console.log('✅ Map features setup complete');
@@ -657,14 +548,10 @@
     async function populateStyleSelector() {
       const select = document.getElementById('styleSelector');
       
-      // Since we can't access the Styles API with a public token,
-      // we'll include your known custom styles manually
       updateDiagnostics('Loading available map styles...');
       
-      // Clear existing options
       select.innerHTML = '';
       
-      // Add default Mapbox styles first
       const defaultStyles = [
         { name: '📍 Streets', value: 'mapbox://styles/mapbox/streets-v11' },
         { name: '🌲 Outdoors', value: 'mapbox://styles/mapbox/outdoors-v11' },
@@ -674,8 +561,6 @@
         { name: '🗺️ Satellite Streets', value: 'mapbox://styles/mapbox/satellite-streets-v11' }
       ];
       
-      // Your custom styles - Add all your style IDs here
-      // To find these: Go to Mapbox Studio > Styles, and copy the style URLs
       const customStyles = [
         { name: 'Classic Standard', id: 'ckxnnmex53n1b14m07t6sum48' },
         { name: 'Classic Vintage', id: 'ckxnmjiti0rvm14pby8w9si99' },
@@ -702,12 +587,7 @@
         { name: 'Unique Picture Book', id: 'ckxoup98z4sv514m0q988ltie' },
         { name: 'Unique Treasure Map', id: 'ckxov1ris0n2415p4e9gn8oxu' },
         { name: 'Unique Woodcut', id: 'ckxous4km02k114m523qh0k9y' },
-        // Add more of your custom styles here in this format:
-        // { name: 'Your Style Name', id: 'your-style-id' },
-        
-        // If you have ~22 styles, you can add them all here
-        // You can find the IDs by going to Mapbox Studio > Styles
-        // and looking at the URL: https://studio.mapbox.com/styles/cb29/STYLE_ID_HERE/
+        // Add your other custom styles here
       ];
       
       // Add separator
@@ -729,7 +609,6 @@
       customSeparator.textContent = '────── Your Custom Styles ──────';
       select.appendChild(customSeparator);
       
-      // Add your custom styles
       customStyles.forEach(style => {
         const option = document.createElement('option');
         option.value = `mapbox://styles/cb29/${style.id}`;
@@ -737,153 +616,193 @@
         select.appendChild(option);
       });
       
-      // Try to test if the custom styles are accessible
-      let accessibleStyles = 0;
-      for (const style of customStyles) {
-        try {
-          // Test if we can access the style by trying to get its metadata
-          const styleUrl = `https://api.mapbox.com/styles/v1/cb29/${style.id}?access_token=${MAPBOX_TOKEN}`;
-          const response = await fetch(styleUrl, { method: 'HEAD' });
-          if (response.ok) {
-            accessibleStyles++;
-          }
-        } catch (error) {
-          // Style might not be accessible, but that's okay
-        }
-      }
-      
       updateDiagnostics(`✅ Style selector loaded with ${defaultStyles.length + customStyles.length} styles`);
-      if (accessibleStyles > 0) {
-        updateDiagnostics(`✅ ${accessibleStyles} custom styles are accessible`);
-      }
       
-      // Add instructions for adding more styles
-      if (customStyles.length < 22) {
-        updateDiagnostics(`ℹ️ To add your remaining styles, edit the customStyles array in the code`);
-      }
-      
-      select.disabled = false;
       select.addEventListener('change', function() {
         if (this.value && !this.options[this.selectedIndex].disabled) {
           updateDiagnostics(`Switching to style: ${this.options[this.selectedIndex].textContent}`);
           
-          // Store current route data before style change
-          let currentRouteData = null;
-          if (map.getSource('route-analysis')) {
-            try {
-              currentRouteData = map.getSource('route-analysis')._data;
-            } catch (e) {
-              // Ignore errors when getting route data
-            }
+          // Store current data
+          let routeData = null;
+          let waypointData = null;
+          
+          if (map.getSource('route-line')) {
+            routeData = map.getSource('route-line')._data;
+          }
+          if (map.getSource('waypoints')) {
+            waypointData = map.getSource('waypoints')._data;
           }
           
-          // Properly remove the directions control before style change
-          if (directionsControl) {
-            try {
-              map.removeControl(directionsControl);
-              directionsControl = null;
-            } catch (e) {
-              console.log('Directions control removal handled');
-            }
-          }
-          
-          // Change the style
+          // Change style
           map.setStyle(this.value);
           
-          // Wait for style to load and then restore features
           map.once('style.load', function() {
-            try {
-              // Small delay to ensure style is fully loaded
-              setTimeout(() => {
-                setupMapFeatures();
-                
-                // Restore route data if it existed
-                if (currentRouteData && currentRouteData.features && currentRouteData.features.length > 0) {
-                  setTimeout(() => {
-                    if (map.getSource('route-analysis')) {
-                      map.getSource('route-analysis').setData(currentRouteData);
-                    }
-                  }, 200);
-                }
-                
-                updateDiagnostics(`✅ Style switched successfully`);
-              }, 100);
+            setTimeout(() => {
+              setupMapFeatures();
               
-            } catch (error) {
-              console.error('Error setting up features after style change:', error);
-              updateDiagnostics(`⚠️ Style loaded but some features may need refresh`);
-            }
-          });
-          
-          // Handle style load errors
-          map.once('error', function(e) {
-            console.error('Map error after style change:', e);
-            updateDiagnostics(`❌ Error after style change: ${e.error ? e.error.message : 'Unknown error'}`);
+              // Restore data
+              if (routeData && routeData.features && routeData.features.length > 0) {
+                map.getSource('route-line').setData(routeData);
+              }
+              if (waypointData && waypointData.features && waypointData.features.length > 0) {
+                map.getSource('waypoints').setData(waypointData);
+              }
+              
+              updateDiagnostics(`✅ Style switched successfully`);
+            }, 100);
           });
         }
       });
     }
 
-    function analyzeDirectionsRoute(route) {
-      // Display the route for analysis
-      map.getSource('route-analysis').setData(route.geometry);
+    function setupRouteCustomization() {
+      document.getElementById('routeColor').addEventListener('change', function() {
+        if (map.getLayer('route-line')) {
+          map.setPaintProperty('route-line', 'line-color', this.value);
+        }
+      });
+
+      document.getElementById('routeWidth').addEventListener('change', function() {
+        if (map.getLayer('route-line')) {
+          map.setPaintProperty('route-line', 'line-width', parseInt(this.value));
+        }
+      });
+    }
+
+    function handleMapClick(e) {
+      const coords = [e.lngLat.lng, e.lngLat.lat];
       
+      if (isSettingOrigin) {
+        setOrigin(coords);
+        isSettingOrigin = false;
+      } else {
+        setDestination(coords);
+        isSettingOrigin = true;
+      }
+    }
+
+    function setOrigin(coords) {
+      origin = coords;
+      document.getElementById('origin-input').value = `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`;
+      updateWaypoints();
+      addReport('🟢 Origin Set', `Starting point: ${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`, true);
+    }
+
+    function setDestination(coords) {
+      destination = coords;
+      document.getElementById('destination-input').value = `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`;
+      updateWaypoints();
+      addReport('🔴 Destination Set', `End point: ${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`, true);
+    }
+
+    function updateWaypoints() {
+      const features = [];
+      
+      if (origin) {
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: origin },
+          properties: { color: '#00ff00' }
+        });
+      }
+      
+      if (destination) {
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: destination },
+          properties: { color: '#ff6600' }
+        });
+      }
+
+      if (map.getSource('waypoints')) {
+        map.getSource('waypoints').setData({
+          type: 'FeatureCollection',
+          features: features
+        });
+      }
+    }
+
+    async function findRoute() {
+      if (!origin || !destination) {
+        updateStatus('<strong>❌ Missing Waypoints</strong><br>Please set both origin and destination', 'error');
+        return;
+      }
+
+      const profile = document.getElementById('profile-select').value;
+      const coords = origin.join(',') + ';' + destination.join(',');
+      const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coords}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
+
+      updateStatus('<strong>🔄 Finding Route...</strong><br>Analyzing path and obstacles...', 'loading');
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.routes && data.routes.length > 0) {
+          analyzeRoute(data.routes[0]);
+        } else {
+          updateStatus('<strong>❌ No Route Found</strong><br>Try different waypoints or travel mode', 'error');
+        }
+      } catch (error) {
+        updateStatus('<strong>❌ Route Error</strong><br>Failed to fetch route: ' + error.message, 'error');
+      }
+    }
+
+    function analyzeRoute(route) {
+      // Display the route
+      map.getSource('route-line').setData(route.geometry);
+
       // Check for obstacles using Turf.js
       const obstacle = turf.buffer(clearances, 0.25, { units: 'kilometers' });
       const clear = turf.booleanDisjoint(obstacle, route.geometry);
-      
+
       const duration = Math.round(route.duration / 60);
       const distance = (route.distance / 1000).toFixed(1);
-      
+
       if (clear) {
         // Safe route - make it green
-        map.setPaintProperty('route-analysis-layer', 'line-color', '#00ff00');
-        map.setPaintProperty('route-analysis-layer', 'line-width', 12);
+        map.setPaintProperty('route-line', 'line-color', '#00ff00');
         addReport('✅ Safe Route Found!', `${duration} min, ${distance} km - avoids all obstacles`, true);
         updateStatus('<strong>✅ Safe Route!</strong><br>' + duration + ' minutes, avoids all obstacles', 'success');
         
         // Apply custom color if user changed it
         const customColor = document.getElementById('routeColor').value;
         if (customColor !== '#ff0000') {
-          map.setPaintProperty('route-analysis-layer', 'line-color', customColor);
+          map.setPaintProperty('route-line', 'line-color', customColor);
         }
       } else {
         // Dangerous route - keep it red and add warning
-        map.setPaintProperty('route-analysis-layer', 'line-color', '#ff0000');
-        map.setPaintProperty('route-analysis-layer', 'line-width', 12);
+        map.setPaintProperty('route-line', 'line-color', '#ff0000');
         addReport('⚠️ Obstacle Warning', `${duration} min, ${distance} km - intersects clearance zones`, false);
         updateStatus('<strong>⚠️ Obstacle Warning!</strong><br>Route intersects low-clearance areas', 'error');
       }
-      
+
       // Apply custom width
       const customWidth = document.getElementById('routeWidth').value;
-      map.setPaintProperty('route-analysis-layer', 'line-width', parseInt(customWidth));
+      map.setPaintProperty('route-line', 'line-width', parseInt(customWidth));
+
+      // Fit map to route
+      const bounds = turf.bbox(route.geometry);
+      map.fitBounds(bounds, { padding: 50 });
     }
 
-    function setupRouteCustomization() {
-      // Only set up event listeners once to prevent duplicates
-      const colorInput = document.getElementById('routeColor');
-      const widthInput = document.getElementById('routeWidth');
+    function clearRoute() {
+      origin = null;
+      destination = null;
+      isSettingOrigin = true;
       
-      // Remove existing event listeners to prevent duplicates
-      const newColorInput = colorInput.cloneNode(true);
-      const newWidthInput = widthInput.cloneNode(true);
-      colorInput.parentNode.replaceChild(newColorInput, colorInput);
-      widthInput.parentNode.replaceChild(newWidthInput, widthInput);
+      document.getElementById('origin-input').value = '';
+      document.getElementById('destination-input').value = '';
       
-      // Route color customization
-      newColorInput.addEventListener('change', function() {
-        if (map.getLayer('route-analysis-layer')) {
-          map.setPaintProperty('route-analysis-layer', 'line-color', this.value);
-        }
-      });
-
-      // Route width customization
-      newWidthInput.addEventListener('change', function() {
-        if (map.getLayer('route-analysis-layer')) {
-          map.setPaintProperty('route-analysis-layer', 'line-width', parseInt(this.value));
-        }
-      });
+      if (map.getSource('route-line')) {
+        map.getSource('route-line').setData({ type: 'FeatureCollection', features: [] });
+      }
+      if (map.getSource('waypoints')) {
+        map.getSource('waypoints').setData({ type: 'FeatureCollection', features: [] });
+      }
+      
+      document.getElementById('reports').innerHTML = '';
+      updateStatus('<strong>🎯 Ready for New Route</strong><br>Click map or enter addresses to set waypoints', 'loading');
     }
 
     function addReport(title, details, isSuccess) {
@@ -904,24 +823,15 @@
       reports.insertBefore(card, reports.firstChild);
     }
 
-    function clearRoute() {
-      if (map && map.getSource('route-analysis')) {
-        map.getSource('route-analysis').setData({ type: 'FeatureCollection', features: [] });
-      }
-      
-      document.getElementById('reports').innerHTML = '';
-      updateStatus('<strong>🎯 Ready for New Route</strong><br>Use the search boxes or click on map', 'loading');
-    }
-
     // Start diagnostics immediately
     window.addEventListener('load', function() {
       setTimeout(() => {
         runNetworkDiagnostics();
-        testDirectMapbox();
+        manualInit();
       }, 1000);
     });
 
-    console.log('🛣️ Route Finder loaded, starting network diagnostics...');
+    console.log('🛣️ Route Finder loaded, starting initialization...');
   </script>
 </body>
 </html>
