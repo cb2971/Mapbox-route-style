@@ -632,12 +632,22 @@
         debugEl.innerHTML += message + '<br>';
         debugEl.scrollTop = debugEl.scrollHeight;
       }
+      // Also try to show in status if debug element isn't working
+      try {
+        const statusEl = document.getElementById('status-message');
+        if (statusEl && !debugEl) {
+          statusEl.innerHTML += '<br>' + message;
+        }
+      } catch (e) {}
     }
 
     function updateStatus(message, type) {
       const statusEl = document.getElementById('status-message');
-      statusEl.className = 'status-message status-' + type;
-      statusEl.innerHTML = message;
+      if (statusEl) {
+        statusEl.className = 'status-message status-' + type;
+        statusEl.innerHTML = message;
+      }
+      console.log('Status: ' + message);
     }
 
     function debugStatus() {
@@ -784,4 +794,3 @@
         source: `waypoints-${routeId}`,
         paint: {
           '
-            
