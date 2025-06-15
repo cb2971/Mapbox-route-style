@@ -148,14 +148,6 @@
       width: 60px;
     }
 
-    .instructions {
-      background-color: #e8f4fd;
-      padding: 15px;
-      border-radius: 5px;
-      margin-bottom: 20px;
-      font-size: 14px;
-    }
-
     .status-message {
       padding: 15px;
       border-radius: 5px;
@@ -342,8 +334,8 @@
         </select>
       </div>
       
-      <button id="find-route-btn" onclick="findRoute()">🗺️ Find Route</button>
-      <button id="clear-route-btn" onclick="clearRoute()">🗑️ Clear All</button>
+      <button onclick="findRoute()">🗺️ Find Route</button>
+      <button onclick="clearRoute()">🗑️ Clear All</button>
       
       <div class="zoom-controls">
         <button onclick="zoomIn()">+</button>
@@ -436,7 +428,7 @@
     let map = null;
     let origin = null;
     let destination = null;
-    let waypoints = []; // Array of intermediate waypoints
+    let waypoints = [];
     let isSettingOrigin = true;
     let customCenter = null;
     let isSettingCenter = false;
@@ -486,272 +478,160 @@
 
     function logDebug(message) {
       console.log(message);
-      try {
-        const debugEl = document.getElementById('diagnostic-results');
-        if (debugEl) {
-          debugEl.innerHTML += message + '<br>';
-          debugEl.scrollTop = debugEl.scrollHeight;
-        }
-      } catch (error) {
-        console.error('Error logging debug message:', error);
+      const debugEl = document.getElementById('diagnostic-results');
+      if (debugEl) {
+        debugEl.innerHTML += message + '<br>';
+        debugEl.scrollTop = debugEl.scrollHeight;
       }
     }
 
-    function updateStatus(message, type = 'loading') {
+    function updateStatus(message, type) {
       const statusEl = document.getElementById('status-message');
       statusEl.className = 'status-message status-' + type;
       statusEl.innerHTML = message;
     }
 
     function debugStatus() {
-      try {
-        logDebug('=== DEBUG STATUS ===');
-        logDebug('Window.mapboxgl exists: ' + (typeof window.mapboxgl !== 'undefined'));
-        logDebug('mapboxgl exists: ' + (typeof mapboxgl !== 'undefined'));
-        
-        if (typeof mapboxgl !== 'undefined') {
-          logDebug('Mapbox GL version: ' + (mapboxgl.version || 'unknown'));
-          logDebug('Access token set: ' + (!!mapboxgl.accessToken));
-        }
-        
-        logDebug('Map instance exists: ' + (!!map));
-        if (map) {
-          logDebug('Map loaded: ' + map.loaded());
-        }
-        
-        logDebug('Document ready state: ' + document.readyState);
-        logDebug('Current URL: ' + window.location.href);
-        
-        // Check for JavaScript errors
-        if (window.console && console.error) {
-          logDebug('Console available for error checking');
-        }
-        
-        // Check if all required functions exist
-        const requiredFunctions = ['updateStatus', 'setupMapFeatures', 'updateWaypoints'];
-        requiredFunctions.forEach(funcName => {
-          logDebug(`Function ${funcName} exists: ` + (typeof window[funcName] === 'function'));
-        });
-        
-        logDebug('=== END DEBUG ===');
-      } catch (error) {
-        console.error('Error in debugStatus:', error);
-        logDebug('❌ Error in debug status: ' + error.message);
-      }
+      logDebug('=== DEBUG STATUS ===');
+      logDebug('Mapbox GL exists: ' + (typeof mapboxgl !== 'undefined'));
+      logDebug('Map instance: ' + (map ? 'exists' : 'null'));
+      logDebug('Document ready: ' + document.readyState);
+      logDebug('=== END DEBUG ===');
     }
 
     function initializeMap() {
-      try {
-        logDebug('=== STARTING MAP INITIALIZATION ===');
-        updateStatus('<strong>🗺️ Initializing Map...</strong><br>Setting up Mapbox instance...', 'loading');
-        
-        // Check if Mapbox GL is available
-        if (typeof mapboxgl === 'undefined') {
-          throw new Error('Mapbox GL is not loaded - please click "Try Initialize Map"');
-        }
-        
-        logDebug('✅ Mapbox GL found');
-        
-        // Set access token
-        mapboxgl.accessToken = MAPBOX_TOKEN;
-        logDebug('✅ Access token set');
-        
-        // Create map instance
-        logDebug('Creating map instance...');
-        map = new mapboxgl.Map({
-          container: 'map',
-          style: 'mapbox://styles/mapbox/streets-v11',
-          center: [-84.5, 38.05],
-          zoom: 10
-        });
-        
-        logDebug('✅ Map instance created, waiting for load...');
-        
-        map.on('load', function() {
-          try {
-            logDebug('✅ Map loaded successfully!');
-            updateStatus('<strong>✅ Map Ready!</strong><br>Enter addresses or click map to set waypoints', 'success');
-            setupMapFeatures();
-          } catch (error) {
-            logDebug('❌ Error in map load handler: ' + error.message);
-            updateStatus('<strong>❌ Setup Error</strong><br>' + error.message, 'error');
-          }
-        });
-        
-        map.on('error', function(e) {
-          try {
-            const errorMsg = e.error ? e.error.message : 'Unknown map error';
-            logDebug('❌ Map error: ' + errorMsg);
-            updateStatus('<strong>❌ Map Error</strong><br>' + errorMsg, 'error');
-          } catch (error) {
-            console.error('Error handling map error:', error);
-          }
-        });
-        
-        // Add click handler
-        map.on('click', function(e) {
-          try {
-            handleMapClick(e);
-          } catch (error) {
-            logDebug('❌ Error in map click handler: ' + error.message);
-          }
-        });
-        
-        // Timeout check
-        setTimeout(() => {
-          try {
-            if (map && !map.loaded()) {
-              logDebug('⏱️ Map still loading after 10 seconds...');
-              updateStatus('<strong>⏱️ Map Loading...</strong><br>This may take a moment...', 'loading');
-            }
-          } catch (error) {
-            logDebug('❌ Error in timeout check: ' + error.message);
-          }
-        }, 10000);
-        
-      } catch (error) {
-        logDebug('❌ Initialization failed: ' + error.message);
-        console.error('Map initialization error:', error);
-        updateStatus('<strong>❌ Failed to Initialize</strong><br>' + error.message + '<br>Try the "Try Initialize Map" button', 'error');
+      logDebug('Starting map initialization...');
+      updateStatus('<strong>🗺️ Initializing...</strong><br>Creating map instance...', 'loading');
+      
+      if (typeof mapboxgl === 'undefined') {
+        logDebug('❌ Mapbox GL not found');
+        updateStatus('<strong>❌ Mapbox GL Missing</strong><br>Library failed to load', 'error');
+        return;
       }
+      
+      logDebug('✅ Mapbox GL found');
+      
+      mapboxgl.accessToken = MAPBOX_TOKEN;
+      
+      map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/streets-v11',
+        center: [-84.5, 38.05],
+        zoom: 10
+      });
+      
+      map.on('load', function() {
+        logDebug('✅ Map loaded!');
+        updateStatus('<strong>✅ Ready!</strong><br>Click map or enter addresses', 'success');
+        setupMapFeatures();
+      });
+      
+      map.on('error', function(e) {
+        logDebug('❌ Map error: ' + (e.error ? e.error.message : 'unknown'));
+        updateStatus('<strong>❌ Map Error</strong><br>Failed to load', 'error');
+      });
+      
+      map.on('click', handleMapClick);
     }
 
     function setupMapFeatures() {
-      try {
-        logDebug('Setting up map features...');
-        
-        // Don't add navigation controls - we'll handle zoom manually
-        // map.addControl(new mapboxgl.NavigationControl());
-        
-        // Add obstacle zones
-        if (typeof turf !== 'undefined') {
-          const obstacle = turf.buffer(clearances, 0.25, { units: 'kilometers' });
-          
-          map.addSource('obstacles', {
-            type: 'geojson',
-            data: obstacle
-          });
+      // Add obstacles
+      const obstacle = turf.buffer(clearances, 0.25, { units: 'kilometers' });
+      
+      map.addSource('obstacles', {
+        type: 'geojson',
+        data: obstacle
+      });
 
-          map.addLayer({
-            id: 'obstacles',
-            type: 'fill',
-            source: 'obstacles',
-            paint: {
-              'fill-color': '#ff0000',
-              'fill-opacity': 0.3
-            }
-          });
-          
-          logDebug('✅ Obstacles added');
+      map.addLayer({
+        id: 'obstacles',
+        type: 'fill',
+        source: 'obstacles',
+        paint: {
+          'fill-color': '#ff0000',
+          'fill-opacity': 0.3
         }
-        
-        // Add route source
-        map.addSource('route', {
-          type: 'geojson',
-          data: { type: 'FeatureCollection', features: [] }
-        });
+      });
+      
+      // Add route source
+      map.addSource('route', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
 
-        map.addLayer({
-          id: 'route',
-          type: 'line',
-          source: 'route',
-          layout: { 'line-join': 'round', 'line-cap': 'round' },
-          paint: { 'line-color': '#ff0000', 'line-width': 8 }
-        });
-        
-        // Add waypoints source
-        map.addSource('waypoints', {
-          type: 'geojson',
-          data: { type: 'FeatureCollection', features: [] }
-        });
+      map.addLayer({
+        id: 'route',
+        type: 'line',
+        source: 'route',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': '#ff0000', 'line-width': 8 }
+      });
+      
+      // Add waypoints source
+      map.addSource('waypoints', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
 
-        map.addLayer({
-          id: 'waypoints',
-          type: 'circle',
-          source: 'waypoints',
-          paint: {
-            'circle-radius': 2,
-            'circle-color': ['get', 'color'],
-            'circle-stroke-color': '#ffffff',
-            'circle-stroke-width': 1
-          }
-        });
-        
-        // Add waypoint labels layer
-        map.addLayer({
-          id: 'waypoint-labels',
-          type: 'symbol',
-          source: 'waypoints',
-          layout: {
-            'text-field': ['get', 'number'],
-            'text-size': 12,
-            'text-allow-overlap': true,
-            'text-ignore-placement': true,
-            'text-offset': [0, 2]
-          },
-          paint: {
-            'text-color': '#ffffff',
-            'text-halo-color': '#000000',
-            'text-halo-width': 1
-          }
-        });
-        
-        // Add center point source
-        map.addSource('center-point', {
-          type: 'geojson',
-          data: { type: 'FeatureCollection', features: [] }
-        });
+      map.addLayer({
+        id: 'waypoints',
+        type: 'circle',
+        source: 'waypoints',
+        paint: {
+          'circle-radius': 2,
+          'circle-color': ['get', 'color'],
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 1
+        }
+      });
+      
+      // Add center point source
+      map.addSource('center-point', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
 
-        // Add center point symbol layer (registration mark)
-        map.addLayer({
-          id: 'center-point-symbol',
-          type: 'symbol',
-          source: 'center-point',
-          layout: {
-            'text-field': '⊕',
-            'text-size': 20,
-            'text-allow-overlap': true,
-            'text-ignore-placement': true
-          },
-          paint: {
-            'text-color': '#ff0000',
-            'text-halo-color': '#ffffff',
-            'text-halo-width': 2
-          }
-        });
-        
-        logDebug('✅ All features setup complete');
-        
-      } catch (error) {
-        logDebug('❌ Feature setup error: ' + error.message);
-      }
+      map.addLayer({
+        id: 'center-point-symbol',
+        type: 'symbol',
+        source: 'center-point',
+        layout: {
+          'text-field': '⊕',
+          'text-size': 20,
+          'text-allow-overlap': true,
+          'text-ignore-placement': true
+        },
+        paint: {
+          'text-color': '#ff0000',
+          'text-halo-color': '#ffffff',
+          'text-halo-width': 2
+        }
+      });
+      
+      logDebug('✅ Map features setup complete');
     }
 
     function handleMapClick(e) {
       const coords = [e.lngLat.lng, e.lngLat.lat];
       
       if (isSettingCenter) {
-        // Setting custom center point
         customCenter = coords;
-        document.getElementById('center-input').value = `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`;
+        document.getElementById('center-input').value = coords[1].toFixed(4) + ', ' + coords[0].toFixed(4);
         updateCenterPoint();
         map.setCenter(coords);
         isSettingCenter = false;
         updateCenterModeButton();
-        logDebug('✅ Custom center set: ' + coords.join(', '));
-        updateStatus('<strong>✅ Center Set!</strong><br>All zoom operations will center here', 'success');
+        updateStatus('<strong>✅ Center Set!</strong><br>Zoom operations will center here', 'success');
         return;
       }
       
       if (isSettingOrigin) {
         origin = coords;
         reverseGeocode(coords, 'origin');
-        logDebug('✅ Origin set by click: ' + coords.join(', '));
         isSettingOrigin = false;
       } else {
         destination = coords;
         reverseGeocode(coords, 'destination');
-        logDebug('✅ Destination set by click: ' + coords.join(', '));
         isSettingOrigin = true;
       }
       
@@ -767,184 +647,10 @@
           const placeName = data.features[0].place_name;
           const inputId = type === 'origin' ? 'origin-input' : 'destination-input';
           document.getElementById(inputId).value = placeName;
-          logDebug(`✅ ${type} geocoded: ${placeName}`);
-        } else {
-          // Fallback to coordinates
-          const inputId = type === 'origin' ? 'origin-input' : 'destination-input';
-          document.getElementById(inputId).value = `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`;
         }
       } catch (error) {
-        logDebug(`⚠️ Reverse geocoding failed for ${type}: ${error.message}`);
-        // Fallback to coordinates
         const inputId = type === 'origin' ? 'origin-input' : 'destination-input';
-        document.getElementById(inputId).value = `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`;
-      }
-    }
-
-    async function geocodeOrigin() {
-      const address = document.getElementById('origin-input').value.trim();
-      if (!address) {
-        updateStatus('<strong>❌ No Address</strong><br>Please enter an address or place name', 'error');
-        return;
-      }
-      
-      await geocodeAddress(address, 'origin');
-    }
-
-    async function geocodeDestination() {
-      const address = document.getElementById('destination-input').value.trim();
-      if (!address) {
-        updateStatus('<strong>❌ No Address</strong><br>Please enter an address or place name', 'error');
-        return;
-      }
-      
-      await geocodeAddress(address, 'destination');
-    }
-
-    async function addWaypoint() {
-      const address = document.getElementById('waypoint-input').value.trim();
-      if (!address) {
-        updateStatus('<strong>❌ No Address</strong><br>Please enter a waypoint address or place name', 'error');
-        return;
-      }
-      
-      try {
-        updateStatus('<strong>🔍 Finding Waypoint...</strong><br>Searching for: ' + address, 'loading');
-        
-        const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&limit=1`);
-        const data = await response.json();
-        
-        if (data.features && data.features.length > 0) {
-          const coords = data.features[0].center;
-          const placeName = data.features[0].place_name;
-          
-          // Add to waypoints array
-          waypoints.push({
-            coordinates: coords,
-            name: placeName,
-            id: Date.now() // Simple unique ID
-          });
-          
-          // Clear input
-          document.getElementById('waypoint-input').value = '';
-          
-          // Update display
-          updateWaypointsList();
-          updateWaypoints();
-          
-          updateStatus('<strong>✅ Waypoint Added!</strong><br>' + placeName, 'success');
-          logDebug(`✅ Waypoint added: ${placeName} at ${coords.join(', ')}`);
-          
-        } else {
-          updateStatus('<strong>❌ Waypoint Not Found</strong><br>Try a different address or place name', 'error');
-          logDebug(`❌ No results for waypoint: ${address}`);
-        }
-      } catch (error) {
-        updateStatus('<strong>❌ Geocoding Error</strong><br>' + error.message, 'error');
-        logDebug(`❌ Waypoint geocoding failed: ${error.message}`);
-      }
-    }
-
-    function updateWaypointsList() {
-      const listEl = document.getElementById('waypoint-list');
-      
-      if (waypoints.length === 0) {
-        listEl.style.display = 'none';
-        return;
-      }
-      
-      listEl.style.display = 'block';
-      listEl.innerHTML = '';
-      
-      waypoints.forEach((waypoint, index) => {
-        const item = document.createElement('div');
-        item.className = 'waypoint-item';
-        
-        item.innerHTML = `
-          <div class="waypoint-number">${index + 1}</div>
-          <div class="waypoint-text" title="${waypoint.name}">${waypoint.name}</div>
-          <div class="waypoint-controls">
-            <button onclick="moveWaypointUp(${index})" ${index === 0 ? 'disabled' : ''}>↑</button>
-            <button onclick="moveWaypointDown(${index})" ${index === waypoints.length - 1 ? 'disabled' : ''}>↓</button>
-            <button onclick="removeWaypoint(${index})">×</button>
-          </div>
-        `;
-        
-        listEl.appendChild(item);
-      });
-    }
-
-    function moveWaypointUp(index) {
-      if (index > 0) {
-        const temp = waypoints[index];
-        waypoints[index] = waypoints[index - 1];
-        waypoints[index - 1] = temp;
-        
-        updateWaypointsList();
-        updateWaypoints();
-        logDebug(`Moved waypoint ${index + 1} up to position ${index}`);
-      }
-    }
-
-    function moveWaypointDown(index) {
-      if (index < waypoints.length - 1) {
-        const temp = waypoints[index];
-        waypoints[index] = waypoints[index + 1];
-        waypoints[index + 1] = temp;
-        
-        updateWaypointsList();
-        updateWaypoints();
-        logDebug(`Moved waypoint ${index + 1} down to position ${index + 2}`);
-      }
-    }
-
-    function removeWaypoint(index) {
-      const removed = waypoints.splice(index, 1)[0];
-      updateWaypointsList();
-      updateWaypoints();
-      logDebug(`Removed waypoint: ${removed.name}`);
-      
-      if (waypoints.length === 0) {
-        updateStatus('<strong>✅ All Waypoints Cleared</strong><br>Ready to add new waypoints', 'success');
-      }
-    }
-      try {
-        updateStatus('<strong>🔍 Finding Location...</strong><br>Searching for: ' + address, 'loading');
-        
-        const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&limit=1`);
-        const data = await response.json();
-        
-        if (data.features && data.features.length > 0) {
-          const coords = data.features[0].center;
-          const placeName = data.features[0].place_name;
-          
-          if (type === 'origin') {
-            origin = coords;
-            isSettingOrigin = false;
-          } else {
-            destination = coords;
-            isSettingOrigin = true;
-          }
-          
-          // Update input with full place name
-          const inputId = type === 'origin' ? 'origin-input' : 'destination-input';
-          document.getElementById(inputId).value = placeName;
-          
-          updateWaypoints();
-          
-          // Fly to the location
-          map.flyTo({ center: coords, zoom: 14 });
-          
-          updateStatus('<strong>✅ Location Found!</strong><br>' + placeName, 'success');
-          logDebug(`✅ ${type} geocoded: ${placeName} at ${coords.join(', ')}`);
-          
-        } else {
-          updateStatus('<strong>❌ Location Not Found</strong><br>Try a different address or place name', 'error');
-          logDebug(`❌ No results for ${type}: ${address}`);
-        }
-      } catch (error) {
-        updateStatus('<strong>❌ Geocoding Error</strong><br>' + error.message, 'error');
-        logDebug(`❌ Geocoding failed for ${type}: ${error.message}`);
+        document.getElementById(inputId).value = coords[1].toFixed(4) + ', ' + coords[0].toFixed(4);
       }
     }
 
@@ -955,16 +661,15 @@
         features.push({
           type: 'Feature',
           geometry: { type: 'Point', coordinates: origin },
-          properties: { color: '#00ff00', number: 'S' }
+          properties: { color: '#00ff00' }
         });
       }
       
-      // Add intermediate waypoints
       waypoints.forEach((waypoint, index) => {
         features.push({
           type: 'Feature',
           geometry: { type: 'Point', coordinates: waypoint.coordinates },
-          properties: { color: '#0066ff', number: (index + 1).toString() }
+          properties: { color: '#0066ff' }
         });
       });
       
@@ -972,7 +677,7 @@
         features.push({
           type: 'Feature',
           geometry: { type: 'Point', coordinates: destination },
-          properties: { color: '#ff6600', number: 'E' }
+          properties: { color: '#ff6600' }
         });
       }
 
@@ -984,401 +689,79 @@
       }
     }
 
-    async function findRoute() {
-      if (!origin || !destination) {
-        updateStatus('<strong>❌ Missing Points</strong><br>Please set both origin and destination', 'error');
-        return;
-      }
+    async function geocodeOrigin() {
+      const address = document.getElementById('origin-input').value.trim();
+      if (!address) return;
+      await geocodeAddress(address, 'origin');
+    }
 
-      const profile = document.getElementById('profile-select').value;
-      
-      // Build coordinates string: origin;waypoint1;waypoint2;...;destination
-      let coords = origin.join(',');
-      waypoints.forEach(waypoint => {
-        coords += ';' + waypoint.coordinates.join(',');
-      });
-      coords += ';' + destination.join(',');
-      
-      const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coords}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
+    async function geocodeDestination() {
+      const address = document.getElementById('destination-input').value.trim();
+      if (!address) return;
+      await geocodeAddress(address, 'destination');
+    }
 
-      const waypointCount = waypoints.length;
-      const waypointText = waypointCount > 0 ? ` with ${waypointCount} stop${waypointCount > 1 ? 's' : ''}` : '';
-      updateStatus(`<strong>🔄 Finding Route...</strong><br>Planning route${waypointText}...`, 'loading');
-      logDebug(`Finding route with ${waypointCount} waypoints...`);
-
+    async function geocodeAddress(address, type) {
       try {
-        const response = await fetch(url);
+        const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&limit=1`);
         const data = await response.json();
-
-        if (data.routes && data.routes.length > 0) {
-          const route = data.routes[0];
+        
+        if (data.features && data.features.length > 0) {
+          const coords = data.features[0].center;
+          const placeName = data.features[0].place_name;
           
-          // Display route
-          map.getSource('route').setData(route.geometry);
-          
-          // Check obstacles
-          const obstacle = turf.buffer(clearances, 0.25, { units: 'kilometers' });
-          const clear = turf.booleanDisjoint(obstacle, route.geometry);
-          
-          const duration = Math.round(route.duration / 60);
-          const distance = (route.distance / 1000).toFixed(1);
-          
-          if (clear) {
-            updateStatus(`<strong>✅ Safe Route!</strong><br>${duration} min, ${distance} km${waypointText}`, 'success');
-            map.setPaintProperty('route', 'line-color', '#00ff00');
+          if (type === 'origin') {
+            origin = coords;
           } else {
-            updateStatus(`<strong>⚠️ Obstacle Warning!</strong><br>${duration} min, ${distance} km${waypointText}`, 'error');
-            map.setPaintProperty('route', 'line-color', '#ff0000');
+            destination = coords;
           }
           
-          // Fit to route
-          const bounds = turf.bbox(route.geometry);
-          map.fitBounds(bounds, { padding: 50 });
+          const inputId = type === 'origin' ? 'origin-input' : 'destination-input';
+          document.getElementById(inputId).value = placeName;
           
-        } else {
-          updateStatus('<strong>❌ No Route Found</strong><br>Try different points or fewer waypoints', 'error');
+          updateWaypoints();
+          map.flyTo({ center: coords, zoom: 14 });
+          updateStatus('<strong>✅ Location Found!</strong><br>' + placeName, 'success');
         }
       } catch (error) {
-        logDebug('❌ Route error: ' + error.message);
-        updateStatus('<strong>❌ Route Error</strong><br>' + error.message, 'error');
+        updateStatus('<strong>❌ Location Error</strong><br>Could not find address', 'error');
       }
     }
 
-    function clearRoute() {
-      origin = null;
-      destination = null;
-      waypoints = [];
-      isSettingOrigin = true;
-      
-      document.getElementById('origin-input').value = '';
-      document.getElementById('destination-input').value = '';
-      document.getElementById('waypoint-input').value = '';
-      
-      updateWaypointsList();
-      
-      if (map && map.getSource('route')) {
-        map.getSource('route').setData({ type: 'FeatureCollection', features: [] });
-      }
-      if (map && map.getSource('waypoints')) {
-        map.getSource('waypoints').setData({ type: 'FeatureCollection', features: [] });
-      }
-      
-      updateStatus('<strong>🎯 Ready</strong><br>Enter addresses or click map to set waypoints', 'loading');
-      logDebug('Route, waypoints, and all stops cleared');
-    }
-
-    function changeMapStyle(type = 'default') {
-      if (!map) return;
-      
-      let styleUrl;
-      let styleName;
-      
-      if (type === 'custom') {
-        const customSelector = document.getElementById('customStyleSelector');
-        styleUrl = customSelector.value;
-        if (!styleUrl) return;
-        styleName = customSelector.options[customSelector.selectedIndex].text;
-        // Reset default selector
-        document.getElementById('styleSelector').selectedIndex = 0;
-      } else {
-        const defaultSelector = document.getElementById('styleSelector');
-        styleUrl = defaultSelector.value;
-        styleName = defaultSelector.options[defaultSelector.selectedIndex].text;
-        // Reset custom selector
-        document.getElementById('customStyleSelector').selectedIndex = 0;
-      }
-      
-      logDebug('Changing style to: ' + styleName);
-      updateStatus('<strong>🎨 Changing Style...</strong><br>Loading ' + styleName, 'loading');
-      
-      // Store current data
-      let routeData = null;
-      let waypointData = null;
+    async function addWaypoint() {
+      const address = document.getElementById('waypoint-input').value.trim();
+      if (!address) return;
       
       try {
-        if (map.getSource('route')) routeData = map.getSource('route')._data;
-        if (map.getSource('waypoints')) waypointData = map.getSource('waypoints')._data;
-      } catch (e) {
-        logDebug('No existing data to preserve');
-      }
-      
-      // Change the map style
-      map.setStyle(styleUrl);
-      
-      map.once('style.load', function() {
-        logDebug('✅ Style loaded: ' + styleName);
-        updateStatus('<strong>✅ Style Changed!</strong><br>Now using ' + styleName, 'success');
+        const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&limit=1`);
+        const data = await response.json();
         
-        // Re-setup all map features
-        setupMapFeatures();
-        
-        // Restore data after a delay
-        setTimeout(() => {
-          try {
-            if (routeData && routeData.features && routeData.features.length > 0 && map.getSource('route')) {
-              map.getSource('route').setData(routeData);
-              logDebug('✅ Route data restored');
-            }
-            if (waypointData && waypointData.features && waypointData.features.length > 0 && map.getSource('waypoints')) {
-              map.getSource('waypoints').setData(waypointData);
-              logDebug('✅ Waypoint data restored');
-            }
-            // Restore center point
-            updateCenterPoint();
-            updateRouteStyle();
-          } catch (error) {
-            logDebug('⚠️ Error restoring data: ' + error.message);
-          }
-        }, 200);
-      });
-      
-      map.once('error', function(e) {
-        logDebug('❌ Style load error: ' + (e.error ? e.error.message : 'Unknown error'));
-        updateStatus('<strong>❌ Style Error</strong><br>Failed to load ' + styleName, 'error');
-      });
-    }
-
-    function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const toggleBtn = document.getElementById('toggle-btn');
-      
-      if (sidebar.classList.contains('hidden')) {
-        sidebar.classList.remove('hidden');
-        toggleBtn.classList.remove('sidebar-hidden');
-        toggleBtn.classList.add('sidebar-visible');
-        toggleBtn.innerHTML = '☰';
-      } else {
-        sidebar.classList.add('hidden');
-        toggleBtn.classList.remove('sidebar-visible');
-        toggleBtn.classList.add('sidebar-hidden');
-        toggleBtn.innerHTML = '☰';
-      }
-    }
-
-    function zoomIn() {
-      if (map) {
-        if (customCenter) {
-          map.zoomTo(map.getZoom() + 1, { center: customCenter });
-          logDebug('Zoomed in to level: ' + (map.getZoom() + 1).toFixed(1) + ' (custom center)');
-        } else {
-          map.zoomIn();
-          logDebug('Zoomed in to level: ' + map.getZoom().toFixed(1));
+        if (data.features && data.features.length > 0) {
+          const coords = data.features[0].center;
+          const placeName = data.features[0].place_name;
+          
+          waypoints.push({
+            coordinates: coords,
+            name: placeName,
+            id: Date.now()
+          });
+          
+          document.getElementById('waypoint-input').value = '';
+          updateWaypointsList();
+          updateWaypoints();
+          updateStatus('<strong>✅ Waypoint Added!</strong><br>' + placeName, 'success');
         }
+      } catch (error) {
+        updateStatus('<strong>❌ Waypoint Error</strong><br>Could not find address', 'error');
       }
     }
 
-    function zoomOut() {
-      if (map) {
-        if (customCenter) {
-          map.zoomTo(map.getZoom() - 1, { center: customCenter });
-          logDebug('Zoomed out to level: ' + (map.getZoom() - 1).toFixed(1) + ' (custom center)');
-        } else {
-          map.zoomOut();
-          logDebug('Zoomed out to level: ' + map.getZoom().toFixed(1));
-        }
-      }
-    }
-
-    function toggleCenterMode() {
-      isSettingCenter = !isSettingCenter;
-      updateCenterModeButton();
+    function updateWaypointsList() {
+      const listEl = document.getElementById('waypoint-list');
       
-      if (isSettingCenter) {
-        updateStatus('<strong>🎯 Center Mode Active</strong><br>Click map to set custom center point', 'loading');
-        logDebug('Center mode activated - click map to set center');
-      } else {
-        updateStatus('<strong>🎯 Center Mode Off</strong><br>Back to normal map interaction', 'success');
-        logDebug('Center mode deactivated');
-      }
-    }
-
-    function updateCenterModeButton() {
-      const btn = document.getElementById('center-mode-btn');
-      if (isSettingCenter) {
-        btn.textContent = '❌ Cancel';
-        btn.style.backgroundColor = '#dc3545';
-      } else {
-        btn.textContent = '🎯 Set Center';
-        btn.style.backgroundColor = '#007bff';
-      }
-    }
-
-    function toggleCenterIcon() {
-      showCenterIcon = !showCenterIcon;
-      const btn = document.getElementById('center-icon-btn');
-      
-      if (showCenterIcon) {
-        btn.textContent = '👁️';
-        btn.style.backgroundColor = '#007bff';
-        if (map && map.getLayer('center-point-symbol')) {
-          map.setLayoutProperty('center-point-symbol', 'visibility', 'visible');
-        }
-        logDebug('Center icon visible');
-      } else {
-        btn.textContent = '🚫';
-        btn.style.backgroundColor = '#6c757d';
-        if (map && map.getLayer('center-point-symbol')) {
-          map.setLayoutProperty('center-point-symbol', 'visibility', 'none');
-        }
-        logDebug('Center icon hidden');
-      }
-    }
-
-    function setCenterFromInput() {
-      const input = document.getElementById('center-input').value.trim();
-      if (!input) {
-        updateStatus('<strong>❌ No Coordinates</strong><br>Please enter lat, lng coordinates', 'error');
+      if (waypoints.length === 0) {
+        listEl.style.display = 'none';
         return;
       }
       
-      try {
-        const parts = input.split(',').map(p => parseFloat(p.trim()));
-        if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) {
-          throw new Error('Invalid format');
-        }
-        
-        const [lat, lng] = parts;
-        
-        // Validate coordinate ranges
-        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-          throw new Error('Coordinates out of range');
-        }
-        
-        customCenter = [lng, lat]; // Mapbox uses [lng, lat]
-        updateCenterPoint();
-        map.flyTo({ center: customCenter, zoom: map.getZoom() });
-        
-        updateStatus('<strong>✅ Center Applied!</strong><br>Custom center point set from coordinates', 'success');
-        logDebug(`✅ Center set from input: ${lat}, ${lng}`);
-        
-      } catch (error) {
-        updateStatus('<strong>❌ Invalid Coordinates</strong><br>Use format: lat, lng (e.g., 38.0500, -84.5000)', 'error');
-        logDebug('❌ Invalid coordinate input: ' + input);
-      }
-    }
-
-    function clearCustomCenter() {
-      customCenter = null;
-      document.getElementById('center-input').value = '';
-      updateCenterPoint();
-      updateStatus('<strong>✅ Center Cleared</strong><br>Back to standard map behavior', 'success');
-      logDebug('Custom center cleared');
-    }
-
-    function updateCenterPoint() {
-      if (!map || !map.getSource('center-point')) return;
-      
-      const features = [];
-      if (customCenter) {
-        features.push({
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: customCenter },
-          properties: {}
-        });
-      }
-      
-      map.getSource('center-point').setData({
-        type: 'FeatureCollection',
-        features: features
-      });
-    }
-
-    function fitToData() {
-      if (!map) return;
-      
-      const allPoints = [];
-      if (origin) allPoints.push(turf.point(origin));
-      waypoints.forEach(wp => allPoints.push(turf.point(wp.coordinates)));
-      if (destination) allPoints.push(turf.point(destination));
-      
-      if (allPoints.length === 0) {
-        // No points, fit to obstacles
-        const bounds = turf.bbox(clearances);
-        map.fitBounds(bounds, { padding: 50 });
-        logDebug('Fitted to obstacles');
-      } else if (allPoints.length === 1) {
-        // One point, center on it
-        map.flyTo({ center: allPoints[0].geometry.coordinates, zoom: 12 });
-        logDebug('Centered on single point');
-      } else {
-        // Multiple points, fit to all
-        const collection = turf.featureCollection(allPoints);
-        const bounds = turf.bbox(collection);
-        map.fitBounds(bounds, { padding: 100 });
-        logDebug(`Fitted to ${allPoints.length} points (origin + ${waypoints.length} waypoints + destination)`);
-      }
-    }
-
-    function updateRouteStyle() {
-      if (!map || !map.getLayer('route')) return;
-      
-      const color = document.getElementById('routeColor').value;
-      const width = parseInt(document.getElementById('routeWidth').value);
-      
-      map.setPaintProperty('route', 'line-color', color);
-      map.setPaintProperty('route', 'line-width', width);
-    }
-
-    // Initialize when page loads
-    window.addEventListener('load', function() {
-      try {
-        logDebug('=== PAGE LOAD EVENT ===');
-        logDebug('Page loaded, checking Mapbox GL...');
-        
-        // Check if Mapbox GL is available immediately
-        if (typeof mapboxgl === 'undefined') {
-          logDebug('❌ Mapbox GL not found, will try alternative loading');
-          updateStatus('<strong>❌ Mapbox GL Not Loaded</strong><br>Click "Try Initialize Map" button', 'error');
-          return;
-        }
-        
-        logDebug('✅ Mapbox GL found, starting initialization');
-        debugStatus();
-        
-        // Start initialization immediately
-        setTimeout(() => {
-          initializeMap();
-        }, 100);
-        
-      } catch (error) {
-        logDebug('❌ Error in window load handler: ' + error.message);
-        updateStatus('<strong>❌ Load Error</strong><br>' + error.message, 'error');
-      }
-    });
-
-    // Also try immediate initialization if DOM is already ready
-    document.addEventListener('DOMContentLoaded', function() {
-      try {
-        logDebug('=== DOM CONTENT LOADED ===');
-        if (document.readyState === 'loading') {
-          logDebug('DOM still loading...');
-        } else {
-          logDebug('DOM ready, checking for Mapbox GL...');
-          if (typeof mapboxgl !== 'undefined') {
-            logDebug('Mapbox GL available, will initialize after page load');
-          } else {
-            logDebug('Mapbox GL not yet available');
-          }
-        }
-      } catch (error) {
-        logDebug('❌ Error in DOMContentLoaded: ' + error.message);
-      }
-    });
-
-    // Immediate check when script loads
-    try {
-      logDebug('=== SCRIPT INITIALIZATION ===');
-      logDebug('Script loaded, document state: ' + document.readyState);
-      logDebug('Mapbox GL available: ' + (typeof mapboxgl !== 'undefined'));
-      
-      // If everything is ready, try initialization
-      if (document.readyState === 'complete' && typeof mapboxgl !== 'undefined') {
-        logDebug('Everything ready, initializing immediately');
-        setTimeout(initializeMap, 100);
-      }
-    } catch (error) {
-      console.error('Script initialization error:', error);
-    }
-  </script>
-</body>
-</html>
+      listEl
