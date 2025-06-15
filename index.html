@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Route Finder with Obstacle Avoidance</title>
+  <title>Route Finder with Multiple Routes</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
    
   <!-- Load Mapbox GL JS -->
@@ -31,7 +31,7 @@
       position: absolute;
       margin: 20px 20px 30px 20px;
       width: 15%;
-      min-width: 300px;
+      min-width: 320px;
       max-height: calc(100vh - 100px);
       top: 0;
       padding: 20px;
@@ -71,18 +71,22 @@
     }
 
     .toggle-btn.sidebar-visible {
-      left: 360px;
+      left: 380px;
     }
      
     .card {
       font-size: small;
       border-bottom: solid #d3d3d3 2px;
-      margin-bottom: 6px;
+      margin-bottom: 10px;
+      padding-bottom: 10px;
     }
      
     .card-header {
       font-weight: bold;
       padding: 6px;
+      background-color: #f8f9fa;
+      border-radius: 3px;
+      margin-bottom: 8px;
     }
      
     .no-route {
@@ -194,6 +198,13 @@
       cursor: not-allowed;
     }
 
+    .small-btn {
+      width: auto;
+      padding: 5px 10px;
+      margin: 2px;
+      font-size: 12px;
+    }
+
     .diagnostic-info {
       background-color: #f8f9fa;
       border: 1px solid #dee2e6;
@@ -286,6 +297,117 @@
       font-size: 12px;
       margin: 0;
     }
+
+    /* Route Management Styles */
+    .route-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #dee2e6;
+      padding-bottom: 10px;
+    }
+
+    .route-tab {
+      padding: 8px 12px;
+      border: 1px solid #dee2e6;
+      border-radius: 4px 4px 0 0;
+      background-color: #f8f9fa;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      min-width: 80px;
+      justify-content: center;
+    }
+
+    .route-tab.active {
+      background-color: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+
+    .route-tab .color-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1px solid rgba(0,0,0,0.2);
+    }
+
+    .route-tab .close-btn {
+      margin-left: 5px;
+      background: none;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+      padding: 0;
+      width: auto;
+      height: auto;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .route-tab .close-btn:hover {
+      background-color: rgba(255,255,255,0.2);
+      border-radius: 50%;
+    }
+
+    .route-list {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+      margin-top: 10px;
+    }
+
+    .route-list-item {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      background-color: white;
+      margin: 2px;
+      border-radius: 3px;
+    }
+
+    .route-list-item:last-child {
+      border-bottom: none;
+    }
+
+    .route-info {
+      flex: 1;
+      font-size: 12px;
+    }
+
+    .route-name {
+      font-weight: bold;
+      margin-bottom: 2px;
+    }
+
+    .route-status {
+      color: #666;
+      font-size: 11px;
+    }
+
+    .route-controls {
+      display: flex;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .visibility-btn {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      font-size: 14px;
+      margin: 0;
+    }
+
+    .visibility-btn.hidden {
+      background-color: #6c757d;
+    }
   </style>
 </head>
  
@@ -302,7 +424,27 @@
       Initializing map...
     </div>
 
+    <!-- Route Management Section -->
     <div class="control-panel">
+      <div class="card-header">🗺️ Route Management</div>
+      
+      <div class="route-tabs" id="route-tabs">
+        <!-- Route tabs will be dynamically generated -->
+      </div>
+      
+      <button onclick="createNewRoute()">➕ New Route</button>
+      
+      <div class="route-list" id="route-list" style="display: none;">
+        <!-- Route list items will be dynamically generated -->
+      </div>
+      
+      <button onclick="toggleRouteList()" id="route-list-toggle" style="display: none;">📋 Show All Routes</button>
+    </div>
+
+    <!-- Current Route Controls -->
+    <div class="control-panel" id="current-route-panel">
+      <div class="card-header" id="current-route-header">🎯 Current Route</div>
+      
       <div class="input-group">
         <label>🟢 Starting Point:</label>
         <input type="text" id="origin-input" placeholder="Enter address or place name">
@@ -335,8 +477,18 @@
       </div>
       
       <button onclick="findRoute()">🗺️ Find Route</button>
-      <button onclick="clearRoute()">🗑️ Clear All</button>
+      <button onclick="clearCurrentRoute()">🗑️ Clear Route</button>
       
+      <div class="route-controls">
+        <label>Color:</label>
+        <input type="color" id="routeColor" value="#ff0000" onchange="updateCurrentRouteStyle()">
+        <label>Width:</label>
+        <input type="number" id="routeWidth" value="8" min="1" max="20" onchange="updateCurrentRouteStyle()">
+      </div>
+    </div>
+
+    <!-- Map Controls -->
+    <div class="control-panel">
       <div class="zoom-controls">
         <button onclick="zoomIn()">+</button>
         <button onclick="zoomOut()">-</button>
@@ -354,15 +506,9 @@
         <button onclick="setCenterFromInput()" style="margin-top: 5px; font-size: 12px; height: 30px;">📍 Apply Center</button>
         <button onclick="clearCustomCenter()" style="margin-top: 5px; font-size: 12px; height: 30px;">❌ Clear Center</button>
       </div>
-      
-      <div class="route-controls">
-        <label>Color:</label>
-        <input type="color" id="routeColor" value="#ff0000" onchange="updateRouteStyle()">
-        <label>Width:</label>
-        <input type="number" id="routeWidth" value="8" min="1" max="20" onchange="updateRouteStyle()">
-      </div>
     </div>
 
+    <!-- Map Styles -->
     <div class="control-panel">
       <div class="input-group">
         <label><strong>Default Map Styles:</strong></label>
@@ -426,13 +572,39 @@
 
     // Global variables
     let map = null;
-    let origin = null;
-    let destination = null;
-    let waypoints = [];
-    let isSettingOrigin = true;
     let customCenter = null;
     let isSettingCenter = false;
     let showCenterIcon = true;
+    let nextRouteId = 1;
+    let currentRouteId = null;
+    let routes = new Map(); // Store all routes
+    let routeListVisible = false;
+
+    // Route colors for new routes
+    const routeColors = [
+      '#ff0000', '#00ff00', '#0066ff', '#ff6600', '#ff00ff', 
+      '#00ffff', '#ffff00', '#990000', '#009900', '#000099'
+    ];
+
+    // Single point selection state
+    let isSettingOrigin = true;
+
+    // Route structure
+    function createEmptyRoute(id = null) {
+      return {
+        id: id || nextRouteId++,
+        name: `Route ${id || nextRouteId - 1}`,
+        origin: null,
+        destination: null,
+        waypoints: [],
+        profile: 'driving',
+        color: routeColors[(id || nextRouteId - 1) % routeColors.length],
+        width: 8,
+        routeData: null,
+        visible: true,
+        status: 'empty' // empty, planning, complete, error
+      };
+    }
 
     // Obstacle data
     const clearances = {
@@ -496,6 +668,8 @@
       logDebug('Mapbox GL exists: ' + (typeof mapboxgl !== 'undefined'));
       logDebug('Map instance: ' + (map ? 'exists' : 'null'));
       logDebug('Document ready: ' + document.readyState);
+      logDebug('Routes count: ' + routes.size);
+      logDebug('Current route: ' + currentRouteId);
       logDebug('=== END DEBUG ===');
     }
 
@@ -524,6 +698,9 @@
         logDebug('✅ Map loaded!');
         updateStatus('<strong>✅ Ready!</strong><br>Click map or enter addresses', 'success');
         setupMapFeatures();
+        
+        // Create first route
+        createNewRoute();
       });
       
       map.on('error', function(e) {
@@ -553,38 +730,6 @@
         }
       });
       
-      // Add route source
-      map.addSource('route', {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: [] }
-      });
-
-      map.addLayer({
-        id: 'route',
-        type: 'line',
-        source: 'route',
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': '#ff0000', 'line-width': 8 }
-      });
-      
-      // Add waypoints source
-      map.addSource('waypoints', {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: [] }
-      });
-
-      map.addLayer({
-        id: 'waypoints',
-        type: 'circle',
-        source: 'waypoints',
-        paint: {
-          'circle-radius': 2,
-          'circle-color': ['get', 'color'],
-          'circle-stroke-color': '#ffffff',
-          'circle-stroke-width': 1
-        }
-      });
-      
       // Add center point source
       map.addSource('center-point', {
         type: 'geojson',
@@ -611,6 +756,223 @@
       logDebug('✅ Map features setup complete');
     }
 
+    // Route Management Functions
+    function createNewRoute() {
+      const newRoute = createEmptyRoute();
+      routes.set(newRoute.id, newRoute);
+      
+      // Add map sources for this route
+      addRouteToMap(newRoute.id);
+      
+      // Switch to new route
+      switchToRoute(newRoute.id);
+      
+      updateRouteTabs();
+      updateRouteList();
+      
+      logDebug(`Created new route ${newRoute.id}`);
+    }
+
+    function addRouteToMap(routeId) {
+      const route = routes.get(routeId);
+      if (!route || !map) return;
+
+      // Add route line source
+      map.addSource(`route-${routeId}`, {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
+
+      map.addLayer({
+        id: `route-${routeId}`,
+        type: 'line',
+        source: `route-${routeId}`,
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 
+          'line-color': route.color, 
+          'line-width': route.width,
+          'line-opacity': route.visible ? 1 : 0
+        }
+      });
+
+      // Add waypoints source
+      map.addSource(`waypoints-${routeId}`, {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
+
+      map.addLayer({
+        id: `waypoints-${routeId}`,
+        type: 'circle',
+        source: `waypoints-${routeId}`,
+        paint: {
+          'circle-radius': 12,
+          'circle-color': ['get', 'color'],
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 2,
+          'circle-opacity': route.visible ? 1 : 0,
+          'circle-stroke-opacity': route.visible ? 1 : 0
+        }
+      });
+    }
+
+    function removeRouteFromMap(routeId) {
+      if (!map) return;
+      
+      // Remove layers and sources
+      if (map.getLayer(`route-${routeId}`)) {
+        map.removeLayer(`route-${routeId}`);
+      }
+      if (map.getSource(`route-${routeId}`)) {
+        map.removeSource(`route-${routeId}`);
+      }
+      if (map.getLayer(`waypoints-${routeId}`)) {
+        map.removeLayer(`waypoints-${routeId}`);
+      }
+      if (map.getSource(`waypoints-${routeId}`)) {
+        map.removeSource(`waypoints-${routeId}`);
+      }
+    }
+
+    function switchToRoute(routeId) {
+      currentRouteId = routeId;
+      const route = routes.get(routeId);
+      if (!route) return;
+
+      // Update UI with route data
+      document.getElementById('origin-input').value = route.origin ? 
+        `${route.origin[1].toFixed(4)}, ${route.origin[0].toFixed(4)}` : '';
+      document.getElementById('destination-input').value = route.destination ? 
+        `${route.destination[1].toFixed(4)}, ${route.destination[0].toFixed(4)}` : '';
+      document.getElementById('profile-select').value = route.profile;
+      document.getElementById('routeColor').value = route.color;
+      document.getElementById('routeWidth').value = route.width;
+
+      // Update waypoints display
+      updateWaypointsList();
+      
+      // Update header
+      document.getElementById('current-route-header').textContent = `🎯 ${route.name}`;
+      
+      updateRouteTabs();
+      logDebug(`Switched to route ${routeId}`);
+    }
+
+    function deleteRoute(routeId) {
+      if (routes.size <= 1) {
+        updateStatus('<strong>❌ Cannot Delete</strong><br>Must have at least one route', 'error');
+        return;
+      }
+
+      removeRouteFromMap(routeId);
+      routes.delete(routeId);
+
+      // If we deleted the current route, switch to another
+      if (currentRouteId === routeId) {
+        const remainingRoutes = Array.from(routes.keys());
+        switchToRoute(remainingRoutes[0]);
+      }
+
+      updateRouteTabs();
+      updateRouteList();
+      logDebug(`Deleted route ${routeId}`);
+    }
+
+    function toggleRouteVisibility(routeId) {
+      const route = routes.get(routeId);
+      if (!route) return;
+
+      route.visible = !route.visible;
+      
+      // Update map layer opacity
+      if (map.getLayer(`route-${routeId}`)) {
+        map.setPaintProperty(`route-${routeId}`, 'line-opacity', route.visible ? 1 : 0);
+      }
+      if (map.getLayer(`waypoints-${routeId}`)) {
+        map.setPaintProperty(`waypoints-${routeId}`, 'circle-opacity', route.visible ? 1 : 0);
+        map.setPaintProperty(`waypoints-${routeId}`, 'circle-stroke-opacity', route.visible ? 1 : 0);
+      }
+
+      updateRouteList();
+      logDebug(`Toggled visibility for route ${routeId}: ${route.visible}`);
+    }
+
+    function updateRouteTabs() {
+      const tabsContainer = document.getElementById('route-tabs');
+      tabsContainer.innerHTML = '';
+
+      routes.forEach((route, id) => {
+        const tab = document.createElement('div');
+        tab.className = `route-tab ${id === currentRouteId ? 'active' : ''}`;
+        tab.innerHTML = `
+          <div class="color-indicator" style="background-color: ${route.color}"></div>
+          <span>${route.name}</span>
+          <button class="close-btn" onclick="event.stopPropagation(); deleteRoute(${id})" title="Delete route">×</button>
+        `;
+        tab.onclick = () => switchToRoute(id);
+        tabsContainer.appendChild(tab);
+      });
+
+      // Show route list toggle if there are multiple routes
+      const toggleBtn = document.getElementById('route-list-toggle');
+      if (routes.size > 1) {
+        toggleBtn.style.display = 'block';
+      } else {
+        toggleBtn.style.display = 'none';
+        document.getElementById('route-list').style.display = 'none';
+        routeListVisible = false;
+      }
+    }
+
+    function updateRouteList() {
+      const listContainer = document.getElementById('route-list');
+      listContainer.innerHTML = '';
+
+      routes.forEach((route, id) => {
+        const item = document.createElement('div');
+        item.className = 'route-list-item';
+        
+        const statusText = getRouteStatusText(route);
+        
+        item.innerHTML = `
+          <div class="color-indicator" style="background-color: ${route.color}; width: 16px; height: 16px; margin-right: 10px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.2);"></div>
+          <div class="route-info">
+            <div class="route-name">${route.name}</div>
+            <div class="route-status">${statusText}</div>
+          </div>
+          <div class="route-controls">
+            <button class="visibility-btn ${route.visible ? '' : 'hidden'}" onclick="toggleRouteVisibility(${id})" title="Toggle visibility">
+              ${route.visible ? '👁️' : '🚫'}
+            </button>
+            <button class="small-btn" onclick="switchToRoute(${id})" title="Edit route">✏️</button>
+            <button class="small-btn" onclick="deleteRoute(${id})" title="Delete route">🗑️</button>
+          </div>
+        `;
+        listContainer.appendChild(item);
+      });
+    }
+
+    function getRouteStatusText(route) {
+      if (!route.origin && !route.destination) return 'Empty route';
+      if (!route.origin) return 'Missing origin';
+      if (!route.destination) return 'Missing destination';
+      if (route.routeData) {
+        const duration = Math.round(route.routeData.duration / 60);
+        const distance = (route.routeData.distance / 1000).toFixed(1);
+        return `${duration} min, ${distance} km`;
+      }
+      return 'Ready to calculate';
+    }
+
+    function toggleRouteList() {
+      const listContainer = document.getElementById('route-list');
+      const toggleBtn = document.getElementById('route-list-toggle');
+      
+      routeListVisible = !routeListVisible;
+      listContainer.style.display = routeListVisible ? 'block' : 'none';
+      toggleBtn.textContent = routeListVisible ? '📋 Hide Routes' : '📋 Show All Routes';
+    }
+
     function handleMapClick(e) {
       const coords = [e.lngLat.lng, e.lngLat.lat];
       
@@ -624,25 +986,30 @@
         updateStatus('<strong>✅ Center Set!</strong><br>Zoom operations will center here', 'success');
         return;
       }
+
+      if (!currentRouteId) return;
+      const route = routes.get(currentRouteId);
+      if (!route) return;
       
       if (isSettingOrigin) {
-        origin = coords;
+        route.origin = coords;
         reverseGeocode(coords, 'origin');
         isSettingOrigin = false;
       } else {
-        destination = coords;
+        route.destination = coords;
         reverseGeocode(coords, 'destination');
         isSettingOrigin = true;
       }
       
       updateWaypoints();
+      updateRouteList();
     }
 
     async function reverseGeocode(coords, type) {
       try {
         const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${coords[0]},${coords[1]}.json?access_token=${MAPBOX_TOKEN}`);
         const data = await response.json();
-        
+
         if (data.features && data.features.length > 0) {
           const placeName = data.features[0].place_name;
           const inputId = type === 'origin' ? 'origin-input' : 'destination-input';
@@ -655,34 +1022,39 @@
     }
 
     function updateWaypoints() {
+      if (!currentRouteId || !map) return;
+      
+      const route = routes.get(currentRouteId);
+      if (!route) return;
+
       const features = [];
       
-      if (origin) {
+      if (route.origin) {
         features.push({
           type: 'Feature',
-          geometry: { type: 'Point', coordinates: origin },
-          properties: { color: '#00ff00' }
-        });
-      }
-      
-      waypoints.forEach((waypoint, index) => {
-        features.push({
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: waypoint.coordinates },
-          properties: { color: '#0066ff' }
-        });
-      });
-      
-      if (destination) {
-        features.push({
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: destination },
-          properties: { color: '#ff6600' }
+          geometry: { type: 'Point', coordinates: route.origin },
+          properties: { color: '#00ff00', type: 'origin' }
         });
       }
 
-      if (map && map.getSource('waypoints')) {
-        map.getSource('waypoints').setData({
+      route.waypoints.forEach((waypoint, index) => {
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: waypoint.coordinates },
+          properties: { color: '#0066ff', type: 'waypoint', index: index }
+        });
+      });
+      
+      if (route.destination) {
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: route.destination },
+          properties: { color: '#ff6600', type: 'destination' }
+        });
+      }
+
+      if (map.getSource(`waypoints-${currentRouteId}`)) {
+        map.getSource(`waypoints-${currentRouteId}`).setData({
           type: 'FeatureCollection',
           features: features
         });
@@ -702,24 +1074,29 @@
     }
 
     async function geocodeAddress(address, type) {
+      if (!currentRouteId) return;
+      const route = routes.get(currentRouteId);
+      if (!route) return;
+
       try {
         const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&limit=1`);
         const data = await response.json();
-        
+
         if (data.features && data.features.length > 0) {
           const coords = data.features[0].center;
           const placeName = data.features[0].place_name;
           
           if (type === 'origin') {
-            origin = coords;
+            route.origin = coords;
           } else {
-            destination = coords;
+            route.destination = coords;
           }
           
           const inputId = type === 'origin' ? 'origin-input' : 'destination-input';
           document.getElementById(inputId).value = placeName;
           
           updateWaypoints();
+          updateRouteList();
           map.flyTo({ center: coords, zoom: 14 });
           updateStatus('<strong>✅ Location Found!</strong><br>' + placeName, 'success');
         }
@@ -729,18 +1106,22 @@
     }
 
     async function addWaypoint() {
+      if (!currentRouteId) return;
+      const route = routes.get(currentRouteId);
+      if (!route) return;
+
       const address = document.getElementById('waypoint-input').value.trim();
       if (!address) return;
       
       try {
         const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&limit=1`);
         const data = await response.json();
-        
+
         if (data.features && data.features.length > 0) {
           const coords = data.features[0].center;
           const placeName = data.features[0].place_name;
           
-          waypoints.push({
+          route.waypoints.push({
             coordinates: coords,
             name: placeName,
             id: Date.now()
@@ -749,6 +1130,7 @@
           document.getElementById('waypoint-input').value = '';
           updateWaypointsList();
           updateWaypoints();
+          updateRouteList();
           updateStatus('<strong>✅ Waypoint Added!</strong><br>' + placeName, 'success');
         }
       } catch (error) {
@@ -757,26 +1139,30 @@
     }
 
     function updateWaypointsList() {
+      if (!currentRouteId) return;
+      const route = routes.get(currentRouteId);
+      if (!route) return;
+
       const listEl = document.getElementById('waypoint-list');
       
-      if (waypoints.length === 0) {
+      if (route.waypoints.length === 0) {
         listEl.style.display = 'none';
         return;
       }
-      
+
       listEl.style.display = 'block';
       listEl.innerHTML = '';
       
-      waypoints.forEach((waypoint, index) => {
+      route.waypoints.forEach((waypoint, index) => {
         const item = document.createElement('div');
         item.className = 'waypoint-item';
-        
+
         item.innerHTML = `
           <div class="waypoint-number">${index + 1}</div>
           <div class="waypoint-text" title="${waypoint.name}">${waypoint.name}</div>
           <div class="waypoint-controls">
             <button onclick="moveWaypointUp(${index})" ${index === 0 ? 'disabled' : ''}>↑</button>
-            <button onclick="moveWaypointDown(${index})" ${index === waypoints.length - 1 ? 'disabled' : ''}>↓</button>
+            <button onclick="moveWaypointDown(${index})" ${index === route.waypoints.length - 1 ? 'disabled' : ''}>↓</button>
             <button onclick="removeWaypoint(${index})">×</button>
           </div>
         `;
@@ -786,46 +1172,60 @@
     }
 
     function moveWaypointUp(index) {
-      if (index > 0) {
-        const temp = waypoints[index];
-        waypoints[index] = waypoints[index - 1];
-        waypoints[index - 1] = temp;
-        updateWaypointsList();
-        updateWaypoints();
-      }
-    }
+      if (!currentRouteId) return;
+      const route = routes.get(currentRouteId);
+      if (!route || index <= 0) return;
 
-    function moveWaypointDown(index) {
-      if (index < waypoints.length - 1) {
-        const temp = waypoints[index];
-        waypoints[index] = waypoints[index + 1];
-        waypoints[index + 1] = temp;
-        updateWaypointsList();
-        updateWaypoints();
-      }
-    }
-
-    function removeWaypoint(index) {
-      waypoints.splice(index, 1);
+      const temp = route.waypoints[index];
+      route.waypoints[index] = route.waypoints[index - 1];
+      route.waypoints[index - 1] = temp;
       updateWaypointsList();
       updateWaypoints();
     }
 
+    function moveWaypointDown(index) {
+      if (!currentRouteId) return;
+      const route = routes.get(currentRouteId);
+      if (!route || index >= route.waypoints.length - 1) return;
+
+      const temp = route.waypoints[index];
+      route.waypoints[index] = route.waypoints[index + 1];
+      route.waypoints[index + 1] = temp;
+      updateWaypointsList();
+      updateWaypoints();
+    }
+
+    function removeWaypoint(index) {
+      if (!currentRouteId) return;
+      const route = routes.get(currentRouteId);
+      if (!route) return;
+
+      route.waypoints.splice(index, 1);
+      updateWaypointsList();
+      updateWaypoints();
+      updateRouteList();
+    }
+
     async function findRoute() {
-      if (!origin || !destination) {
+      if (!currentRouteId) return;
+      const route = routes.get(currentRouteId);
+      if (!route) return;
+
+      if (!route.origin || !route.destination) {
         updateStatus('<strong>❌ Missing Points</strong><br>Set origin and destination first', 'error');
         return;
       }
 
-      const profile = document.getElementById('profile-select').value;
-      
-      let coords = origin.join(',');
-      waypoints.forEach(waypoint => {
+      // Update profile from UI
+      route.profile = document.getElementById('profile-select').value;
+
+      let coords = route.origin.join(',');
+      route.waypoints.forEach(waypoint => {
         coords += ';' + waypoint.coordinates.join(',');
       });
-      coords += ';' + destination.join(',');
+      coords += ';' + route.destination.join(',');
       
-      const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coords}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
+      const url = `https://api.mapbox.com/directions/v5/mapbox/${route.profile}/${coords}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
 
       updateStatus('<strong>🔄 Finding Route...</strong><br>Planning route...', 'loading');
 
@@ -834,36 +1234,47 @@
         const data = await response.json();
 
         if (data.routes && data.routes.length > 0) {
-          const route = data.routes[0];
+          const routeData = data.routes[0];
+          route.routeData = routeData;
           
-          map.getSource('route').setData(route.geometry);
+          map.getSource(`route-${currentRouteId}`).setData(routeData.geometry);
           
           const obstacle = turf.buffer(clearances, 0.25, { units: 'kilometers' });
-          const clear = turf.booleanDisjoint(obstacle, route.geometry);
+          const clear = turf.booleanDisjoint(obstacle, routeData.geometry);
           
-          const duration = Math.round(route.duration / 60);
-          const distance = (route.distance / 1000).toFixed(1);
+          const duration = Math.round(routeData.duration / 60);
+          const distance = (routeData.distance / 1000).toFixed(1);
           
           if (clear) {
             updateStatus(`<strong>✅ Safe Route!</strong><br>${duration} min, ${distance} km`, 'success');
-            map.setPaintProperty('route', 'line-color', '#00ff00');
+            route.status = 'safe';
           } else {
             updateStatus(`<strong>⚠️ Obstacle Warning!</strong><br>${duration} min, ${distance} km`, 'error');
-            map.setPaintProperty('route', 'line-color', '#ff0000');
+            route.status = 'warning';
           }
           
-          const bounds = turf.bbox(route.geometry);
+          const bounds = turf.bbox(routeData.geometry);
           map.fitBounds(bounds, { padding: 50 });
+          
+          updateRouteList();
         }
       } catch (error) {
         updateStatus('<strong>❌ Route Error</strong><br>Could not find route', 'error');
+        route.status = 'error';
+        updateRouteList();
       }
     }
 
-    function clearRoute() {
-      origin = null;
-      destination = null;
-      waypoints = [];
+    function clearCurrentRoute() {
+      if (!currentRouteId) return;
+      const route = routes.get(currentRouteId);
+      if (!route) return;
+
+      route.origin = null;
+      route.destination = null;
+      route.waypoints = [];
+      route.routeData = null;
+      route.status = 'empty';
       isSettingOrigin = true;
       
       document.getElementById('origin-input').value = '';
@@ -872,14 +1283,35 @@
       
       updateWaypointsList();
       
-      if (map && map.getSource('route')) {
-        map.getSource('route').setData({ type: 'FeatureCollection', features: [] });
+      if (map.getSource(`route-${currentRouteId}`)) {
+        map.getSource(`route-${currentRouteId}`).setData({ type: 'FeatureCollection', features: [] });
       }
-      if (map && map.getSource('waypoints')) {
-        map.getSource('waypoints').setData({ type: 'FeatureCollection', features: [] });
+      if (map.getSource(`waypoints-${currentRouteId}`)) {
+        map.getSource(`waypoints-${currentRouteId}`).setData({ type: 'FeatureCollection', features: [] });
       }
       
       updateStatus('<strong>🎯 Ready</strong><br>Enter addresses or click map', 'loading');
+      updateRouteList();
+    }
+
+    function updateCurrentRouteStyle() {
+      if (!currentRouteId || !map) return;
+      const route = routes.get(currentRouteId);
+      if (!route) return;
+
+      const color = document.getElementById('routeColor').value;
+      const width = parseInt(document.getElementById('routeWidth').value);
+      
+      route.color = color;
+      route.width = width;
+
+      if (map.getLayer(`route-${currentRouteId}`)) {
+        map.setPaintProperty(`route-${currentRouteId}`, 'line-color', color);
+        map.setPaintProperty(`route-${currentRouteId}`, 'line-width', width);
+      }
+
+      updateRouteTabs();
+      updateRouteList();
     }
 
     function changeMapStyle(type) {
@@ -895,35 +1327,41 @@
         document.getElementById('customStyleSelector').selectedIndex = 0;
       }
       
-      const routeData = map.getSource('route') ? map.getSource('route')._data : null;
-      const waypointData = map.getSource('waypoints') ? map.getSource('waypoints')._data : null;
-      
+      // Store all route data before style change
+      const routeDataBackup = new Map();
+      routes.forEach((route, id) => {
+        if (map.getSource(`route-${id}`)) {
+          routeDataBackup.set(id, {
+            route: map.getSource(`route-${id}`)._data,
+            waypoints: map.getSource(`waypoints-${id}`)._data
+          });
+        }
+      });
+
       map.setStyle(styleUrl);
       
       map.once('style.load', function() {
         setupMapFeatures();
         
         setTimeout(() => {
-          if (routeData && map.getSource('route')) {
-            map.getSource('route').setData(routeData);
-          }
-          if (waypointData && map.getSource('waypoints')) {
-            map.getSource('waypoints').setData(waypointData);
-          }
+          // Re-add all routes
+          routes.forEach((route, id) => {
+            addRouteToMap(id);
+            
+            const backup = routeDataBackup.get(id);
+            if (backup) {
+              if (map.getSource(`route-${id}`)) {
+                map.getSource(`route-${id}`).setData(backup.route);
+              }
+              if (map.getSource(`waypoints-${id}`)) {
+                map.getSource(`waypoints-${id}`).setData(backup.waypoints);
+              }
+            }
+          });
+          
           updateCenterPoint();
-          updateRouteStyle();
         }, 200);
       });
-    }
-
-    function updateRouteStyle() {
-      if (!map || !map.getLayer('route')) return;
-      
-      const color = document.getElementById('routeColor').value;
-      const width = parseInt(document.getElementById('routeWidth').value);
-      
-      map.setPaintProperty('route', 'line-color', color);
-      map.setPaintProperty('route', 'line-width', width);
     }
 
     function zoomIn() {
@@ -944,9 +1382,14 @@
 
     function fitToData() {
       const allPoints = [];
-      if (origin) allPoints.push(turf.point(origin));
-      waypoints.forEach(wp => allPoints.push(turf.point(wp.coordinates)));
-      if (destination) allPoints.push(turf.point(destination));
+      
+      routes.forEach(route => {
+        if (route.visible) {
+          if (route.origin) allPoints.push(turf.point(route.origin));
+          route.waypoints.forEach(wp => allPoints.push(turf.point(wp.coordinates)));
+          if (route.destination) allPoints.push(turf.point(route.destination));
+        }
+      });
       
       if (allPoints.length === 0) {
         const bounds = turf.bbox(clearances);
@@ -1084,4 +1527,3 @@
   </script>
 </body>
 </html>
-      
