@@ -248,17 +248,7 @@
   <div class="sidebar" id="sidebar">
     <div id="status-message" class="status-message status-loading">
       <strong>🔄 Loading...</strong><br>
-      Checking Mapbox availability...
-    </div>
-
-    <div class="instructions">
-      <strong>🛣️ Route Finder with Obstacle Avoidance</strong><br><br>
-      <strong>Simple Usage:</strong><br>
-      1. Wait for map to load<br>
-      2. Click map to set origin (green)<br>
-      3. Click again to set destination (orange)<br>
-      4. Click "Find Route" to analyze<br>
-      5. Change map styles from dropdown
+      Initializing map...
     </div>
 
     <div class="control-panel">
@@ -317,6 +307,9 @@
         <label><strong>Your Custom Styles:</strong></label>
         <select id="customStyleSelector" onchange="changeMapStyle('custom')">
           <option value="">Select custom style...</option>
+          <option value="mapbox://styles/cb29/ckxnmjiti0rvm14pby8w9si99">🎨 Classic Vintage</option>
+          <option value="mapbox://styles/cb29/ckxnnmex53n1b14m07t6sum48">🎨 Classic Standard</option>
+          <!-- Add your other custom styles here:
           <option value="mapbox://styles/cb29/ckxnnmex53n1b14m07t6sum48”>Classic Standard</option>
           <option value="mapbox://styles/cb29/ckxnmjiti0rvm14pby8w9si99”>Classic Vintage</option>
           <option value="mapbox://styles/cb29/ckxov33jj3le314ueu15gl6yh”>Dark Digital</option>
@@ -341,7 +334,7 @@
           <option value="mapbox://styles/cb29/ckxove5sy174l15mq6h82hwxk”>Unique Dusty Western</option>
           <option value="mapbox://styles/cb29/ckxoup98z4sv514m0q988ltie”>Unique Picture Book</option>
           <option value="mapbox://styles/cb29/ckxov1ris0n2415p4e9gn8oxu”>Unique Treasure Map</option>
-          <option value="mapbox://styles/cb29/ckxous4km02k114m523qh0k9y”>Unique Woodcut</option>
+          <option value="mapbox://styles/cb29/ckxous4km02k114m523qh0k9y”>Unique Woodcut</option>          -->
         </select>
       </div>
     </div>
@@ -443,13 +436,13 @@
     }
 
     function initializeMap() {
-      logDebug('Starting map initialization...');
-      updateStatus('<strong>🔄 Initializing Map...</strong><br>Please wait...', 'loading');
+      logDebug('=== STARTING MAP INITIALIZATION ===');
+      updateStatus('<strong>🗺️ Initializing Map...</strong><br>Setting up Mapbox instance...', 'loading');
       
       try {
         // Check if Mapbox GL is available
         if (typeof mapboxgl === 'undefined') {
-          throw new Error('Mapbox GL is not loaded');
+          throw new Error('Mapbox GL is not loaded - please click "Try Initialize Map"');
         }
         
         logDebug('✅ Mapbox GL found');
@@ -458,7 +451,8 @@
         mapboxgl.accessToken = MAPBOX_TOKEN;
         logDebug('✅ Access token set');
         
-        // Create map
+        // Create map instance
+        logDebug('Creating map instance...');
         map = new mapboxgl.Map({
           container: 'map',
           style: 'mapbox://styles/mapbox/streets-v11',
@@ -466,25 +460,34 @@
           zoom: 10
         });
         
-        logDebug('✅ Map instance created');
+        logDebug('✅ Map instance created, waiting for load...');
         
         map.on('load', function() {
-          logDebug('✅ Map loaded successfully');
-          updateStatus('<strong>✅ Map Ready!</strong><br>Click to set waypoints', 'success');
+          logDebug('✅ Map loaded successfully!');
+          updateStatus('<strong>✅ Map Ready!</strong><br>Enter addresses or click map to set waypoints', 'success');
           setupMapFeatures();
         });
         
         map.on('error', function(e) {
-          logDebug('❌ Map error: ' + (e.error ? e.error.message : 'Unknown'));
-          updateStatus('<strong>❌ Map Error</strong><br>' + (e.error ? e.error.message : 'Unknown error'), 'error');
+          const errorMsg = e.error ? e.error.message : 'Unknown map error';
+          logDebug('❌ Map error: ' + errorMsg);
+          updateStatus('<strong>❌ Map Error</strong><br>' + errorMsg, 'error');
         });
         
         // Add click handler
         map.on('click', handleMapClick);
         
+        // Timeout check
+        setTimeout(() => {
+          if (map && !map.loaded()) {
+            logDebug('⏱️ Map still loading after 10 seconds...');
+            updateStatus('<strong>⏱️ Map Loading...</strong><br>This may take a moment...', 'loading');
+          }
+        }, 10000);
+        
       } catch (error) {
         logDebug('❌ Initialization failed: ' + error.message);
-        updateStatus('<strong>❌ Failed to Initialize</strong><br>' + error.message, 'error');
+        updateStatus('<strong>❌ Failed to Initialize</strong><br>' + error.message + '<br>Try the "Try Initialize Map" button', 'error');
       }
     }
 
@@ -892,18 +895,37 @@
 
     // Initialize when page loads
     window.addEventListener('load', function() {
-      logDebug('Page loaded, starting initialization...');
+      logDebug('Page loaded, checking Mapbox GL...');
+      
+      // Check if Mapbox GL is available immediately
+      if (typeof mapboxgl === 'undefined') {
+        logDebug('❌ Mapbox GL not found, will try alternative loading');
+        updateStatus('<strong>❌ Mapbox GL Not Loaded</strong><br>Click "Try Initialize Map" button', 'error');
+        return;
+      }
+      
+      logDebug('✅ Mapbox GL found, starting initialization');
       debugStatus();
       
-      setTimeout(() => {
-        initializeMap();
-      }, 500);
+      // Start initialization immediately
+      initializeMap();
     });
 
-    // Also try immediate initialization
-    document.addEventListener('DOMContentLoaded', function() {
-      logDebug('DOM ready');
-    });
+    // Also try immediate initialization if DOM is already ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        logDebug('DOM ready');
+        if (typeof mapboxgl !== 'undefined') {
+          setTimeout(initializeMap, 100);
+        }
+      });
+    } else {
+      // DOM is already ready
+      logDebug('DOM already ready');
+      if (typeof mapboxgl !== 'undefined') {
+        setTimeout(initializeMap, 100);
+      }
+    }
   </script>
 </body>
 </html>
