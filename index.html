@@ -250,6 +250,9 @@
     let destination = null;
     let counter = 0;
     const maxAttempts = 50;
+    
+    // Global variable to track the directions control
+    let directionsControl = null;
 
     // Your Mapbox access token
     const MAPBOX_TOKEN = 'pk.eyJ1IjoiY2IyOSIsImEiOiJja3E4OHo3anowZGx1Mm9tcXF3ZmhyaWtwIn0.IQ5rY622AU9GOETrqa9NBw';
@@ -500,6 +503,7 @@
         map.on('load', function() {
           updateStatus('<strong>✅ Map Loaded Successfully!</strong><br>Ready for route planning', 'success');
           setupMapFeatures();
+          populateStyleSelector();
           document.getElementById('custom-route').style.display = 'block';
         });
 
@@ -522,72 +526,132 @@
     }
 
     function setupMapFeatures() {
-      // Add navigation controls (zoom +/- buttons)
-      map.addControl(new mapboxgl.NavigationControl());
-      
-      // Add Mapbox Directions control
-      const directions = new MapboxDirections({
-        accessToken: MAPBOX_TOKEN,
-        unit: 'imperial',
-        profile: 'mapbox/driving-traffic',
-        alternatives: false,
-        geometries: 'geojson',
-        controls: { instructions: false },
-        flyTo: false
-      });
-      
-      map.addControl(directions, 'top-left');
-      
-      // Listen for route events from directions control
-      directions.on('route', function(event) {
-        if (event.route && event.route.length > 0) {
-          analyzeDirectionsRoute(event.route[0]);
+      try {
+        // Only add navigation controls if they don't already exist
+        const hasNavControls = map._controls.some(control => 
+          control instanceof mapboxgl.NavigationControl
+        );
+        if (!hasNavControls) {
+          map.addControl(new mapboxgl.NavigationControl());
         }
-      });
-      
-      directions.on('clear', function() {
-        clearRoute();
-      });
-      
-      // Add obstacles
-      const obstacle = turf.buffer(clearances, 0.25, { units: 'kilometers' });
-      
-      map.addSource('obstacles', {
-        type: 'geojson',
-        data: obstacle
-      });
-
-      map.addLayer({
-        id: 'obstacles-fill',
-        type: 'fill',
-        source: 'obstacles',
-        paint: {
-          'fill-color': '#f03b20',
-          'fill-opacity': 0.5
+        
+        // Remove existing directions control completely
+        if (directionsControl) {
+          try {
+            map.removeControl(directionsControl);
+            directionsControl = null;
+          } catch (e) {
+            console.log('Directions control already removed or not found');
+          }
         }
-      });
+        
+        // Create a fresh directions control
+        try {
+          directionsControl = new MapboxDirections({
+            accessToken: MAPBOX_TOKEN,
+            unit: 'imperial',
+            profile: 'mapbox/driving-traffic',
+            alternatives: false,
+            geometries: 'geojson',
+            controls: { instructions: false },
+            flyTo: false
+          });
+          
+          map.addControl(directionsControl, 'top-left');
+          
+          // Listen for route events from directions control
+          directionsControl.on('route', function(event) {
+            if (event.route && event.route.length > 0) {
+              analyzeDirectionsRoute(event.route[0]);
+            }
+          });
+          
+          directionsControl.on('clear', function() {
+            clearRoute();
+          });
+          
+          // Handle directions errors gracefully
+          directionsControl.on('error', function(e) {
+            console.warn('Directions error (non-critical):', e);
+            // Don't show error for minor directions issues
+          });
+          
+        } catch (directionsError) {
+          console.error('Failed to add directions control:', directionsError);
+          updateDiagnostics(`⚠️ Directions control failed to load: ${directionsError.message}`);
+        }
+        
+        // Add obstacles with error checking
+        if (typeof turf !== 'undefined') {
+          try {
+            const obstacle = turf.buffer(clearances, 0.25, { units: 'kilometers' });
+            
+            // Remove existing obstacle layers/sources if they exist
+            if (map.getLayer('obstacles-fill')) {
+              map.removeLayer('obstacles-fill');
+            }
+            if (map.getSource('obstacles')) {
+              map.removeSource('obstacles');
+            }
+            
+            map.addSource('obstacles', {
+              type: 'geojson',
+              data: obstacle
+            });
 
-      // Setup route layer for our custom analysis
-      map.addSource('route-analysis', {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: [] }
-      });
+            map.addLayer({
+              id: 'obstacles-fill',
+              type: 'fill',
+              source: 'obstacles',
+              paint: {
+                'fill-color': '#f03b20',
+                'fill-opacity': 0.5
+              }
+            });
+          } catch (obstacleError) {
+            console.error('Failed to add obstacles:', obstacleError);
+            updateDiagnostics(`⚠️ Obstacle layer failed: ${obstacleError.message}`);
+          }
+        } else {
+          updateDiagnostics(`⚠️ Turf.js not available for obstacle analysis`);
+        }
 
-      map.addLayer({
-        id: 'route-analysis-layer',
-        type: 'line',
-        source: 'route-analysis',
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': '#ff0000', 'line-width': 8, 'line-opacity': 0.8 }
-      });
+        // Setup route layer for our custom analysis
+        try {
+          // Remove existing route analysis layers/sources if they exist
+          if (map.getLayer('route-analysis-layer')) {
+            map.removeLayer('route-analysis-layer');
+          }
+          if (map.getSource('route-analysis')) {
+            map.removeSource('route-analysis');
+          }
+          
+          map.addSource('route-analysis', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] }
+          });
 
-      // Setup route customization
-      setupRouteCustomization();
-      
-      // Populate style selector
-      populateStyleSelector();
-      
-      console.log('✅ Map features setup complete');
+          map.addLayer({
+            id: 'route-analysis-layer',
+            type: 'line',
+            source: 'route-analysis',
+            layout: { 'line-join': 'round', 'line-cap': 'round' },
+            paint: { 'line-color': '#ff0000', 'line-width': 8, 'line-opacity': 0.8 }
+          });
+        } catch (routeLayerError) {
+          console.error('Failed to add route analysis layer:', routeLayerError);
+          updateDiagnostics(`⚠️ Route analysis layer failed: ${routeLayerError.message}`);
+        }
+
+        // Setup route customization (only once)
+        setupRouteCustomization();
+        
+        console.log('✅ Map features setup complete');
+        
+      } catch (error) {
+        console.error('Error in setupMapFeatures:', error);
+        updateDiagnostics(`❌ Feature setup error: ${error.message}`);
+      }
     }
 
     async function populateStyleSelector() {
@@ -613,32 +677,31 @@
       // Your custom styles - Add all your style IDs here
       // To find these: Go to Mapbox Studio > Styles, and copy the style URLs
       const customStyles = [
+        { name: 'Classic Standard', id: 'ckxnnmex53n1b14m07t6sum48' },
         { name: 'Classic Vintage', id: 'ckxnmjiti0rvm14pby8w9si99' },
-        { name: 'Unique Treasure Map', id: 'ckxov1ris0n2415p4e9gn8oxu' },
-        { name: 'Unique Woodcut', id: 'ckxous4km02k114m523qh0k9y' },
-        { name: 'Unique Picture Book', id: 'ckxoup98z4sv514m0q988ltie' },
-        { name: 'Unique Colorful', id: 'ckxrrtfqk0oir15my0y9tpjvj' },
-        { name: 'Topography Outdoor', id: 'ckxnkf6rs60r214uc0j42vbj4' },
+        { name: 'Dark Digital', id: 'ckxov33jj3le314ueu15gl6yh' },
         { name: 'Dark Monochrome', id: 'ckxmhuc4k2gxm14s0eq1htzns' },
+        { name: 'Dark Night Mode', id: 'ckxs1bfov2cay14mnx6nvrzxt' },
+        { name: 'Light Engraved', id: 'ckwgtu6ly20cr15qiy9i2ftsz' },
+        { name: 'Light High Contrast', id: 'ckxntkwjq4flv14ld7uisp5b1' },
+        { name: 'Light Pencil Sketch', id: 'ckxouv50s02lw14r2jiyvnvxh' },
         { name: 'Pastel Blue', id: 'ckxtl08qj2gb215p8y2blzxur' },
-        { name: 'Pastel Yellow', id: 'ckxtl35nk4hsb15mry8rwlg4l' },
         { name: 'Pastel Cool', id: 'ckxtkuk8l10zj14pk8irf7owt' },
         { name: 'Pastel Pink', id: 'ckxtl2a2s0yot14nw9pbn2733' },
-        { name: 'Classic Standard', id: 'ckxnnmex53n1b14m07t6sum48' },
-        { name: 'Topography Subtle', id: 'ckxnqwyww0sri14p9skglgshs' },
-        { name: 'Topography Globe', id: 'ckxnp39kb5eyw14oaan01mkp0' },
-        { name: 'Light Engraved', id: 'ckwgtu6ly20cr15qiy9i2ftsz' },
+        { name: 'Pastel Yellow', id: 'ckxtl35nk4hsb15mry8rwlg4l' },
         { name: 'Satellite Streets', id: 'ckxmjckme2if514s0v3xq4vxy' },
-        { name: 'Light High Contrast', id: 'ckxntkwjq4flv14ld7uisp5b1' },
-        { name: 'Dark Night Mode', id: 'ckxs1bfov2cay14mnx6nvrzxt' },
-        { name: 'Dark Digital', id: 'ckxov33jj3le314ueu15gl6yh' },
-        { name: 'Unique Dusty Western', id: 'ckxove5sy174l15mq6h82hwxk' },
-        { name: 'Unique Comic Book', id: 'ckxovchyg4tfj14s6d7u559tj' },
-        { name: 'Unique Comic Book 2', id: 'ckxov6vgm66g214o064dp3vda' },
         { name: 'Topography Colorful', id: 'ckxrnuq691z6h14mnuy5jpk5c' },
+        { name: 'Topography Globe', id: 'ckxnp39kb5eyw14oaan01mkp0' },
+        { name: 'Topography Outdoor', id: 'ckxnkf6rs60r214uc0j42vbj4' },
+        { name: 'Topography Subtle', id: 'ckxnqwyww0sri14p9skglgshs' },
         { name: 'Topography Vintage', id: 'ckxno9jbk3nn714s6vjah6fwb' },
-        { name: 'Light Pencil Sketch', id: 'ckxouv50s02lw14r2jiyvnvxh' },
-        
+        { name: 'Unique Colorful', id: 'ckxrrtfqk0oir15my0y9tpjvj' },
+        { name: 'Unique Comic Book 1’, id: 'ckxovchyg4tfj14s6d7u559tj' },
+        { name: 'Unique Comic Book 2', id: 'ckxov6vgm66g214o064dp3vda' },
+        { name: 'Unique Dusty Western', id: 'ckxove5sy174l15mq6h82hwxk' },
+        { name: 'Unique Picture Book', id: 'ckxoup98z4sv514m0q988ltie' },
+        { name: 'Unique Treasure Map', id: 'ckxov1ris0n2415p4e9gn8oxu' },
+        { name: 'Unique Woodcut', id: 'ckxous4km02k114m523qh0k9y' },
         // Add more of your custom styles here in this format:
         // { name: 'Your Style Name', id: 'your-style-id' },
         
@@ -703,8 +766,60 @@
       select.addEventListener('change', function() {
         if (this.value && !this.options[this.selectedIndex].disabled) {
           updateDiagnostics(`Switching to style: ${this.options[this.selectedIndex].textContent}`);
+          
+          // Store current route data before style change
+          let currentRouteData = null;
+          if (map.getSource('route-analysis')) {
+            try {
+              currentRouteData = map.getSource('route-analysis')._data;
+            } catch (e) {
+              // Ignore errors when getting route data
+            }
+          }
+          
+          // Properly remove the directions control before style change
+          if (directionsControl) {
+            try {
+              map.removeControl(directionsControl);
+              directionsControl = null;
+            } catch (e) {
+              console.log('Directions control removal handled');
+            }
+          }
+          
+          // Change the style
           map.setStyle(this.value);
-          map.once('style.load', setupMapFeatures);
+          
+          // Wait for style to load and then restore features
+          map.once('style.load', function() {
+            try {
+              // Small delay to ensure style is fully loaded
+              setTimeout(() => {
+                setupMapFeatures();
+                
+                // Restore route data if it existed
+                if (currentRouteData && currentRouteData.features && currentRouteData.features.length > 0) {
+                  setTimeout(() => {
+                    if (map.getSource('route-analysis')) {
+                      map.getSource('route-analysis').setData(currentRouteData);
+                    }
+                  }, 200);
+                }
+                
+                updateDiagnostics(`✅ Style switched successfully`);
+              }, 100);
+              
+            } catch (error) {
+              console.error('Error setting up features after style change:', error);
+              updateDiagnostics(`⚠️ Style loaded but some features may need refresh`);
+            }
+          });
+          
+          // Handle style load errors
+          map.once('error', function(e) {
+            console.error('Map error after style change:', e);
+            updateDiagnostics(`❌ Error after style change: ${e.error ? e.error.message : 'Unknown error'}`);
+          });
         }
       });
     }
@@ -746,15 +861,25 @@
     }
 
     function setupRouteCustomization() {
+      // Only set up event listeners once to prevent duplicates
+      const colorInput = document.getElementById('routeColor');
+      const widthInput = document.getElementById('routeWidth');
+      
+      // Remove existing event listeners to prevent duplicates
+      const newColorInput = colorInput.cloneNode(true);
+      const newWidthInput = widthInput.cloneNode(true);
+      colorInput.parentNode.replaceChild(newColorInput, colorInput);
+      widthInput.parentNode.replaceChild(newWidthInput, widthInput);
+      
       // Route color customization
-      document.getElementById('routeColor').addEventListener('change', function() {
+      newColorInput.addEventListener('change', function() {
         if (map.getLayer('route-analysis-layer')) {
           map.setPaintProperty('route-analysis-layer', 'line-color', this.value);
         }
       });
 
       // Route width customization
-      document.getElementById('routeWidth').addEventListener('change', function() {
+      newWidthInput.addEventListener('change', function() {
         if (map.getLayer('route-analysis-layer')) {
           map.setPaintProperty('route-analysis-layer', 'line-width', parseInt(this.value));
         }
