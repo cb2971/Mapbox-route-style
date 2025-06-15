@@ -1,331 +1,4 @@
-    function updateWaypointsList() {
-      const listEl = document.getElementById('waypoint-list');
-      
-      if (waypoints.length === 0) {
-        listEl.style.display = 'none';
-        return;
-      }
-      
-      listEl.style.display = 'block';
-      listEl.innerHTML = '';
-      
-      waypoints.forEach((waypoint, index) => {
-        const item = document.createElement('div');
-        item.className = 'waypoint-item';
-        
-        item.innerHTML = `
-          <div class="waypoint-number">${index + 1}</div>
-          <div class="waypoint-text" title="${waypoint.name}">${waypoint.name}</div>
-          <div class="waypoint-controls">
-            <button onclick="moveWaypointUp(${index})" ${index === 0 ? 'disabled' : ''}>↑</button>
-            <button onclick="moveWaypointDown(${index})" ${index === waypoints.length - 1 ? 'disabled' : ''}>↓</button>
-            <button onclick="removeWaypoint(${index})">×</button>
-          </div>
-        `;
-        
-        listEl.appendChild(item);
-      });
-    }
-
-    function moveWaypointUp(index) {
-      if (index > 0) {
-        const temp = waypoints[index];
-        waypoints[index] = waypoints[index - 1];
-        waypoints[index - 1] = temp;
-        updateWaypointsList();
-        updateWaypoints();
-      }
-    }
-
-    function moveWaypointDown(index) {
-      if (index < waypoints.length - 1) {
-        const temp = waypoints[index];
-        waypoints[index] = waypoints[index + 1];
-        waypoints[index + 1] = temp;
-        updateWaypointsList();
-        updateWaypoints();
-      }
-    }
-
-    function removeWaypoint(index) {
-      waypoints.splice(index, 1);
-      updateWaypointsList();
-      updateWaypoints();
-    }
-
-    async function findRoute() {
-      if (!origin || !destination) {
-        updateStatus('<strong>❌ Missing Points</strong><br>Set origin and destination first', 'error');
-        return;
-      }
-
-      const profile = document.getElementById('profile-select').value;
-      
-      let coords = origin.join(',');
-      waypoints.forEach(waypoint => {
-        coords += ';' + waypoint.coordinates.join(',');
-      });
-      coords += ';' + destination.join(',');
-      
-      const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coords}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
-
-      updateStatus('<strong>🔄 Finding Route...</strong><br>Planning route...', 'loading');
-
-      try {
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.routes && data.routes.length > 0) {
-          const route = data.routes[0];
-          
-          map.getSource('route').setData(route.geometry);
-          
-          const obstacle = turf.buffer(clearances, 0.25, { units: 'kilometers' });
-          const clear = turf.booleanDisjoint(obstacle, route.geometry);
-          
-          const duration = Math.round(route.duration / 60);
-          const distance = (route.distance / 1000).toFixed(1);
-          
-          if (clear) {
-            updateStatus(`<strong>✅ Safe Route!</strong><br>${duration} min, ${distance} km`, 'success');
-            map.setPaintProperty('route', 'line-color', '#00ff00');
-          } else {
-            updateStatus(`<strong>⚠️ Obstacle Warning!</strong><br>${duration} min, ${distance} km`, 'error');
-            map.setPaintProperty('route', 'line-color', '#ff0000');
-          }
-          
-          const bounds = turf.bbox(route.geometry);
-          map.fitBounds(bounds, { padding: 50 });
-        }
-      } catch (error) {
-        updateStatus('<strong>❌ Route Error</strong><br>Could not find route', 'error');
-      }
-    }
-
-    function clearRoute() {
-      origin = null;
-      destination = null;
-      waypoints = [];
-      isSettingOrigin = true;
-      
-      document.getElementById('origin-input').value = '';
-      document.getElementById('destination-input').value = '';
-      document.getElementById('waypoint-input').value = '';
-      
-      updateWaypointsList();
-      
-      if (map && map.getSource('route')) {
-        map.getSource('route').setData({ type: 'FeatureCollection', features: [] });
-      }
-      if (map && map.getSource('waypoints')) {
-        map.getSource('waypoints').setData({ type: 'FeatureCollection', features: [] });
-      }
-      
-      updateStatus('<strong>🎯 Ready</strong><br>Enter addresses or click map', 'loading');
-    }
-
-    function changeMapStyle(type) {
-      if (!map) return;
-      
-      let styleUrl;
-      if (type === 'custom') {
-        styleUrl = document.getElementById('customStyleSelector').value;
-        if (!styleUrl) return;
-        document.getElementById('styleSelector').selectedIndex = 0;
-      } else {
-        styleUrl = document.getElementById('styleSelector').value;
-        document.getElementById('customStyleSelector').selectedIndex = 0;
-      }
-      
-      const routeData = map.getSource('route') ? map.getSource('route')._data : null;
-      const waypointData = map.getSource('waypoints') ? map.getSource('waypoints')._data : null;
-      
-      map.setStyle(styleUrl);
-      
-      map.once('style.load', function() {
-        setupMapFeatures();
-        
-        setTimeout(() => {
-          if (routeData && map.getSource('route')) {
-            map.getSource('route').setData(routeData);
-          }
-          if (waypointData && map.getSource('waypoints')) {
-            map.getSource('waypoints').setData(waypointData);
-          }
-          updateCenterPoint();
-          updateRouteStyle();
-        }, 200);
-      });
-    }
-
-    function updateRouteStyle() {
-      if (!map || !map.getLayer('route')) return;
-      
-      const color = document.getElementById('routeColor').value;
-      const width = parseInt(document.getElementById('routeWidth').value);
-      
-      map.setPaintProperty('route', 'line-color', color);
-      map.setPaintProperty('route', 'line-width', width);
-    }
-
-    function zoomIn() {
-      if (customCenter) {
-        map.zoomTo(map.getZoom() + 1, { center: customCenter });
-      } else {
-        map.zoomIn();
-      }
-    }
-
-    function zoomOut() {
-      if (customCenter) {
-        map.zoomTo(map.getZoom() - 1, { center: customCenter });
-      } else {
-        map.zoomOut();
-      }
-    }
-
-    function fitToData() {
-      const allPoints = [];
-      if (origin) allPoints.push(turf.point(origin));
-      waypoints.forEach(wp => allPoints.push(turf.point(wp.coordinates)));
-      if (destination) allPoints.push(turf.point(destination));
-      
-      if (allPoints.length === 0) {
-        const bounds = turf.bbox(clearances);
-        map.fitBounds(bounds, { padding: 50 });
-      } else if (allPoints.length === 1) {
-        map.flyTo({ center: allPoints[0].geometry.coordinates, zoom: 12 });
-      } else {
-        const collection = turf.featureCollection(allPoints);
-        const bounds = turf.bbox(collection);
-        map.fitBounds(bounds, { padding: 100 });
-      }
-    }
-
-    function toggleCenterMode() {
-      isSettingCenter = !isSettingCenter;
-      updateCenterModeButton();
-      
-      if (isSettingCenter) {
-        updateStatus('<strong>🎯 Center Mode</strong><br>Click map to set center point', 'loading');
-      } else {
-        updateStatus('<strong>🎯 Ready</strong><br>Center mode disabled', 'success');
-      }
-    }
-
-    function updateCenterModeButton() {
-      const btn = document.getElementById('center-mode-btn');
-      if (isSettingCenter) {
-        btn.textContent = '❌ Cancel';
-        btn.style.backgroundColor = '#dc3545';
-      } else {
-        btn.textContent = '🎯 Set Center';
-        btn.style.backgroundColor = '#007bff';
-      }
-    }
-
-    function toggleCenterIcon() {
-      showCenterIcon = !showCenterIcon;
-      const btn = document.getElementById('center-icon-btn');
-      
-      if (showCenterIcon) {
-        btn.textContent = '👁️';
-        btn.style.backgroundColor = '#007bff';
-        if (map && map.getLayer('center-point-symbol')) {
-          map.setLayoutProperty('center-point-symbol', 'visibility', 'visible');
-        }
-      } else {
-        btn.textContent = '🚫';
-        btn.style.backgroundColor = '#6c757d';
-        if (map && map.getLayer('center-point-symbol')) {
-          map.setLayoutProperty('center-point-symbol', 'visibility', 'none');
-        }
-      }
-    }
-
-    function setCenterFromInput() {
-      const input = document.getElementById('center-input').value.trim();
-      if (!input) return;
-      
-      try {
-        const parts = input.split(',').map(p => parseFloat(p.trim()));
-        if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) {
-          throw new Error('Invalid format');
-        }
-        
-        const [lat, lng] = parts;
-        customCenter = [lng, lat];
-        updateCenterPoint();
-        map.flyTo({ center: customCenter, zoom: map.getZoom() });
-        updateStatus('<strong>✅ Center Applied!</strong><br>Custom center point set', 'success');
-      } catch (error) {
-        updateStatus('<strong>❌ Invalid Coordinates</strong><br>Use format: lat, lng', 'error');
-      }
-    }
-
-    function clearCustomCenter() {
-      customCenter = null;
-      document.getElementById('center-input').value = '';
-      updateCenterPoint();
-      updateStatus('<strong>✅ Center Cleared</strong><br>Back to normal behavior', 'success');
-    }
-
-    function updateCenterPoint() {
-      if (!map || !map.getSource('center-point')) return;
-      
-      const features = [];
-      if (customCenter) {
-        features.push({
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: customCenter },
-          properties: {}
-        });
-      }
-      
-      map.getSource('center-point').setData({
-        type: 'FeatureCollection',
-        features: features
-      });
-    }
-
-    function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const toggleBtn = document.getElementById('toggle-btn');
-      
-      if (sidebar.classList.contains('hidden')) {
-        sidebar.classList.remove('hidden');
-        toggleBtn.classList.remove('sidebar-hidden');
-        toggleBtn.classList.add('sidebar-visible');
-        toggleBtn.innerHTML = '☰';
-      } else {
-        sidebar.classList.add('hidden');
-        toggleBtn.classList.remove('sidebar-visible');
-        toggleBtn.classList.add('sidebar-hidden');
-        toggleBtn.innerHTML = '☰';
-      }
-    }
-
-    // Initialize immediately when script loads
-    logDebug('Script loaded, checking Mapbox GL...');
-    
-    if (typeof mapboxgl !== 'undefined') {
-      logDebug('✅ Mapbox GL available');
-      setTimeout(initializeMap, 100);
-    } else {
-      logDebug('❌ Mapbox GL not available');
-      updateStatus('<strong>❌ Mapbox GL Missing</strong><br>Click "Try Initialize Map"', 'error');
-    }
-
-    // Also try on window load
-    window.addEventListener('load', function() {
-      if (!map && typeof mapboxgl !== 'undefined') {
-        logDebug('Window loaded, trying initialization...');
-        setTimeout(initializeMap, 100);
-      }
-    });
-  </script>
-</body>
-</html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -1091,4 +764,324 @@
         return;
       }
       
-      listEl
+      listEl.style.display = 'block';
+      listEl.innerHTML = '';
+      
+      waypoints.forEach((waypoint, index) => {
+        const item = document.createElement('div');
+        item.className = 'waypoint-item';
+        
+        item.innerHTML = `
+          <div class="waypoint-number">${index + 1}</div>
+          <div class="waypoint-text" title="${waypoint.name}">${waypoint.name}</div>
+          <div class="waypoint-controls">
+            <button onclick="moveWaypointUp(${index})" ${index === 0 ? 'disabled' : ''}>↑</button>
+            <button onclick="moveWaypointDown(${index})" ${index === waypoints.length - 1 ? 'disabled' : ''}>↓</button>
+            <button onclick="removeWaypoint(${index})">×</button>
+          </div>
+        `;
+        
+        listEl.appendChild(item);
+      });
+    }
+
+    function moveWaypointUp(index) {
+      if (index > 0) {
+        const temp = waypoints[index];
+        waypoints[index] = waypoints[index - 1];
+        waypoints[index - 1] = temp;
+        updateWaypointsList();
+        updateWaypoints();
+      }
+    }
+
+    function moveWaypointDown(index) {
+      if (index < waypoints.length - 1) {
+        const temp = waypoints[index];
+        waypoints[index] = waypoints[index + 1];
+        waypoints[index + 1] = temp;
+        updateWaypointsList();
+        updateWaypoints();
+      }
+    }
+
+    function removeWaypoint(index) {
+      waypoints.splice(index, 1);
+      updateWaypointsList();
+      updateWaypoints();
+    }
+
+    async function findRoute() {
+      if (!origin || !destination) {
+        updateStatus('<strong>❌ Missing Points</strong><br>Set origin and destination first', 'error');
+        return;
+      }
+
+      const profile = document.getElementById('profile-select').value;
+      
+      let coords = origin.join(',');
+      waypoints.forEach(waypoint => {
+        coords += ';' + waypoint.coordinates.join(',');
+      });
+      coords += ';' + destination.join(',');
+      
+      const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coords}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
+
+      updateStatus('<strong>🔄 Finding Route...</strong><br>Planning route...', 'loading');
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.routes && data.routes.length > 0) {
+          const route = data.routes[0];
+          
+          map.getSource('route').setData(route.geometry);
+          
+          const obstacle = turf.buffer(clearances, 0.25, { units: 'kilometers' });
+          const clear = turf.booleanDisjoint(obstacle, route.geometry);
+          
+          const duration = Math.round(route.duration / 60);
+          const distance = (route.distance / 1000).toFixed(1);
+          
+          if (clear) {
+            updateStatus(`<strong>✅ Safe Route!</strong><br>${duration} min, ${distance} km`, 'success');
+            map.setPaintProperty('route', 'line-color', '#00ff00');
+          } else {
+            updateStatus(`<strong>⚠️ Obstacle Warning!</strong><br>${duration} min, ${distance} km`, 'error');
+            map.setPaintProperty('route', 'line-color', '#ff0000');
+          }
+          
+          const bounds = turf.bbox(route.geometry);
+          map.fitBounds(bounds, { padding: 50 });
+        }
+      } catch (error) {
+        updateStatus('<strong>❌ Route Error</strong><br>Could not find route', 'error');
+      }
+    }
+
+    function clearRoute() {
+      origin = null;
+      destination = null;
+      waypoints = [];
+      isSettingOrigin = true;
+      
+      document.getElementById('origin-input').value = '';
+      document.getElementById('destination-input').value = '';
+      document.getElementById('waypoint-input').value = '';
+      
+      updateWaypointsList();
+      
+      if (map && map.getSource('route')) {
+        map.getSource('route').setData({ type: 'FeatureCollection', features: [] });
+      }
+      if (map && map.getSource('waypoints')) {
+        map.getSource('waypoints').setData({ type: 'FeatureCollection', features: [] });
+      }
+      
+      updateStatus('<strong>🎯 Ready</strong><br>Enter addresses or click map', 'loading');
+    }
+
+    function changeMapStyle(type) {
+      if (!map) return;
+      
+      let styleUrl;
+      if (type === 'custom') {
+        styleUrl = document.getElementById('customStyleSelector').value;
+        if (!styleUrl) return;
+        document.getElementById('styleSelector').selectedIndex = 0;
+      } else {
+        styleUrl = document.getElementById('styleSelector').value;
+        document.getElementById('customStyleSelector').selectedIndex = 0;
+      }
+      
+      const routeData = map.getSource('route') ? map.getSource('route')._data : null;
+      const waypointData = map.getSource('waypoints') ? map.getSource('waypoints')._data : null;
+      
+      map.setStyle(styleUrl);
+      
+      map.once('style.load', function() {
+        setupMapFeatures();
+        
+        setTimeout(() => {
+          if (routeData && map.getSource('route')) {
+            map.getSource('route').setData(routeData);
+          }
+          if (waypointData && map.getSource('waypoints')) {
+            map.getSource('waypoints').setData(waypointData);
+          }
+          updateCenterPoint();
+          updateRouteStyle();
+        }, 200);
+      });
+    }
+
+    function updateRouteStyle() {
+      if (!map || !map.getLayer('route')) return;
+      
+      const color = document.getElementById('routeColor').value;
+      const width = parseInt(document.getElementById('routeWidth').value);
+      
+      map.setPaintProperty('route', 'line-color', color);
+      map.setPaintProperty('route', 'line-width', width);
+    }
+
+    function zoomIn() {
+      if (customCenter) {
+        map.zoomTo(map.getZoom() + 1, { center: customCenter });
+      } else {
+        map.zoomIn();
+      }
+    }
+
+    function zoomOut() {
+      if (customCenter) {
+        map.zoomTo(map.getZoom() - 1, { center: customCenter });
+      } else {
+        map.zoomOut();
+      }
+    }
+
+    function fitToData() {
+      const allPoints = [];
+      if (origin) allPoints.push(turf.point(origin));
+      waypoints.forEach(wp => allPoints.push(turf.point(wp.coordinates)));
+      if (destination) allPoints.push(turf.point(destination));
+      
+      if (allPoints.length === 0) {
+        const bounds = turf.bbox(clearances);
+        map.fitBounds(bounds, { padding: 50 });
+      } else if (allPoints.length === 1) {
+        map.flyTo({ center: allPoints[0].geometry.coordinates, zoom: 12 });
+      } else {
+        const collection = turf.featureCollection(allPoints);
+        const bounds = turf.bbox(collection);
+        map.fitBounds(bounds, { padding: 100 });
+      }
+    }
+
+    function toggleCenterMode() {
+      isSettingCenter = !isSettingCenter;
+      updateCenterModeButton();
+      
+      if (isSettingCenter) {
+        updateStatus('<strong>🎯 Center Mode</strong><br>Click map to set center point', 'loading');
+      } else {
+        updateStatus('<strong>🎯 Ready</strong><br>Center mode disabled', 'success');
+      }
+    }
+
+    function updateCenterModeButton() {
+      const btn = document.getElementById('center-mode-btn');
+      if (isSettingCenter) {
+        btn.textContent = '❌ Cancel';
+        btn.style.backgroundColor = '#dc3545';
+      } else {
+        btn.textContent = '🎯 Set Center';
+        btn.style.backgroundColor = '#007bff';
+      }
+    }
+
+    function toggleCenterIcon() {
+      showCenterIcon = !showCenterIcon;
+      const btn = document.getElementById('center-icon-btn');
+      
+      if (showCenterIcon) {
+        btn.textContent = '👁️';
+        btn.style.backgroundColor = '#007bff';
+        if (map && map.getLayer('center-point-symbol')) {
+          map.setLayoutProperty('center-point-symbol', 'visibility', 'visible');
+        }
+      } else {
+        btn.textContent = '🚫';
+        btn.style.backgroundColor = '#6c757d';
+        if (map && map.getLayer('center-point-symbol')) {
+          map.setLayoutProperty('center-point-symbol', 'visibility', 'none');
+        }
+      }
+    }
+
+    function setCenterFromInput() {
+      const input = document.getElementById('center-input').value.trim();
+      if (!input) return;
+      
+      try {
+        const parts = input.split(',').map(p => parseFloat(p.trim()));
+        if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) {
+          throw new Error('Invalid format');
+        }
+        
+        const [lat, lng] = parts;
+        customCenter = [lng, lat];
+        updateCenterPoint();
+        map.flyTo({ center: customCenter, zoom: map.getZoom() });
+        updateStatus('<strong>✅ Center Applied!</strong><br>Custom center point set', 'success');
+      } catch (error) {
+        updateStatus('<strong>❌ Invalid Coordinates</strong><br>Use format: lat, lng', 'error');
+      }
+    }
+
+    function clearCustomCenter() {
+      customCenter = null;
+      document.getElementById('center-input').value = '';
+      updateCenterPoint();
+      updateStatus('<strong>✅ Center Cleared</strong><br>Back to normal behavior', 'success');
+    }
+
+    function updateCenterPoint() {
+      if (!map || !map.getSource('center-point')) return;
+      
+      const features = [];
+      if (customCenter) {
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: customCenter },
+          properties: {}
+        });
+      }
+      
+      map.getSource('center-point').setData({
+        type: 'FeatureCollection',
+        features: features
+      });
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const toggleBtn = document.getElementById('toggle-btn');
+      
+      if (sidebar.classList.contains('hidden')) {
+        sidebar.classList.remove('hidden');
+        toggleBtn.classList.remove('sidebar-hidden');
+        toggleBtn.classList.add('sidebar-visible');
+        toggleBtn.innerHTML = '☰';
+      } else {
+        sidebar.classList.add('hidden');
+        toggleBtn.classList.remove('sidebar-visible');
+        toggleBtn.classList.add('sidebar-hidden');
+        toggleBtn.innerHTML = '☰';
+      }
+    }
+
+    // Initialize immediately when script loads
+    logDebug('Script loaded, checking Mapbox GL...');
+    
+    if (typeof mapboxgl !== 'undefined') {
+      logDebug('✅ Mapbox GL available');
+      setTimeout(initializeMap, 100);
+    } else {
+      logDebug('❌ Mapbox GL not available');
+      updateStatus('<strong>❌ Mapbox GL Missing</strong><br>Click "Try Initialize Map"', 'error');
+    }
+
+    // Also try on window load
+    window.addEventListener('load', function() {
+      if (!map && typeof mapboxgl !== 'undefined') {
+        logDebug('Window loaded, trying initialization...');
+        setTimeout(initializeMap, 100);
+      }
+    });
+  </script>
+</body>
+</html>
+      
