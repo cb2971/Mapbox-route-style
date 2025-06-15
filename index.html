@@ -12,18 +12,53 @@
       font-family: 'Open Sans', sans-serif;
       background-color: #f0f0f0;
     }
+
+    function setupBasicMapFeatures(map) {
+      // Add some basic obstacle data for testing
+      const clearances = {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [-84.47426, 38.06673] },
+            properties: { clearance: "13' 2\"" }
+          },
+          {
+            type: 'Feature', 
+            geometry: { type: 'Point', coordinates: [-84.47208, 38.06694] },
+            properties: { clearance: "13' 7\"" }
+          }
+        ]
+      };
+
+      // Add obstacles as red circles
+      map.addSource('obstacles', {
+        type: 'geojson',
+        data: clearances
+      });
+
+      map.addLayer({
+        id: 'obstacles',
+        type: 'circle',
+        source: 'obstacles',
+        paint: {
+          'circle-radius': 8,
+          'circle-color': '#ff0000',
+          'circle-opacity': 0.7,
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 2
+        }
+      });
+
+      logStatus('✅ Basic map features added');
+      updateStatus('<strong>🗺️ Map Fully Ready!</strong><br>Click the map to test interaction', 'success');
+    }
      
     #map {
       position: absolute;
       top: 0;
       bottom: 0;
       width: 100%;
-      background-color: #e0e0e0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      color: #666;
     }
      
     .sidebar {
@@ -195,9 +230,7 @@
 </head>
  
 <body>
-  <div id="map">
-    📍 Map will load here once libraries are ready...
-  </div>
+  <div id="map"></div>
   
   <div class="toggle-btn sidebar-visible" id="toggle-btn" onclick="toggleSidebar()">
     ☰
@@ -409,8 +442,9 @@
           updateStatus('<strong>🎉 Map Ready!</strong><br>Mapping application is now functional', 'success');
           mapInitialized = true;
           
-          // Clear the placeholder text
-          document.getElementById('map').innerHTML = '';
+          // Don't clear the map container - let Mapbox handle it
+          // Add basic map features
+          setupBasicMapFeatures(map);
         });
         
         map.on('error', function(e) {
