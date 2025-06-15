@@ -264,12 +264,14 @@
     <div class="control-panel">
       <div class="input-group">
         <label>🟢 Starting Point:</label>
-        <input type="text" id="origin-input" placeholder="Click map to set" readonly>
+        <input type="text" id="origin-input" placeholder="Enter address or place name">
+        <button onclick="geocodeOrigin()" style="margin-top: 5px; font-size: 12px; height: 30px;">📍 Find Location</button>
       </div>
       
       <div class="input-group">
         <label>🔴 Destination:</label>
-        <input type="text" id="destination-input" placeholder="Click map to set" readonly>
+        <input type="text" id="destination-input" placeholder="Enter address or place name">
+        <button onclick="geocodeDestination()" style="margin-top: 5px; font-size: 12px; height: 30px;">📍 Find Location</button>
       </div>
       
       <div class="input-group">
@@ -287,7 +289,7 @@
       <div class="zoom-controls">
         <button onclick="zoomIn()">+</button>
         <button onclick="zoomOut()">-</button>
-        <button onclick="fitToData()" style="width: auto; flex: 1;">📍 Fit to Points</button>
+        <button onclick="fitToData()" style="width: auto; flex: 1; font-size: 14px;">📍 Fit to Points</button>
       </div>
       
       <div class="route-controls">
@@ -340,11 +342,6 @@
           <option value="mapbox://styles/cb29/ckxoup98z4sv514m0q988ltie”>Unique Picture Book</option>
           <option value="mapbox://styles/cb29/ckxov1ris0n2415p4e9gn8oxu”>Unique Treasure Map</option>
           <option value="mapbox://styles/cb29/ckxous4km02k114m523qh0k9y”>Unique Woodcut</option>
-
-
-          <!-- Add your other custom styles here:
-               <option value="mapbox://styles/cb29/YOUR_STYLE_ID">🎨 Your Style Name</option>
-          -->
         </select>
       </div>
     </div>
@@ -564,17 +561,101 @@
       
       if (isSettingOrigin) {
         origin = coords;
-        document.getElementById('origin-input').value = `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`;
-        logDebug('✅ Origin set: ' + coords.join(', '));
+        reverseGeocode(coords, 'origin');
+        logDebug('✅ Origin set by click: ' + coords.join(', '));
         isSettingOrigin = false;
       } else {
         destination = coords;
-        document.getElementById('destination-input').value = `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`;
-        logDebug('✅ Destination set: ' + coords.join(', '));
+        reverseGeocode(coords, 'destination');
+        logDebug('✅ Destination set by click: ' + coords.join(', '));
         isSettingOrigin = true;
       }
       
       updateWaypoints();
+    }
+
+    async function reverseGeocode(coords, type) {
+      try {
+        const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${coords[0]},${coords[1]}.json?access_token=${MAPBOX_TOKEN}`);
+        const data = await response.json();
+        
+        if (data.features && data.features.length > 0) {
+          const placeName = data.features[0].place_name;
+          const inputId = type === 'origin' ? 'origin-input' : 'destination-input';
+          document.getElementById(inputId).value = placeName;
+          logDebug(`✅ ${type} geocoded: ${placeName}`);
+        } else {
+          // Fallback to coordinates
+          const inputId = type === 'origin' ? 'origin-input' : 'destination-input';
+          document.getElementById(inputId).value = `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`;
+        }
+      } catch (error) {
+        logDebug(`⚠️ Reverse geocoding failed for ${type}: ${error.message}`);
+        // Fallback to coordinates
+        const inputId = type === 'origin' ? 'origin-input' : 'destination-input';
+        document.getElementById(inputId).value = `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`;
+      }
+    }
+
+    async function geocodeOrigin() {
+      const address = document.getElementById('origin-input').value.trim();
+      if (!address) {
+        updateStatus('<strong>❌ No Address</strong><br>Please enter an address or place name', 'error');
+        return;
+      }
+      
+      await geocodeAddress(address, 'origin');
+    }
+
+    async function geocodeDestination() {
+      const address = document.getElementById('destination-input').value.trim();
+      if (!address) {
+        updateStatus('<strong>❌ No Address</strong><br>Please enter an address or place name', 'error');
+        return;
+      }
+      
+      await geocodeAddress(address, 'destination');
+    }
+
+    async function geocodeAddress(address, type) {
+      try {
+        updateStatus('<strong>🔍 Finding Location...</strong><br>Searching for: ' + address, 'loading');
+        
+        const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&limit=1`);
+        const data = await response.json();
+        
+        if (data.features && data.features.length > 0) {
+          const coords = data.features[0].center;
+          const placeName = data.features[0].place_name;
+          
+          if (type === 'origin') {
+            origin = coords;
+            isSettingOrigin = false;
+          } else {
+            destination = coords;
+            isSettingOrigin = true;
+          }
+          
+          // Update input with full place name
+          const inputId = type === 'origin' ? 'origin-input' : 'destination-input';
+          document.getElementById(inputId).value = placeName;
+          
+          updateWaypoints();
+          
+          // Fly to the location
+          map.flyTo({ center: coords, zoom: 14 });
+          
+          updateStatus('<strong>✅ Location Found!</strong><br>' + placeName, 'success');
+          logDebug(`✅ ${type} geocoded: ${placeName} at ${coords.join(', ')}`);
+          
+        } else {
+          updateStatus('<strong>❌ Location Not Found</strong><br>Try a different address or place name', 'error');
+          logDebug(`❌ No results for ${type}: ${address}`);
+        }
+      } catch (error) {
+        updateStatus('<strong>❌ Geocoding Error</strong><br>' + error.message, 'error');
+        logDebug(`❌ Geocoding failed for ${type}: ${error.message}`);
+      }
     }
 
     function updateWaypoints() {
@@ -670,26 +751,33 @@
         map.getSource('waypoints').setData({ type: 'FeatureCollection', features: [] });
       }
       
-      updateStatus('<strong>🎯 Ready</strong><br>Click map to set new waypoints', 'loading');
-      logDebug('Route cleared');
+      updateStatus('<strong>🎯 Ready</strong><br>Enter addresses or click map to set waypoints', 'loading');
+      logDebug('Route and waypoints cleared');
     }
 
     function changeMapStyle(type = 'default') {
       if (!map) return;
       
       let styleUrl;
+      let styleName;
+      
       if (type === 'custom') {
-        styleUrl = document.getElementById('customStyleSelector').value;
+        const customSelector = document.getElementById('customStyleSelector');
+        styleUrl = customSelector.value;
         if (!styleUrl) return;
+        styleName = customSelector.options[customSelector.selectedIndex].text;
         // Reset default selector
         document.getElementById('styleSelector').selectedIndex = 0;
       } else {
-        styleUrl = document.getElementById('styleSelector').value;
+        const defaultSelector = document.getElementById('styleSelector');
+        styleUrl = defaultSelector.value;
+        styleName = defaultSelector.options[defaultSelector.selectedIndex].text;
         // Reset custom selector
         document.getElementById('customStyleSelector').selectedIndex = 0;
       }
       
-      logDebug('Changing style to: ' + styleUrl);
+      logDebug('Changing style to: ' + styleName);
+      updateStatus('<strong>🎨 Changing Style...</strong><br>Loading ' + styleName, 'loading');
       
       // Store current data
       let routeData = null;
@@ -699,24 +787,40 @@
         if (map.getSource('route')) routeData = map.getSource('route')._data;
         if (map.getSource('waypoints')) waypointData = map.getSource('waypoints')._data;
       } catch (e) {
-        // Ignore errors
+        logDebug('No existing data to preserve');
       }
       
+      // Change the map style
       map.setStyle(styleUrl);
       
       map.once('style.load', function() {
+        logDebug('✅ Style loaded: ' + styleName);
+        updateStatus('<strong>✅ Style Changed!</strong><br>Now using ' + styleName, 'success');
+        
+        // Re-setup all map features
         setupMapFeatures();
         
-        // Restore data
+        // Restore data after a delay
         setTimeout(() => {
-          if (routeData && map.getSource('route')) {
-            map.getSource('route').setData(routeData);
+          try {
+            if (routeData && routeData.features && routeData.features.length > 0 && map.getSource('route')) {
+              map.getSource('route').setData(routeData);
+              logDebug('✅ Route data restored');
+            }
+            if (waypointData && waypointData.features && waypointData.features.length > 0 && map.getSource('waypoints')) {
+              map.getSource('waypoints').setData(waypointData);
+              logDebug('✅ Waypoint data restored');
+            }
+            updateRouteStyle();
+          } catch (error) {
+            logDebug('⚠️ Error restoring data: ' + error.message);
           }
-          if (waypointData && map.getSource('waypoints')) {
-            map.getSource('waypoints').setData(waypointData);
-          }
-          updateRouteStyle();
-        }, 100);
+        }, 200);
+      });
+      
+      map.once('error', function(e) {
+        logDebug('❌ Style load error: ' + (e.error ? e.error.message : 'Unknown error'));
+        updateStatus('<strong>❌ Style Error</strong><br>Failed to load ' + styleName, 'error');
       });
     }
 
