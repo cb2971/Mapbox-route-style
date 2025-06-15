@@ -267,8 +267,9 @@
       <div id="diagnostic-results">Running tests...</div>
     </div>
 
-    <button id="manual-init" onclick="manualInit()" disabled>🔄 Retry Initialization</button>
+    <button id="manual-init" onclick="manualInit()">🔄 Retry Initialization</button>
     <button id="test-different-approach" onclick="testDifferentApproach()">🧪 Try Alternative Loading</button>
+    <button onclick="debugMapbox()">🔍 Debug Mapbox Status</button>
 
     <div id="reports"></div>
   </div>
@@ -400,14 +401,18 @@
 
     async function manualInit() {
       try {
-        updateStatus('<strong>🗺️ Initializing Map...</strong><br>Creating Mapbox instance...', 'loading');
+        updateStatus('<strong>🗺️ Initializing Map...</strong><br>Setting up Mapbox instance...', 'loading');
         
+        // Double-check Mapbox GL availability
         if (typeof mapboxgl === 'undefined') {
-          throw new Error('Mapbox GL JS library not loaded');
+          throw new Error('Mapbox GL JS library not loaded - trying alternative...');
         }
 
+        updateDiagnostics('✅ Mapbox GL library found');
+        updateDiagnostics('Setting access token...');
         mapboxgl.accessToken = MAPBOX_TOKEN;
         
+        updateDiagnostics('Creating map instance...');
         map = new mapboxgl.Map({
           container: 'map',
           style: 'mapbox://styles/mapbox/streets-v11',
@@ -417,29 +422,51 @@
           antialias: true
         });
 
+        updateDiagnostics('Waiting for map to load...');
+
         map.on('load', function() {
-          updateStatus('<strong>✅ Map Loaded Successfully!</strong><br>Ready for route planning', 'success');
-          setupMapFeatures();
-          populateStyleSelector();
+          updateStatus('<strong>✅ Map Loaded Successfully!</strong><br>Setting up features...', 'success');
+          updateDiagnostics('✅ Map loaded successfully');
+          
+          try {
+            setupMapFeatures();
+            populateStyleSelector();
+            updateDiagnostics('✅ All features initialized');
+            updateStatus('<strong>✅ Ready!</strong><br>Click map or enter addresses to start routing', 'success');
+          } catch (setupError) {
+            updateDiagnostics('❌ Feature setup error: ' + setupError.message);
+            updateStatus('<strong>⚠️ Partial Load</strong><br>Map loaded but some features failed', 'error');
+          }
         });
 
         map.on('error', function(e) {
           console.error('Map error:', e);
-          updateStatus('<strong>❌ Map Error:</strong><br>' + (e.error ? e.error.message : 'Unknown error'), 'error');
+          const errorMsg = e.error ? e.error.message : 'Unknown map error';
+          updateStatus('<strong>❌ Map Error:</strong><br>' + errorMsg, 'error');
+          updateDiagnostics('❌ Map error: ' + errorMsg);
         });
 
         // Add click handler for setting waypoints
         map.on('click', handleMapClick);
 
+        // Timeout check
         setTimeout(() => {
           if (!map.loaded()) {
-            updateStatus('<strong>⏱️ Map Loading Timeout</strong><br>Taking longer than expected...', 'error');
+            updateStatus('<strong>⏱️ Map Loading Timeout</strong><br>Map is taking longer than expected...', 'error');
+            updateDiagnostics('⏱️ Map load timeout - may still be loading');
           }
         }, 15000);
 
       } catch (error) {
         console.error('Initialization failed:', error);
         updateStatus('<strong>❌ Initialization Failed:</strong><br>' + error.message, 'error');
+        updateDiagnostics('❌ Init failed: ' + error.message);
+        
+        // Try alternative loading
+        if (error.message.includes('not loaded')) {
+          updateDiagnostics('Attempting alternative CDN...');
+          testDifferentApproach();
+        }
       }
     }
 
@@ -548,20 +575,23 @@
     async function populateStyleSelector() {
       const select = document.getElementById('styleSelector');
       
-      updateDiagnostics('Loading available map styles...');
-      
-      select.innerHTML = '';
-      
-      const defaultStyles = [
-        { name: '📍 Streets', value: 'mapbox://styles/mapbox/streets-v11' },
-        { name: '🌲 Outdoors', value: 'mapbox://styles/mapbox/outdoors-v11' },
-        { name: '☀️ Light', value: 'mapbox://styles/mapbox/light-v10' },
-        { name: '🌙 Dark', value: 'mapbox://styles/mapbox/dark-v10' },
-        { name: '🛰️ Satellite', value: 'mapbox://styles/mapbox/satellite-v9' },
-        { name: '🗺️ Satellite Streets', value: 'mapbox://styles/mapbox/satellite-streets-v11' }
-      ];
-      
-      const customStyles = [
+      try {
+        updateDiagnostics('Loading map styles...');
+        
+        // Clear and set loading state
+        select.innerHTML = '<option value="">Loading styles...</option>';
+        select.disabled = true;
+        
+        const defaultStyles = [
+          { name: '📍 Streets', value: 'mapbox://styles/mapbox/streets-v11' },
+          { name: '🌲 Outdoors', value: 'mapbox://styles/mapbox/outdoors-v11' },
+          { name: '☀️ Light', value: 'mapbox://styles/mapbox/light-v10' },
+          { name: '🌙 Dark', value: 'mapbox://styles/mapbox/dark-v10' },
+          { name: '🛰️ Satellite', value: 'mapbox://styles/mapbox/satellite-v9' },
+          { name: '🗺️ Satellite Streets', value: 'mapbox://styles/mapbox/satellite-streets-v11' }
+        ];
+        
+        const customStyles = [
         { name: 'Classic Standard', id: 'ckxnnmex53n1b14m07t6sum48' },
         { name: 'Classic Vintage', id: 'ckxnmjiti0rvm14pby8w9si99' },
         { name: 'Dark Digital', id: 'ckxov33jj3le314ueu15gl6yh' },
@@ -587,72 +617,106 @@
         { name: 'Unique Picture Book', id: 'ckxoup98z4sv514m0q988ltie' },
         { name: 'Unique Treasure Map', id: 'ckxov1ris0n2415p4e9gn8oxu' },
         { name: 'Unique Woodcut', id: 'ckxous4km02k114m523qh0k9y' },
-        // Add your other custom styles here
-      ];
-      
-      // Add separator
-      const separatorOption = document.createElement('option');
-      separatorOption.disabled = true;
-      separatorOption.textContent = '────── Default Styles ──────';
-      select.appendChild(separatorOption);
-      
-      defaultStyles.forEach(style => {
-        const option = document.createElement('option');
-        option.value = style.value;
-        option.textContent = style.name;
-        select.appendChild(option);
-      });
-      
-      // Add separator for custom styles
-      const customSeparator = document.createElement('option');
-      customSeparator.disabled = true;
-      customSeparator.textContent = '────── Your Custom Styles ──────';
-      select.appendChild(customSeparator);
-      
-      customStyles.forEach(style => {
-        const option = document.createElement('option');
-        option.value = `mapbox://styles/cb29/${style.id}`;
-        option.textContent = `🎨 ${style.name}`;
-        select.appendChild(option);
-      });
-      
-      updateDiagnostics(`✅ Style selector loaded with ${defaultStyles.length + customStyles.length} styles`);
-      
-      select.addEventListener('change', function() {
-        if (this.value && !this.options[this.selectedIndex].disabled) {
-          updateDiagnostics(`Switching to style: ${this.options[this.selectedIndex].textContent}`);
-          
-          // Store current data
-          let routeData = null;
-          let waypointData = null;
-          
-          if (map.getSource('route-line')) {
-            routeData = map.getSource('route-line')._data;
+          // Add your other custom styles here:
+          // { name: 'Your Style Name', id: 'your-style-id' },
+        ];
+        
+        // Clear loading message
+        select.innerHTML = '';
+        
+        // Add separator
+        const separatorOption = document.createElement('option');
+        separatorOption.disabled = true;
+        separatorOption.textContent = '────── Default Styles ──────';
+        select.appendChild(separatorOption);
+        
+        defaultStyles.forEach(style => {
+          const option = document.createElement('option');
+          option.value = style.value;
+          option.textContent = style.name;
+          if (style.value === 'mapbox://styles/mapbox/streets-v11') {
+            option.selected = true; // Mark current style as selected
           }
-          if (map.getSource('waypoints')) {
-            waypointData = map.getSource('waypoints')._data;
-          }
+          select.appendChild(option);
+        });
+        
+        // Add separator for custom styles
+        if (customStyles.length > 0) {
+          const customSeparator = document.createElement('option');
+          customSeparator.disabled = true;
+          customSeparator.textContent = '────── Your Custom Styles ──────';
+          select.appendChild(customSeparator);
           
-          // Change style
-          map.setStyle(this.value);
-          
-          map.once('style.load', function() {
-            setTimeout(() => {
-              setupMapFeatures();
-              
-              // Restore data
-              if (routeData && routeData.features && routeData.features.length > 0) {
-                map.getSource('route-line').setData(routeData);
-              }
-              if (waypointData && waypointData.features && waypointData.features.length > 0) {
-                map.getSource('waypoints').setData(waypointData);
-              }
-              
-              updateDiagnostics(`✅ Style switched successfully`);
-            }, 100);
+          customStyles.forEach(style => {
+            const option = document.createElement('option');
+            option.value = `mapbox://styles/cb29/${style.id}`;
+            option.textContent = `🎨 ${style.name}`;
+            select.appendChild(option);
           });
         }
-      });
+        
+        updateDiagnostics(`✅ Loaded ${defaultStyles.length + customStyles.length} map styles`);
+        
+        // Enable the selector
+        select.disabled = false;
+        
+        // Add change handler
+        select.addEventListener('change', function() {
+          if (this.value && !this.options[this.selectedIndex].disabled) {
+            updateDiagnostics(`Switching to: ${this.options[this.selectedIndex].textContent}`);
+            
+            // Store current data
+            let routeData = null;
+            let waypointData = null;
+            
+            try {
+              if (map.getSource('route-line')) {
+                routeData = map.getSource('route-line')._data;
+              }
+              if (map.getSource('waypoints')) {
+                waypointData = map.getSource('waypoints')._data;
+              }
+            } catch (e) {
+              // Ignore data retrieval errors
+            }
+            
+            // Change style
+            map.setStyle(this.value);
+            
+            map.once('style.load', function() {
+              setTimeout(() => {
+                try {
+                  setupMapFeatures();
+                  
+                  // Restore data
+                  if (routeData && routeData.features && routeData.features.length > 0) {
+                    map.getSource('route-line').setData(routeData);
+                  }
+                  if (waypointData && waypointData.features && waypointData.features.length > 0) {
+                    map.getSource('waypoints').setData(waypointData);
+                  }
+                  
+                  updateDiagnostics(`✅ Style switched successfully`);
+                } catch (error) {
+                  updateDiagnostics(`⚠️ Style switch error: ${error.message}`);
+                }
+              }, 200);
+            });
+            
+            map.once('error', function(e) {
+              updateDiagnostics(`❌ Style error: ${e.error ? e.error.message : 'Unknown error'}`);
+            });
+          }
+        });
+        
+      } catch (error) {
+        console.error('Style selector error:', error);
+        updateDiagnostics(`❌ Style selector failed: ${error.message}`);
+        
+        // Fallback to basic selector
+        select.innerHTML = '<option value="mapbox://styles/mapbox/streets-v11">📍 Streets (Default)</option>';
+        select.disabled = false;
+      }
     }
 
     function setupRouteCustomization() {
@@ -823,15 +887,57 @@
       reports.insertBefore(card, reports.firstChild);
     }
 
-    // Start diagnostics immediately
+    // Debug function to check Mapbox status
+    function debugMapbox() {
+      updateDiagnostics('=== MAPBOX DEBUG INFO ===');
+      updateDiagnostics('typeof mapboxgl: ' + typeof mapboxgl);
+      
+      if (typeof mapboxgl !== 'undefined') {
+        updateDiagnostics('Mapbox GL version: ' + (mapboxgl.version || 'unknown'));
+        updateDiagnostics('Access token set: ' + (mapboxgl.accessToken ? 'YES' : 'NO'));
+        updateDiagnostics('Map instance exists: ' + (map ? 'YES' : 'NO'));
+        
+        if (map) {
+          updateDiagnostics('Map loaded: ' + (map.loaded() ? 'YES' : 'NO'));
+          updateDiagnostics('Map style: ' + (map.getStyle() ? 'LOADED' : 'NOT LOADED'));
+        }
+      } else {
+        updateDiagnostics('❌ Mapbox GL not found in global scope');
+        updateDiagnostics('Available globals: ' + Object.keys(window).filter(k => k.includes('map')).join(', '));
+      }
+      updateDiagnostics('=== END DEBUG ===');
+    }
     window.addEventListener('load', function() {
+      console.log('🛣️ Route Finder starting...');
+      updateStatus('<strong>🔄 Starting...</strong><br>Checking Mapbox GL availability...', 'loading');
+      
+      // Check if Mapbox GL is loaded
+      if (typeof mapboxgl === 'undefined') {
+        updateStatus('<strong>❌ Mapbox GL Not Loaded</strong><br>Trying alternative CDN...', 'error');
+        testDifferentApproach();
+        return;
+      }
+      
+      // Start diagnostics and initialization
       setTimeout(() => {
         runNetworkDiagnostics();
-        manualInit();
-      }, 1000);
+        setTimeout(() => {
+          manualInit();
+        }, 500);
+      }, 500);
     });
 
-    console.log('🛣️ Route Finder loaded, starting initialization...');
+    // Immediate check for Mapbox GL
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM loaded, checking Mapbox GL...');
+      if (typeof mapboxgl !== 'undefined') {
+        console.log('✅ Mapbox GL is available');
+      } else {
+        console.log('❌ Mapbox GL not found');
+      }
+    });
+
+    console.log('🛣️ Route Finder script loaded');
   </script>
 </body>
 </html>
