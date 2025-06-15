@@ -40,6 +40,38 @@
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
       border-radius: 5px;
       z-index: 1000;
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar.hidden {
+      transform: translateX(-100%);
+    }
+
+    .toggle-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 40px;
+      height: 40px;
+      background-color: #fff;
+      border: 2px solid #007bff;
+      border-radius: 5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      z-index: 1001;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      transition: left 0.3s ease;
+    }
+
+    .toggle-btn.sidebar-hidden {
+      left: 20px;
+    }
+
+    .toggle-btn.sidebar-visible {
+      left: 360px;
     }
      
     .card {
@@ -190,13 +222,30 @@
       margin: 10px 0;
       font-size: 13px;
     }
+
+    .zoom-controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .zoom-controls button {
+      width: 50px;
+      height: 40px;
+      font-size: 18px;
+      font-weight: bold;
+    }
   </style>
 </head>
  
 <body>
   <div id="map"></div>
   
-  <div class="sidebar">
+  <div class="toggle-btn sidebar-visible" id="toggle-btn" onclick="toggleSidebar()">
+    ☰
+  </div>
+  
+  <div class="sidebar" id="sidebar">
     <div id="status-message" class="status-message status-loading">
       <strong>🔄 Loading...</strong><br>
       Checking Mapbox availability...
@@ -235,6 +284,12 @@
       <button id="find-route-btn" onclick="findRoute()">🗺️ Find Route</button>
       <button id="clear-route-btn" onclick="clearRoute()">🗑️ Clear All</button>
       
+      <div class="zoom-controls">
+        <button onclick="zoomIn()">+</button>
+        <button onclick="zoomOut()">-</button>
+        <button onclick="fitToData()" style="width: auto; flex: 1;">📍 Fit to Points</button>
+      </div>
+      
       <div class="route-controls">
         <label>Color:</label>
         <input type="color" id="routeColor" value="#ff0000" onchange="updateRouteStyle()">
@@ -245,15 +300,26 @@
 
     <div class="control-panel">
       <div class="input-group">
-        <label><strong>Map Style:</strong></label>
+        <label><strong>Default Map Styles:</strong></label>
         <select id="styleSelector" onchange="changeMapStyle()">
           <option value="mapbox://styles/mapbox/streets-v11">📍 Streets</option>
           <option value="mapbox://styles/mapbox/outdoors-v11">🌲 Outdoors</option>
           <option value="mapbox://styles/mapbox/light-v10">☀️ Light</option>
           <option value="mapbox://styles/mapbox/dark-v10">🌙 Dark</option>
           <option value="mapbox://styles/mapbox/satellite-v9">🛰️ Satellite</option>
+          <option value="mapbox://styles/mapbox/satellite-streets-v11">🗺️ Satellite Streets</option>
+        </select>
+      </div>
+      
+      <div class="input-group">
+        <label><strong>Your Custom Styles:</strong></label>
+        <select id="customStyleSelector" onchange="changeMapStyle('custom')">
+          <option value="">Select custom style...</option>
           <option value="mapbox://styles/cb29/ckxnmjiti0rvm14pby8w9si99">🎨 Classic Vintage</option>
           <option value="mapbox://styles/cb29/ckxnnmex53n1b14m07t6sum48">🎨 Classic Standard</option>
+          <!-- Add your other custom styles here:
+               <option value="mapbox://styles/cb29/YOUR_STYLE_ID">🎨 Your Style Name</option>
+          -->
         </select>
       </div>
     </div>
@@ -404,8 +470,8 @@
       try {
         logDebug('Setting up map features...');
         
-        // Add navigation controls
-        map.addControl(new mapboxgl.NavigationControl());
+        // Don't add navigation controls - we'll handle zoom manually
+        // map.addControl(new mapboxgl.NavigationControl());
         
         // Add obstacle zones
         if (typeof turf !== 'undefined') {
@@ -583,10 +649,21 @@
       logDebug('Route cleared');
     }
 
-    function changeMapStyle() {
+    function changeMapStyle(type = 'default') {
       if (!map) return;
       
-      const styleUrl = document.getElementById('styleSelector').value;
+      let styleUrl;
+      if (type === 'custom') {
+        styleUrl = document.getElementById('customStyleSelector').value;
+        if (!styleUrl) return;
+        // Reset default selector
+        document.getElementById('styleSelector').selectedIndex = 0;
+      } else {
+        styleUrl = document.getElementById('styleSelector').value;
+        // Reset custom selector
+        document.getElementById('customStyleSelector').selectedIndex = 0;
+      }
+      
       logDebug('Changing style to: ' + styleUrl);
       
       // Store current data
@@ -616,6 +693,62 @@
           updateRouteStyle();
         }, 100);
       });
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const toggleBtn = document.getElementById('toggle-btn');
+      
+      if (sidebar.classList.contains('hidden')) {
+        sidebar.classList.remove('hidden');
+        toggleBtn.classList.remove('sidebar-hidden');
+        toggleBtn.classList.add('sidebar-visible');
+        toggleBtn.innerHTML = '☰';
+      } else {
+        sidebar.classList.add('hidden');
+        toggleBtn.classList.remove('sidebar-visible');
+        toggleBtn.classList.add('sidebar-hidden');
+        toggleBtn.innerHTML = '☰';
+      }
+    }
+
+    function zoomIn() {
+      if (map) {
+        map.zoomIn();
+        logDebug('Zoomed in to level: ' + map.getZoom().toFixed(1));
+      }
+    }
+
+    function zoomOut() {
+      if (map) {
+        map.zoomOut();
+        logDebug('Zoomed out to level: ' + map.getZoom().toFixed(1));
+      }
+    }
+
+    function fitToData() {
+      if (!map) return;
+      
+      const features = [];
+      if (origin) features.push(turf.point(origin));
+      if (destination) features.push(turf.point(destination));
+      
+      if (features.length === 0) {
+        // No points, fit to obstacles
+        const bounds = turf.bbox(clearances);
+        map.fitBounds(bounds, { padding: 50 });
+        logDebug('Fitted to obstacles');
+      } else if (features.length === 1) {
+        // One point, center on it
+        map.flyTo({ center: features[0].geometry.coordinates, zoom: 12 });
+        logDebug('Centered on single point');
+      } else {
+        // Multiple points, fit to all
+        const collection = turf.featureCollection(features);
+        const bounds = turf.bbox(collection);
+        map.fitBounds(bounds, { padding: 100 });
+        logDebug('Fitted to all waypoints');
+      }
     }
 
     function updateRouteStyle() {
