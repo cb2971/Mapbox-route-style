@@ -12,47 +12,6 @@
       font-family: 'Open Sans', sans-serif;
       background-color: #f0f0f0;
     }
-
-    function setupBasicMapFeatures(map) {
-      // Add some basic obstacle data for testing
-      const clearances = {
-        type: 'FeatureCollection',
-        features: [
-          {
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: [-84.47426, 38.06673] },
-            properties: { clearance: "13' 2\"" }
-          },
-          {
-            type: 'Feature', 
-            geometry: { type: 'Point', coordinates: [-84.47208, 38.06694] },
-            properties: { clearance: "13' 7\"" }
-          }
-        ]
-      };
-
-      // Add obstacles as red circles
-      map.addSource('obstacles', {
-        type: 'geojson',
-        data: clearances
-      });
-
-      map.addLayer({
-        id: 'obstacles',
-        type: 'circle',
-        source: 'obstacles',
-        paint: {
-          'circle-radius': 8,
-          'circle-color': '#ff0000',
-          'circle-opacity': 0.7,
-          'circle-stroke-color': '#ffffff',
-          'circle-stroke-width': 2
-        }
-      });
-
-      logStatus('✅ Basic map features added');
-      updateStatus('<strong>🗺️ Map Fully Ready!</strong><br>Click the map to test interaction', 'success');
-    }
      
     #map {
       position: absolute;
@@ -142,6 +101,24 @@
       box-sizing: border-box;
     }
 
+    .route-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .route-controls input[type="color"] {
+      width: 40px;
+      height: 30px;
+      padding: 0;
+      border: none;
+    }
+
+    .route-controls input[type="number"] {
+      width: 60px;
+    }
+
     .status-message {
       padding: 15px;
       border-radius: 5px;
@@ -188,43 +165,188 @@
       cursor: not-allowed;
     }
 
-    .diagnostic-info {
-      background-color: #f8f9fa;
-      border: 1px solid #dee2e6;
-      border-radius: 5px;
-      padding: 10px;
-      margin: 10px 0;
+    .small-btn {
+      width: auto;
+      padding: 5px 10px;
+      margin: 2px;
       font-size: 12px;
-      font-family: monospace;
+    }
+
+    .waypoint-list {
       max-height: 200px;
       overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f9f9f9;
     }
 
-    .network-test {
-      background-color: #e3f2fd;
-      border: 1px solid #90caf9;
-      border-radius: 5px;
+    .waypoint-item {
+      display: flex;
+      align-items: center;
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+      background-color: white;
+      margin: 2px;
+      border-radius: 3px;
+    }
+
+    .waypoint-item:last-child {
+      border-bottom: none;
+    }
+
+    .waypoint-number {
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      background-color: #007bff;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+
+    .waypoint-text {
+      flex: 1;
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .waypoint-controls {
+      display: flex;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .waypoint-controls button {
+      width: 25px;
+      height: 25px;
+      padding: 0;
+      font-size: 12px;
+      margin: 0;
+    }
+
+    /* Route Management Styles */
+    .route-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #dee2e6;
+      padding-bottom: 10px;
+    }
+
+    .route-tab {
+      padding: 8px 12px;
+      border: 1px solid #dee2e6;
+      border-radius: 4px 4px 0 0;
+      background-color: #f8f9fa;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      min-width: 80px;
+      justify-content: center;
+    }
+
+    .route-tab.active {
+      background-color: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+
+    .route-tab .color-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1px solid rgba(0,0,0,0.2);
+    }
+
+    .route-tab .close-btn {
+      margin-left: 5px;
+      background: none;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+      padding: 0;
+      width: auto;
+      height: auto;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .route-tab .close-btn:hover {
+      background-color: rgba(255,255,255,0.2);
+      border-radius: 50%;
+    }
+
+    .route-list {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+      margin-top: 10px;
+    }
+
+    .route-list-item {
+      display: flex;
+      align-items: center;
       padding: 10px;
-      margin: 10px 0;
-      font-size: 13px;
+      border-bottom: 1px solid #eee;
+      background-color: white;
+      margin: 2px;
+      border-radius: 3px;
     }
 
-    .error-display {
-      background-color: #ffebee;
-      border: 1px solid #f8bbd9;
-      border-radius: 5px;
-      padding: 15px;
-      margin: 15px 0;
-      color: #c62828;
+    .route-list-item:last-child {
+      border-bottom: none;
     }
 
-    .safari-warning {
-      background-color: #fff3e0;
-      border: 1px solid #ffcc02;
-      border-radius: 5px;
-      padding: 15px;
-      margin: 15px 0;
-      color: #e65100;
+    .route-info {
+      flex: 1;
+      font-size: 12px;
+    }
+
+    .route-name {
+      font-weight: bold;
+      margin-bottom: 2px;
+    }
+
+    .route-status {
+      color: #666;
+      font-size: 11px;
+    }
+
+    .visibility-btn {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      font-size: 14px;
+      margin: 0;
+    }
+
+    .visibility-btn.hidden {
+      background-color: #6c757d;
+    }
+
+    .zoom-controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .zoom-controls button {
+      width: 50px;
+      height: 40px;
+      font-size: 18px;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -239,66 +361,160 @@
   <div class="sidebar" id="sidebar">
     <div id="status-message" class="status-message status-loading">
       <strong>🔄 Initializing...</strong><br>
-      Loading mapping libraries...
+      Loading mapping application...
     </div>
 
-    <div class="safari-warning">
-      <strong>🦁 Safari Users:</strong><br>
-      If the map doesn't load, please try:<br>
-      • Check Safari's security settings<br>
-      • Allow loading external content<br>
-      • Try Chrome or Firefox as alternative
+    <!-- Route Management Section -->
+    <div class="control-panel" id="route-management" style="display: none;">
+      <div class="card-header">🗺️ Route Management</div>
+      
+      <div class="route-tabs" id="route-tabs">
+        <!-- Route tabs will be dynamically generated -->
+      </div>
+      
+      <button onclick="createNewRoute()">➕ New Route</button>
+      
+      <div class="route-list" id="route-list" style="display: none;">
+        <!-- Route list items will be dynamically generated -->
+      </div>
+      
+      <button onclick="toggleRouteList()" id="route-list-toggle" style="display: none;">📋 Show All Routes</button>
     </div>
 
-    <div class="control-panel">
-      <div class="card-header">📋 System Status</div>
-      <button onclick="testBasicFunctionality()" id="test-btn">🧪 Test Basic Functions</button>
-      <button onclick="loadMapboxLibraries()" id="load-btn">📥 Load Map Libraries</button>
-      <button onclick="initializeMap()" id="init-btn" disabled>🗺️ Initialize Map</button>
-      <button onclick="testNetworkAccess()" id="network-btn">🌐 Test Network</button>
-    </div>
-
-    <div class="network-test">
-      <strong>🔍 System Information:</strong>
-      <div id="diagnostic-results" class="diagnostic-info">
-        Browser: <span id="browser-info">Detecting...</span><br>
-        JavaScript: <span id="js-status">Testing...</span><br>
-        Network: <span id="network-status">Testing...</span><br>
-        Libraries: <span id="library-status">Not loaded</span>
+    <!-- Current Route Controls -->
+    <div class="control-panel" id="current-route-panel" style="display: none;">
+      <div class="card-header" id="current-route-header">🎯 Current Route</div>
+      
+      <div class="input-group">
+        <label>🟢 Starting Point:</label>
+        <input type="text" id="origin-input" placeholder="Enter address or place name">
+        <button onclick="geocodeOrigin()" style="margin-top: 5px; font-size: 12px; height: 30px;">📍 Find Location</button>
+      </div>
+      
+      <div class="input-group">
+        <label>🔴 Destination:</label>
+        <input type="text" id="destination-input" placeholder="Enter address or place name">
+        <button onclick="geocodeDestination()" style="margin-top: 5px; font-size: 12px; height: 30px;">📍 Find Location</button>
+      </div>
+      
+      <div class="input-group">
+        <label>🔵 Waypoints:</label>
+        <input type="text" id="waypoint-input" placeholder="Enter intermediate stop">
+        <div style="display: flex; gap: 5px; margin-top: 5px;">
+          <button onclick="addWaypoint()" style="flex: 1; font-size: 12px; height: 30px;">➕ Add Waypoint</button>
+          <button onclick="toggleWaypointMode()" id="waypoint-mode-btn" style="flex: 1; font-size: 12px; height: 30px;">📍 Click Map</button>
+        </div>
+        
+        <div id="waypoint-list" class="waypoint-list" style="margin-top: 10px; display: none;">
+          <!-- Waypoints will be added here dynamically -->
+        </div>
+      </div>
+      
+      <div class="input-group">
+        <label>🚗 Travel Mode:</label>
+        <select id="profile-select">
+          <option value="driving">🚗 Driving</option>
+          <option value="walking">🚶 Walking</option>
+          <option value="cycling">🚴 Cycling</option>
+        </select>
+      </div>
+      
+      <button onclick="findRoute()">🗺️ Find Route</button>
+      <button onclick="clearCurrentRoute()">🗑️ Clear Route</button>
+      
+      <div class="route-controls">
+        <label>Color:</label>
+        <input type="color" id="routeColor" value="#ff0000" onchange="updateCurrentRouteStyle()">
+        <label>Width:</label>
+        <input type="number" id="routeWidth" value="8" min="1" max="20" onchange="updateCurrentRouteStyle()">
       </div>
     </div>
 
-    <div id="error-display" class="error-display" style="display: none;">
-      <strong>❌ Error Details:</strong>
-      <div id="error-content"></div>
+    <!-- Map Controls -->
+    <div class="control-panel" id="map-controls" style="display: none;">
+      <div class="card-header">🗺️ Map Controls</div>
+      
+      <div class="zoom-controls">
+        <button onclick="zoomIn()">+</button>
+        <button onclick="zoomOut()">-</button>
+        <button onclick="fitToData()" style="width: auto; flex: 1; font-size: 14px;">📍 Fit to Routes</button>
+      </div>
     </div>
 
-    <div class="control-panel">
-      <div class="card-header">ℹ️ Instructions</div>
-      <p><strong>1. Test Basic Functions</strong> - Verify JavaScript works</p>
-      <p><strong>2. Load Map Libraries</strong> - Download required libraries</p>
-      <p><strong>3. Initialize Map</strong> - Start the mapping application</p>
-      <p><strong>4. Test Network</strong> - Check external connections</p>
+    <!-- Initialization Controls -->
+    <div class="control-panel" id="init-controls">
+      <div class="card-header">🚀 Initialize Application</div>
+      <button onclick="loadAndInitialize()" id="init-app-btn">🗺️ Start Route Finder</button>
+      <p style="font-size: 12px; color: #666; margin: 10px 0;">This will load the mapping libraries and start the full application.</p>
     </div>
   </div>
 
   <script>
-    console.log('=== SCRIPT STARTING ===');
+    console.log('=== Multi-Route Mapper Starting ===');
     
     // Global variables
-    let mapboxLibrariesLoaded = false;
-    let mapInitialized = false;
-    let networkAccessible = false;
+    let map = null;
+    let mapboxLoaded = false;
+    let turfLoaded = false;
+    let appInitialized = false;
+    
+    // Route management
+    let routes = new Map();
+    let currentRouteId = null;
+    let nextRouteId = 1;
+    let routeListVisible = false;
+    
+    // Interaction states
+    let isSettingOrigin = true;
+    let isAddingWaypoint = false;
+    
+    // Route colors
+    const routeColors = [
+      '#ff0000', '#00ff00', '#0066ff', '#ff6600', '#ff00ff', 
+      '#00ffff', '#ffff00', '#990000', '#009900', '#000099'
+    ];
 
-    // Basic logging function
-    function logStatus(message) {
-      console.log(message);
-      const diagnosticEl = document.getElementById('diagnostic-results');
-      if (diagnosticEl) {
-        diagnosticEl.innerHTML += '<br>' + message;
-        diagnosticEl.scrollTop = diagnosticEl.scrollHeight;
-      }
-    }
+    // Obstacle data
+    const clearances = {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [-84.47426, 38.06673] },
+          properties: { clearance: "13' 2\"" }
+        },
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [-84.47208, 38.06694] },
+          properties: { clearance: "13' 7\"" }
+        },
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [-84.60485, 38.12184] },
+          properties: { clearance: "13' 7\"" }
+        },
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [-84.61905, 37.87504] },
+          properties: { clearance: "12' 0\"" }
+        },
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [-84.55946, 38.30213] },
+          properties: { clearance: "13' 6\"" }
+        },
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [-84.27235, 38.04954] },
+          properties: { clearance: "13' 6\"" }
+        },
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [-84.27264, 37.82917] },
+          properties: { clearance: "11' 6\"" }
+        }
+      ]
+    };
 
     function updateStatus(message, type) {
       const statusEl = document.getElementById('status-message');
@@ -309,128 +525,80 @@
       console.log('STATUS: ' + message);
     }
 
-    function showError(error) {
-      const errorEl = document.getElementById('error-display');
-      const errorContent = document.getElementById('error-content');
-      if (errorEl && errorContent) {
-        errorContent.innerHTML = error;
-        errorEl.style.display = 'block';
-      }
-      console.error('ERROR: ' + error);
+    function createEmptyRoute(id = null) {
+      return {
+        id: id || nextRouteId++,
+        name: `Route ${id || nextRouteId - 1}`,
+        origin: null,
+        destination: null,
+        waypoints: [],
+        profile: 'driving',
+        color: routeColors[(id || nextRouteId - 1) % routeColors.length],
+        width: 8,
+        routeData: null,
+        visible: true,
+        status: 'empty'
+      };
     }
 
-    function testBasicFunctionality() {
-      logStatus('=== Testing Basic Functionality ===');
+    function loadAndInitialize() {
+      updateStatus('<strong>📥 Loading Libraries...</strong><br>Downloading Mapbox GL and Turf.js...', 'loading');
       
-      try {
-        // Test JavaScript features
-        document.getElementById('js-status').textContent = 'Working ✅';
-        
-        // Test browser detection
-        const browserInfo = navigator.userAgent.includes('Safari') ? 'Safari 🦁' : 
-                           navigator.userAgent.includes('Chrome') ? 'Chrome 🟢' :
-                           navigator.userAgent.includes('Firefox') ? 'Firefox 🦊' : 'Unknown';
-        document.getElementById('browser-info').textContent = browserInfo;
-        
-        // Test DOM manipulation
-        updateStatus('<strong>✅ Basic Functions Working!</strong><br>JavaScript and DOM access confirmed', 'success');
-        
-        // Enable next step
-        document.getElementById('load-btn').disabled = false;
-        
-        logStatus('✅ Basic functionality test passed');
-        return true;
-        
-      } catch (error) {
-        showError('Basic functionality test failed: ' + error.message);
-        return false;
-      }
-    }
-
-    function loadMapboxLibraries() {
-      logStatus('=== Loading Mapbox Libraries ===');
-      updateStatus('<strong>📥 Loading Libraries...</strong><br>Downloading Mapbox GL JS...', 'loading');
+      // Load Mapbox GL JS
+      const mapboxScript = document.createElement('script');
+      mapboxScript.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
+      mapboxScript.crossOrigin = 'anonymous';
       
-      try {
-        // Load Mapbox GL JS
-        const script = document.createElement('script');
-        script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
-        script.crossOrigin = 'anonymous';
+      mapboxScript.onload = function() {
+        console.log('Mapbox GL loaded');
+        mapboxLoaded = true;
         
-        script.onload = function() {
-          logStatus('✅ Mapbox GL JS loaded');
-          
-          // Load CSS
-          const link = document.createElement('link');
-          link.rel = 'stylesheet';
-          link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
-          link.crossOrigin = 'anonymous';
-          
-          link.onload = function() {
-            logStatus('✅ Mapbox GL CSS loaded');
-            loadTurfLibrary();
-          };
-          
-          link.onerror = function() {
-            showError('Failed to load Mapbox GL CSS');
-          };
-          
-          document.head.appendChild(link);
+        // Load CSS
+        const mapboxCSS = document.createElement('link');
+        mapboxCSS.rel = 'stylesheet';
+        mapboxCSS.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
+        mapboxCSS.crossOrigin = 'anonymous';
+        document.head.appendChild(mapboxCSS);
+        
+        // Load Turf.js
+        const turfScript = document.createElement('script');
+        turfScript.src = 'https://unpkg.com/@turf/turf@6/turf.min.js';
+        turfScript.crossOrigin = 'anonymous';
+        
+        turfScript.onload = function() {
+          console.log('Turf.js loaded');
+          turfLoaded = true;
+          initializeFullApplication();
         };
         
-        script.onerror = function() {
-          showError('Failed to load Mapbox GL JS - check network connection and Safari security settings');
-          updateStatus('<strong>❌ Library Load Failed</strong><br>Check Safari security settings', 'error');
+        turfScript.onerror = function() {
+          updateStatus('<strong>❌ Failed to Load</strong><br>Could not load Turf.js library', 'error');
         };
         
-        document.head.appendChild(script);
-        
-      } catch (error) {
-        showError('Library loading error: ' + error.message);
-      }
-    }
-
-    function loadTurfLibrary() {
-      logStatus('Loading Turf.js library...');
-      
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/@turf/turf@6/turf.min.js';
-      script.crossOrigin = 'anonymous';
-      
-      script.onload = function() {
-        logStatus('✅ Turf.js loaded');
-        mapboxLibrariesLoaded = true;
-        document.getElementById('library-status').textContent = 'Loaded ✅';
-        document.getElementById('init-btn').disabled = false;
-        updateStatus('<strong>✅ Libraries Loaded!</strong><br>Ready to initialize map', 'success');
+        document.head.appendChild(turfScript);
       };
       
-      script.onerror = function() {
-        showError('Failed to load Turf.js library');
+      mapboxScript.onerror = function() {
+        updateStatus('<strong>❌ Failed to Load</strong><br>Could not load Mapbox GL library', 'error');
       };
       
-      document.head.appendChild(script);
+      document.head.appendChild(mapboxScript);
     }
 
-    function initializeMap() {
-      if (!mapboxLibrariesLoaded) {
-        showError('Libraries not loaded yet - click "Load Map Libraries" first');
+    function initializeFullApplication() {
+      if (!mapboxLoaded || !turfLoaded) {
+        updateStatus('<strong>❌ Libraries Missing</strong><br>Required libraries not loaded', 'error');
         return;
       }
       
-      logStatus('=== Initializing Map ===');
-      updateStatus('<strong>🗺️ Creating Map...</strong><br>Setting up Mapbox instance...', 'loading');
+      updateStatus('<strong>🗺️ Initializing Map...</strong><br>Creating map instance...', 'loading');
       
       try {
-        if (typeof mapboxgl === 'undefined') {
-          throw new Error('Mapbox GL not available');
-        }
-        
-        // Set access token
+        // Set Mapbox access token
         mapboxgl.accessToken = 'pk.eyJ1IjoiY2IyOSIsImEiOiJja3E4OHo3anowZGx1Mm9tcXF3ZmhyaWtwIn0.IQ5rY622AU9GOETrqa9NBw';
         
         // Create map
-        const map = new mapboxgl.Map({
+        map = new mapboxgl.Map({
           container: 'map',
           style: 'mapbox://styles/mapbox/streets-v11',
           center: [-84.5, 38.05],
@@ -438,79 +606,264 @@
         });
         
         map.on('load', function() {
-          logStatus('✅ Map initialized successfully!');
-          updateStatus('<strong>🎉 Map Ready!</strong><br>Mapping application is now functional', 'success');
-          mapInitialized = true;
-          
-          // Don't clear the map container - let Mapbox handle it
-          // Add basic map features
-          setupBasicMapFeatures(map);
+          console.log('Map loaded successfully');
+          setupMapFeatures();
+          setupEventHandlers();
+          createNewRoute();
+          showApplicationUI();
+          updateStatus('<strong>🎉 Ready!</strong><br>Multi-route mapper is ready to use', 'success');
+          appInitialized = true;
         });
         
         map.on('error', function(e) {
-          throw new Error('Map error: ' + (e.error ? e.error.message : 'unknown'));
+          console.error('Map error:', e);
+          updateStatus('<strong>❌ Map Error</strong><br>Failed to initialize map', 'error');
         });
         
       } catch (error) {
-        showError('Map initialization failed: ' + error.message);
-        updateStatus('<strong>❌ Map Failed</strong><br>' + error.message, 'error');
+        console.error('Initialization error:', error);
+        updateStatus('<strong>❌ Initialization Failed</strong><br>' + error.message, 'error');
       }
     }
 
-    function testNetworkAccess() {
-      logStatus('=== Testing Network Access ===');
-      updateStatus('<strong>🌐 Testing Network...</strong><br>Checking external connections...', 'loading');
+    function setupMapFeatures() {
+      // Add obstacles
+      const obstacle = turf.buffer(clearances, 0.25, { units: 'kilometers' });
       
-      // Test fetch to Mapbox API
-      fetch('https://api.mapbox.com/styles/v1/mapbox/streets-v11?access_token=pk.eyJ1IjoiY2IyOSIsImEiOiJja3E4OHo3anowZGx1Mm9tcXF3ZmhyaWtwIn0.IQ5rY622AU9GOETrqa9NBw')
-        .then(response => {
-          if (response.ok) {
-            logStatus('✅ Network access confirmed');
-            document.getElementById('network-status').textContent = 'Connected ✅';
-            networkAccessible = true;
-            updateStatus('<strong>✅ Network OK!</strong><br>External services accessible', 'success');
-          } else {
-            throw new Error('HTTP ' + response.status);
-          }
-        })
-        .catch(error => {
-          logStatus('❌ Network test failed: ' + error.message);
-          document.getElementById('network-status').textContent = 'Failed ❌';
-          showError('Network access failed: ' + error.message + '<br>Check internet connection and Safari security settings');
-          updateStatus('<strong>❌ Network Issue</strong><br>Cannot reach external services', 'error');
-        });
+      map.addSource('obstacles', {
+        type: 'geojson',
+        data: obstacle
+      });
+
+      map.addLayer({
+        id: 'obstacles',
+        type: 'fill',
+        source: 'obstacles',
+        paint: {
+          'fill-color': '#ff0000',
+          'fill-opacity': 0.3
+        }
+      });
+      
+      console.log('Map features setup complete');
     }
 
-    function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const toggleBtn = document.getElementById('toggle-btn');
+    function setupEventHandlers() {
+      map.on('click', handleMapClick);
+    }
+
+    function showApplicationUI() {
+      // Hide initialization controls
+      document.getElementById('init-controls').style.display = 'none';
       
-      if (sidebar.classList.contains('hidden')) {
-        sidebar.classList.remove('hidden');
-        toggleBtn.classList.remove('sidebar-hidden');
-        toggleBtn.classList.add('sidebar-visible');
+      // Show application panels
+      document.getElementById('route-management').style.display = 'block';
+      document.getElementById('current-route-panel').style.display = 'block';
+      document.getElementById('map-controls').style.display = 'block';
+    }
+
+    function createNewRoute() {
+      const newRoute = createEmptyRoute();
+      routes.set(newRoute.id, newRoute);
+      
+      // Add map sources for this route
+      addRouteToMap(newRoute.id);
+      
+      // Switch to new route
+      switchToRoute(newRoute.id);
+      
+      updateRouteTabs();
+      updateRouteList();
+      
+      console.log(`Created new route ${newRoute.id}`);
+    }
+
+    function addRouteToMap(routeId) {
+      const route = routes.get(routeId);
+      if (!route || !map) return;
+
+      // Add route line source
+      map.addSource(`route-${routeId}`, {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
+
+      map.addLayer({
+        id: `route-${routeId}`,
+        type: 'line',
+        source: `route-${routeId}`,
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 
+          'line-color': route.color, 
+          'line-width': route.width,
+          'line-opacity': route.visible ? 1 : 0
+        }
+      });
+
+      // Add waypoints source
+      map.addSource(`waypoints-${routeId}`, {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
+
+      map.addLayer({
+        id: `waypoints-${routeId}`,
+        type: 'circle',
+        source: `waypoints-${routeId}`,
+        paint: {
+          'circle-radius': 2,
+          'circle-color': ['get', 'color'],
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 2,
+          'circle-opacity': route.visible ? 1 : 0,
+          'circle-stroke-opacity': route.visible ? 1 : 0
+        }
+      });
+    }
+
+    function switchToRoute(routeId) {
+      currentRouteId = routeId;
+      const route = routes.get(routeId);
+      if (!route) return;
+
+      // Update UI with route data
+      document.getElementById('origin-input').value = route.origin ? 
+        `${route.origin[1].toFixed(4)}, ${route.origin[0].toFixed(4)}` : '';
+      document.getElementById('destination-input').value = route.destination ? 
+        `${route.destination[1].toFixed(4)}, ${route.destination[0].toFixed(4)}` : '';
+      document.getElementById('profile-select').value = route.profile;
+      document.getElementById('routeColor').value = route.color;
+      document.getElementById('routeWidth').value = route.width;
+
+      // Update waypoints display
+      updateWaypointsList();
+      
+      // Update header
+      document.getElementById('current-route-header').textContent = `🎯 ${route.name}`;
+      
+      updateRouteTabs();
+      console.log(`Switched to route ${routeId}`);
+    }
+
+    function updateRouteTabs() {
+      const tabsContainer = document.getElementById('route-tabs');
+      tabsContainer.innerHTML = '';
+
+      routes.forEach((route, id) => {
+        const tab = document.createElement('div');
+        tab.className = `route-tab ${id === currentRouteId ? 'active' : ''}`;
+        tab.innerHTML = `
+          <div class="color-indicator" style="background-color: ${route.color}"></div>
+          <span>${route.name}</span>
+          <button class="close-btn" onclick="event.stopPropagation(); deleteRoute(${id})" title="Delete route">×</button>
+        `;
+        tab.onclick = () => switchToRoute(id);
+        tabsContainer.appendChild(tab);
+      });
+
+      // Show route list toggle if there are multiple routes
+      const toggleBtn = document.getElementById('route-list-toggle');
+      if (routes.size > 1) {
+        toggleBtn.style.display = 'block';
       } else {
-        sidebar.classList.add('hidden');
-        toggleBtn.classList.remove('sidebar-visible');
-        toggleBtn.classList.add('sidebar-hidden');
+        toggleBtn.style.display = 'none';
+        document.getElementById('route-list').style.display = 'none';
+        routeListVisible = false;
       }
     }
 
-    // Auto-start basic functionality test
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('DOM Content Loaded');
-      setTimeout(testBasicFunctionality, 500);
-    });
-
-    // Also try on window load
-    window.addEventListener('load', function() {
-      console.log('Window Load Event');
-      if (!document.getElementById('js-status').textContent.includes('✅')) {
-        testBasicFunctionality();
+    function deleteRoute(routeId) {
+      if (routes.size <= 1) {
+        updateStatus('<strong>❌ Cannot Delete</strong><br>Must have at least one route', 'error');
+        return;
       }
-    });
 
-    console.log('=== SCRIPT LOADED ===');
-  </script>
-</body>
-</html>
+      // Remove from map
+      if (map.getLayer(`route-${routeId}`)) {
+        map.removeLayer(`route-${routeId}`);
+      }
+      if (map.getSource(`route-${routeId}`)) {
+        map.removeSource(`route-${routeId}`);
+      }
+      if (map.getLayer(`waypoints-${routeId}`)) {
+        map.removeLayer(`waypoints-${routeId}`);
+      }
+      if (map.getSource(`waypoints-${routeId}`)) {
+        map.removeSource(`waypoints-${routeId}`);
+      }
+
+      routes.delete(routeId);
+
+      // If we deleted the current route, switch to another
+      if (currentRouteId === routeId) {
+        const remainingRoutes = Array.from(routes.keys());
+        switchToRoute(remainingRoutes[0]);
+      }
+
+      updateRouteTabs();
+      updateRouteList();
+      console.log(`Deleted route ${routeId}`);
+    }
+
+    function toggleRouteList() {
+      const listContainer = document.getElementById('route-list');
+      const toggleBtn = document.getElementById('route-list-toggle');
+      
+      routeListVisible = !routeListVisible;
+      listContainer.style.display = routeListVisible ? 'block' : 'none';
+      toggleBtn.textContent = routeListVisible ? '📋 Hide Routes' : '📋 Show All Routes';
+    }
+
+    function updateRouteList() {
+      const listContainer = document.getElementById('route-list');
+      listContainer.innerHTML = '';
+
+      routes.forEach((route, id) => {
+        const item = document.createElement('div');
+        item.className = 'route-list-item';
+        
+        const statusText = getRouteStatusText(route);
+        
+        item.innerHTML = `
+          <div class="color-indicator" style="background-color: ${route.color}; width: 16px; height: 16px; margin-right: 10px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.2);"></div>
+          <div class="route-info">
+            <div class="route-name">${route.name}</div>
+            <div class="route-status">${statusText}</div>
+          </div>
+          <div class="route-controls">
+            <button class="visibility-btn ${route.visible ? '' : 'hidden'}" onclick="toggleRouteVisibility(${id})" title="Toggle visibility">
+              ${route.visible ? '👁️' : '🚫'}
+            </button>
+            <button class="small-btn" onclick="switchToRoute(${id})" title="Edit route">✏️</button>
+            <button class="small-btn" onclick="deleteRoute(${id})" title="Delete route">🗑️</button>
+          </div>
+        `;
+        listContainer.appendChild(item);
+      });
+    }
+
+    function getRouteStatusText(route) {
+      if (!route.origin && !route.destination) return 'Empty route';
+      if (!route.origin) return 'Missing origin';
+      if (!route.destination) return 'Missing destination';
+      if (route.routeData) {
+        const duration = Math.round(route.routeData.duration / 60);
+        const distance = (route.routeData.distance / 1000).toFixed(1);
+        return `${duration} min, ${distance} km`;
+      }
+      return 'Ready to calculate';
+    }
+
+    function toggleRouteVisibility(routeId) {
+      const route = routes.get(routeId);
+      if (!route) return;
+
+      route.visible = !route.visible;
+      
+      // Update map layer opacity
+      if (map.getLayer(`route-${routeId}`)) {
+        map.setPaintProperty(`route-${routeId}`, 'line-opacity', route.visible ? 1 : 0);
+      }
+      if (map.getLayer(`waypoints-${routeId}`)) {
+        map.setPaintProperty(`waypoints-${routeId}`, 'circle-opacity', route.visible ? 1 : 0);
+        
