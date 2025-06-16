@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <title>Route Finder with Multiple Routes</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
+  
   <style type="text/css">
     body {
       margin: 0;
@@ -399,136 +398,131 @@
       box-shadow: 0 0 0 1px #ffffff;
     }
   </style>
-
 </head>
-
+ 
 <body>
   <div id="map"></div>
-
+  
   <!-- Map crosshair indicator -->
-
   <div id="map-crosshair" class="map-crosshair" style="display: none;">
     <div class="center-circle"></div>
   </div>
-
+  
   <div class="toggle-btn sidebar-visible" id="toggle-btn" onclick="RouteFinderApp.ui.toggleSidebar()">
     ☰
   </div>
-
+  
   <div class="sidebar" id="sidebar">
     <div id="status-message" class="status-message status-loading">
       <strong>🔄 Initializing...</strong><br>
       Loading mapping application...
     </div>
 
-```
-<!-- Route Management Section -->
-<div class="control-panel" id="route-management" style="display: none;">
-  <div class="card-header">🗺️ Route Management</div>
-  
-  <div class="route-tabs" id="route-tabs">
-    <!-- Route tabs will be dynamically generated -->
-  </div>
-  
-  <button onclick="RouteFinderApp.routes.createNewRoute()">➕ New Route</button>
-  
-  <div style="display: flex; gap: 5px; margin: 5px 0;">
-    <button onclick="RouteFinderApp.fileManager.exportRoutes()" style="flex: 1; font-size: 12px; height: 35px;">📤 Export Routes</button>
-    <button onclick="RouteFinderApp.fileManager.triggerImportRoutes()" style="flex: 1; font-size: 12px; height: 35px;">📥 Import Routes</button>
-  </div>
-  
-  <!-- Hidden file input for importing -->
-  <input type="file" id="import-file-input" accept=".json" style="display: none;" onchange="RouteFinderApp.fileManager.importRoutes(event)">
-  
-  <div class="route-list" id="route-list" style="display: none;">
-    <!-- Route list items will be dynamically generated -->
-  </div>
-  
-  <button onclick="RouteFinderApp.ui.toggleRouteList()" id="route-list-toggle" style="display: none;">📋 Show All Routes</button>
-</div>
-
-<!-- Current Route Controls -->
-<div class="control-panel" id="current-route-panel" style="display: none;">
-  <div class="card-header" id="current-route-header">🎯 Current Route</div>
-  
-  <div class="input-group">
-    <label>🟢 Starting Point:</label>
-    <input type="text" id="origin-input" placeholder="Enter address or place name">
-    <button onclick="RouteFinderApp.geocoding.geocodeOrigin()" style="margin-top: 5px; font-size: 12px; height: 30px;">📍 Find Location</button>
-  </div>
-  
-  <div class="input-group">
-    <label>🔴 Destination:</label>
-    <input type="text" id="destination-input" placeholder="Enter address or place name">
-    <button onclick="RouteFinderApp.geocoding.geocodeDestination()" style="margin-top: 5px; font-size: 12px; height: 30px;">📍 Find Location</button>
-  </div>
-  
-  <div class="input-group">
-    <label>🔵 Waypoints:</label>
-    <input type="text" id="waypoint-input" placeholder="Enter intermediate stop">
-    <div style="display: flex; gap: 5px; margin-top: 5px;">
-      <button onclick="RouteFinderApp.waypoints.addWaypoint()" style="flex: 1; font-size: 12px; height: 30px;">➕ Add Waypoint</button>
-      <button onclick="RouteFinderApp.waypoints.toggleWaypointMode()" id="waypoint-mode-btn" style="flex: 1; font-size: 12px; height: 30px;">📍 Click Map</button>
+    <!-- Route Management Section -->
+    <div class="control-panel" id="route-management" style="display: none;">
+      <div class="card-header">🗺️ Route Management</div>
+      
+      <div class="route-tabs" id="route-tabs">
+        <!-- Route tabs will be dynamically generated -->
+      </div>
+      
+      <button onclick="RouteFinderApp.routes.createNewRoute()">➕ New Route</button>
+      
+      <div style="display: flex; gap: 5px; margin: 5px 0;">
+        <button onclick="RouteFinderApp.fileManager.exportRoutes()" style="flex: 1; font-size: 12px; height: 35px;">📤 Export Routes</button>
+        <button onclick="RouteFinderApp.fileManager.triggerImportRoutes()" style="flex: 1; font-size: 12px; height: 35px;">📥 Import Routes</button>
+      </div>
+      
+      <!-- Hidden file input for importing -->
+      <input type="file" id="import-file-input" accept=".json" style="display: none;" onchange="RouteFinderApp.fileManager.importRoutes(event)">
+      
+      <div class="route-list" id="route-list" style="display: none;">
+        <!-- Route list items will be dynamically generated -->
+      </div>
+      
+      <button onclick="RouteFinderApp.ui.toggleRouteList()" id="route-list-toggle" style="display: none;">📋 Show All Routes</button>
     </div>
-    
-    <div id="waypoint-list" class="waypoint-list" style="margin-top: 10px; display: none;">
-      <!-- Waypoints will be added here dynamically -->
+
+    <!-- Current Route Controls -->
+    <div class="control-panel" id="current-route-panel" style="display: none;">
+      <div class="card-header" id="current-route-header">🎯 Current Route</div>
+      
+      <div class="input-group">
+        <label>🟢 Starting Point:</label>
+        <input type="text" id="origin-input" placeholder="Enter address or place name">
+        <button onclick="RouteFinderApp.geocoding.geocodeOrigin()" style="margin-top: 5px; font-size: 12px; height: 30px;">📍 Find Location</button>
+      </div>
+      
+      <div class="input-group">
+        <label>🔴 Destination:</label>
+        <input type="text" id="destination-input" placeholder="Enter address or place name">
+        <button onclick="RouteFinderApp.geocoding.geocodeDestination()" style="margin-top: 5px; font-size: 12px; height: 30px;">📍 Find Location</button>
+      </div>
+      
+      <div class="input-group">
+        <label>🔵 Waypoints:</label>
+        <input type="text" id="waypoint-input" placeholder="Enter intermediate stop">
+        <div style="display: flex; gap: 5px; margin-top: 5px;">
+          <button onclick="RouteFinderApp.waypoints.addWaypoint()" style="flex: 1; font-size: 12px; height: 30px;">➕ Add Waypoint</button>
+          <button onclick="RouteFinderApp.waypoints.toggleWaypointMode()" id="waypoint-mode-btn" style="flex: 1; font-size: 12px; height: 30px;">📍 Click Map</button>
+        </div>
+        
+        <div id="waypoint-list" class="waypoint-list" style="margin-top: 10px; display: none;">
+          <!-- Waypoints will be added here dynamically -->
+        </div>
+      </div>
+      
+      <div class="input-group">
+        <label>🚗 Travel Mode:</label>
+        <select id="profile-select">
+          <option value="driving">🚗 Driving</option>
+          <option value="walking">🚶 Walking</option>
+          <option value="cycling">🚴 Cycling</option>
+        </select>
+      </div>
+      
+      <button onclick="RouteFinderApp.routing.findRoute()">🗺️ Find Route</button>
+      <button onclick="RouteFinderApp.routes.clearCurrentRoute()">🗑️ Clear Route</button>
+      
+      <div class="route-controls">
+        <label>Color:</label>
+        <input type="color" id="routeColor" value="#ff0000" onchange="RouteFinderApp.routes.updateCurrentRouteStyle()">
+        <label>Width:</label>
+        <input type="number" id="routeWidth" value="8" min="1" max="20" onchange="RouteFinderApp.routes.updateCurrentRouteStyle()">
+      </div>
     </div>
-  </div>
-  
-  <div class="input-group">
-    <label>🚗 Travel Mode:</label>
-    <select id="profile-select">
-      <option value="driving">🚗 Driving</option>
-      <option value="walking">🚶 Walking</option>
-      <option value="cycling">🚴 Cycling</option>
-    </select>
-  </div>
-  
-  <button onclick="RouteFinderApp.routing.findRoute()">🗺️ Find Route</button>
-  <button onclick="RouteFinderApp.routes.clearCurrentRoute()">🗑️ Clear Route</button>
-  
-  <div class="route-controls">
-    <label>Color:</label>
-    <input type="color" id="routeColor" value="#ff0000" onchange="RouteFinderApp.routes.updateCurrentRouteStyle()">
-    <label>Width:</label>
-    <input type="number" id="routeWidth" value="8" min="1" max="20" onchange="RouteFinderApp.routes.updateCurrentRouteStyle()">
-  </div>
-</div>
 
-<!-- Map Controls -->
-<div class="control-panel" id="map-controls" style="display: none;">
-  <div class="card-header">🗺️ Map Controls</div>
-  
-  <div class="input-group">
-    <label>📍 Center Map On:</label>
-    <input type="text" id="center-input" placeholder="Enter address or coordinates">
-    <div style="display: flex; gap: 5px; margin-top: 5px;">
-      <button onclick="RouteFinderApp.mapControls.centerMapOnLocation()" style="flex: 1; font-size: 12px; height: 30px;">🎯 Center Map</button>
-      <button onclick="RouteFinderApp.mapControls.toggleCenterMode()" id="center-mode-btn" style="flex: 1; font-size: 12px; height: 30px;">📍 Click Map</button>
+    <!-- Map Controls -->
+    <div class="control-panel" id="map-controls" style="display: none;">
+      <div class="card-header">🗺️ Map Controls</div>
+      
+      <div class="input-group">
+        <label>📍 Center Map On:</label>
+        <input type="text" id="center-input" placeholder="Enter address or coordinates">
+        <div style="display: flex; gap: 5px; margin-top: 5px;">
+          <button onclick="RouteFinderApp.mapControls.centerMapOnLocation()" style="flex: 1; font-size: 12px; height: 30px;">🎯 Center Map</button>
+          <button onclick="RouteFinderApp.mapControls.toggleCenterMode()" id="center-mode-btn" style="flex: 1; font-size: 12px; height: 30px;">📍 Click Map</button>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+        <button onclick="RouteFinderApp.mapControls.toggleCrosshair()" id="crosshair-toggle" style="flex: 1; font-size: 12px;">🎯 Show Center</button>
+        <button onclick="RouteFinderApp.mapControls.getCurrentCenter()" style="flex: 1; font-size: 12px;">📋 Get Center</button>
+      </div>
+      
+      <div class="zoom-controls">
+        <button onclick="RouteFinderApp.mapControls.zoomIn()">+</button>
+        <button onclick="RouteFinderApp.mapControls.zoomOut()">-</button>
+        <button onclick="RouteFinderApp.mapControls.fitToData()" style="width: auto; flex: 1; font-size: 14px;">📍 Fit to Routes</button>
+      </div>
     </div>
-  </div>
-  
-  <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-    <button onclick="RouteFinderApp.mapControls.toggleCrosshair()" id="crosshair-toggle" style="flex: 1; font-size: 12px;">🎯 Show Center</button>
-    <button onclick="RouteFinderApp.mapControls.getCurrentCenter()" style="flex: 1; font-size: 12px;">📋 Get Center</button>
-  </div>
-  
-  <div class="zoom-controls">
-    <button onclick="RouteFinderApp.mapControls.zoomIn()">+</button>
-    <button onclick="RouteFinderApp.mapControls.zoomOut()">-</button>
-    <button onclick="RouteFinderApp.mapControls.fitToData()" style="width: auto; flex: 1; font-size: 14px;">📍 Fit to Routes</button>
-  </div>
-</div>
 
-<!-- Initialization Controls -->
-<div class="control-panel" id="init-controls">
-  <div class="card-header">🚀 Initialize Application</div>
-  <button onclick="RouteFinderApp.init()" id="init-app-btn">🗺️ Start Route Finder</button>
-  <p style="font-size: 12px; color: #666; margin: 10px 0;">This will load the mapping libraries and start the full application.</p>
-</div>
-```
-
+    <!-- Initialization Controls -->
+    <div class="control-panel" id="init-controls">
+      <div class="card-header">🚀 Initialize Application</div>
+      <button onclick="RouteFinderApp.init()" id="init-app-btn">🗺️ Start Route Finder</button>
+      <p style="font-size: 12px; color: #666; margin: 10px 0;">This will load the mapping libraries and start the full application.</p>
+    </div>
   </div>
 
   <script>
@@ -1599,3 +1593,4 @@
         handleCenterMapClick(coords) {
           State.map.flyTo({ center: coords, duration: 1500 });
           document.getElementById('center-input').value = Utils.formatCoordinates(coords, 6);
+          
