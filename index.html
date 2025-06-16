@@ -853,6 +853,12 @@
       const layerId = `waypoints-${routeId}`;
       
       console.log('Setting up interactions for single route:', routeId);
+      console.log('Looking for layer with ID:', layerId);
+      
+      // List all layers to see what exists
+      const allLayers = map.getStyle().layers;
+      console.log('All current layers:', allLayers.map(l => l.id));
+      console.log('Layers containing "waypoint":', allLayers.filter(l => l.id.includes('waypoint')).map(l => l.id));
       
       // Check if layer exists
       const layerExists = map.getLayer(layerId);
@@ -860,6 +866,12 @@
       
       if (!layerExists) {
         console.log('❌ Cannot setup interactions - layer does not exist:', layerId);
+        
+        // Try to find any similar layers
+        const similarLayers = allLayers.filter(l => l.id.includes('waypoint'));
+        if (similarLayers.length > 0) {
+          console.log('Found similar waypoint layers:', similarLayers.map(l => l.id));
+        }
         return;
       }
       
