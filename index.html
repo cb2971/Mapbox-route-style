@@ -733,13 +733,59 @@
     function setupEventHandlers() {
       map.on('click', handleMapClick);
       
-      // Global mouse events for waypoint dragging
-      map.on('mousemove', handleWaypointMouseMove);
-      map.on('mouseup', handleWaypointMouseUp);
+      // Set up waypoint interaction after map is fully loaded
+      setTimeout(() => {
+        setupAllWaypointInteractions();
+      }, 1000);
     }
 
-    function setupWaypointDragging() {
-      // This function is no longer needed since we setup per route
+    function setupAllWaypointInteractions() {
+      console.log('Setting up waypoint interactions for', routes.size, 'routes');
+      
+      routes.forEach((route, routeId) => {
+        const layerId = `waypoints-${routeId}`;
+        console.log('Setting up interactions for layer:', layerId);
+        
+        // Remove any existing listeners first
+        map.off('mouseenter', layerId);
+        map.off('mouseleave', layerId);
+        map.off('mousedown', layerId);
+        
+        // Add new listeners
+        map.on('mouseenter', layerId, (e) => {
+          console.log('Mouse entered waypoint layer:', layerId);
+          map.getCanvas().style.cursor = 'grab';
+          
+          if (e.features && e.features.length > 0) {
+            map.setFeatureState(
+              { source: layerId, id: e.features[0].id },
+              { hover: true }
+            );
+          }
+        });
+        
+        map.on('mouseleave', layerId, (e) => {
+          if (!isDraggingWaypoint) {
+            map.getCanvas().style.cursor = '';
+          }
+          
+          if (e.features && e.features.length > 0) {
+            map.setFeatureState(
+              { source: layerId, id: e.features[0].id },
+              { hover: false }
+            );
+          }
+        });
+        
+        map.on('mousedown', layerId, (e) => {
+          console.log('Mouse down on waypoint layer:', layerId);
+          handleWaypointMouseDown(e);
+        });
+      });
+      
+      // Global mouse events
+      map.on('mousemove', handleWaypointMouseMove);
+      map.on('mouseup', handleWaypointMouseUp);
     }
 
     function showApplicationUI() {
@@ -764,6 +810,13 @@
       
       updateRouteTabs();
       updateRouteList();
+      
+      // Refresh waypoint interactions
+      if (appInitialized) {
+        setTimeout(() => {
+          setupAllWaypointInteractions();
+        }, 100);
+      }
       
       console.log(`Created new route ${newRoute.id}`);
     }
@@ -800,6 +853,8 @@
       const route = routes.get(routeId);
       if (!route || !map) return;
 
+      console.log('Adding route to map:', routeId);
+
       // Add route line source
       map.addSource(`route-${routeId}`, {
         type: 'geojson',
@@ -832,8 +887,10 @@
           'circle-radius': [
             'case',
             ['boolean', ['feature-state', 'hover'], false],
-            6,  // Larger when hovered
-            3   // Normal size
+            8,  // Larger when hovered
+            ['boolean', ['feature-state', 'dragging'], false],
+            10, // Largest when dragging
+            6   // Normal size - increased for easier clicking
           ],
           'circle-color': ['get', 'color'],
           'circle-stroke-color': [
@@ -857,29 +914,7 @@
         }
       });
       
-      // Setup dragging for this specific route's waypoints
-      setupWaypointDraggingForRoute(routeId);
-    }
-
-    function setupWaypointDraggingForRoute(routeId) {
-      const layerId = `waypoints-${routeId}`;
-      
-      // Mouse events for dragging
-      map.on('mouseenter', layerId, handleWaypointMouseEnter);
-      map.on('mouseleave', layerId, handleWaypointMouseLeave);
-      map.on('mousedown', layerId, handleWaypointMouseDown);
-      
-      // Cursor changes
-      map.on('mouseenter', layerId, () => {
-        if (!isDraggingWaypoint) {
-          map.getCanvas().style.cursor = 'grab';
-        }
-      });
-      map.on('mouseleave', layerId, () => {
-        if (!isDraggingWaypoint) {
-          map.getCanvas().style.cursor = '';
-        }
-      });
+      console.log('Added waypoint layer:', `waypoints-${routeId}`);
     }
     }
 
@@ -1643,34 +1678,10 @@
     }
 
     // Map-based Waypoint Dragging Functions
-    function handleWaypointMouseEnter(e) {
-      if (isDraggingWaypoint) return;
-      
-      const feature = e.features[0];
-      const layerId = e.target.id;
-      
-      map.setFeatureState(
-        { source: layerId, id: feature.id },
-        { hover: true }
-      );
-      
-      console.log('Mouse enter waypoint:', feature.properties.type);
-    }
-
-    function handleWaypointMouseLeave(e) {
-      if (isDraggingWaypoint) return;
-      
-      const feature = e.features[0];
-      const layerId = e.target.id;
-      
-      map.setFeatureState(
-        { source: layerId, id: feature.id },
-        { hover: false }
-      );
-    }
-
     function handleWaypointMouseDown(e) {
       if (!appInitialized) return;
+      
+      console.log('Waypoint mouse down event:', e);
       
       // Prevent map panning
       e.preventDefault();
@@ -1679,6 +1690,10 @@
       const feature = e.features[0];
       const layerId = e.target.id;
       const routeId = parseInt(layerId.split('-')[1]);
+      
+      console.log('Feature:', feature);
+      console.log('Layer ID:', layerId);
+      console.log('Route ID:', routeId);
       
       // Determine what type of point this is
       const pointType = feature.properties.type;
@@ -1744,6 +1759,8 @@
       const { routeId, layerId, featureId } = draggedWaypointInfo;
       const route = routes.get(routeId);
       
+      console.log('Finished dragging waypoint');
+      
       // Re-enable map panning
       map.dragPan.enable();
       
@@ -1770,8 +1787,6 @@
       map.getCanvas().style.cursor = '';
       
       updateStatus('<strong>✅ Point Moved</strong><br>Route updated, recalculate to see new path', 'success');
-      
-      console.log('Finished dragging waypoint');
     }
 
     // Initialize when page loads
