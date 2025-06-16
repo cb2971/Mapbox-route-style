@@ -428,6 +428,14 @@
       
       <button onclick="createNewRoute()">➕ New Route</button>
       
+      <div style="display: flex; gap: 5px; margin: 5px 0;">
+        <button onclick="exportRoutes()" style="flex: 1; font-size: 12px; height: 35px;">📤 Export Routes</button>
+        <button onclick="triggerImportRoutes()" style="flex: 1; font-size: 12px; height: 35px;">📥 Import Routes</button>
+      </div>
+      
+      <!-- Hidden file input for importing -->
+      <input type="file" id="import-file-input" accept=".json" style="display: none;" onchange="importRoutes(event)">
+      
       <div class="route-list" id="route-list" style="display: none;">
         <!-- Route list items will be dynamically generated -->
       </div>
@@ -1375,6 +1383,167 @@
       
       // Also update the input field
       document.getElementById('center-input').value = centerText;
+    }
+
+    // Route Export/Import Functions
+    function exportRoutes() {
+      if (routes.size === 0) {
+        updateStatus('<strong>❌ No Routes</strong><br>No routes to export', 'error');
+        return;
+      }
+
+      try {
+        // Convert routes Map to exportable format
+        const exportData = {
+          version: "1.0",
+          exportDate: new Date().toISOString(),
+          totalRoutes: routes.size,
+          routes: Array.from(routes.values()).map(route => ({
+            id: route.id,
+            name: route.name,
+            origin: route.origin,
+            destination: route.destination,
+            waypoints: route.waypoints,
+            profile: route.profile,
+            color: route.color,
+            width: route.width,
+            visible: route.visible,
+            status: route.status,
+            // Don't export routeData as it can be recalculated
+            routeStats: route.routeData ? {
+              duration: route.routeData.duration,
+              distance: route.routeData.distance
+            } : null
+          }))
+        };
+
+        // Create and download file
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = `routes_export_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+        
+        // Trigger download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up
+        URL.revokeObjectURL(link.href);
+        
+        updateStatus(`<strong>📤 Routes Exported</strong><br>Downloaded ${routes.size} routes successfully`, 'success');
+        
+      } catch (error) {
+        console.error('Export error:', error);
+        updateStatus('<strong>❌ Export Failed</strong><br>Could not export routes', 'error');
+      }
+    }
+
+    function triggerImportRoutes() {
+      const fileInput = document.getElementById('import-file-input');
+      fileInput.click();
+    }
+
+    function importRoutes(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (!file.name.endsWith('.json')) {
+        updateStatus('<strong>❌ Invalid File</strong><br>Please select a JSON file', 'error');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importData = JSON.parse(e.target.result);
+          
+          // Validate import data structure
+          if (!importData.routes || !Array.isArray(importData.routes)) {
+            throw new Error('Invalid route data structure');
+          }
+
+          updateStatus('<strong>📥 Importing Routes...</strong><br>Processing route data', 'loading');
+
+          // Clear existing routes first (with confirmation)
+          if (routes.size > 0) {
+            const confirmClear = confirm(`This will replace your current ${routes.size} route(s). Continue?`);
+            if (!confirmClear) {
+              updateStatus('<strong>❌ Import Cancelled</strong><br>Existing routes preserved', 'error');
+              return;
+            }
+          }
+
+          // Clear existing routes from map
+          routes.forEach((route, id) => {
+            if (map.getLayer(`route-${id}`)) map.removeLayer(`route-${id}`);
+            if (map.getSource(`route-${id}`)) map.removeSource(`route-${id}`);
+            if (map.getLayer(`waypoints-${id}`)) map.removeLayer(`waypoints-${id}`);
+            if (map.getSource(`waypoints-${id}`)) map.removeSource(`waypoints-${id}`);
+          });
+
+          // Clear routes collection
+          routes.clear();
+
+          // Import new routes
+          let importedCount = 0;
+          let maxId = 0;
+
+          importData.routes.forEach(routeData => {
+            const newRoute = {
+              id: routeData.id,
+              name: routeData.name || `Route ${routeData.id}`,
+              origin: routeData.origin || null,
+              destination: routeData.destination || null,
+              waypoints: routeData.waypoints || [],
+              profile: routeData.profile || 'driving',
+              color: routeData.color || routeColors[routeData.id % routeColors.length],
+              width: routeData.width || 8,
+              visible: routeData.visible !== undefined ? routeData.visible : true,
+              status: routeData.status || 'empty',
+              routeData: null // Will be recalculated if needed
+            };
+
+            routes.set(newRoute.id, newRoute);
+            addRouteToMap(newRoute.id);
+            maxId = Math.max(maxId, newRoute.id);
+            importedCount++;
+          });
+
+          // Update nextRouteId to avoid conflicts
+          nextRouteId = maxId + 1;
+
+          // Switch to first imported route
+          if (routes.size > 0) {
+            const firstRouteId = Array.from(routes.keys())[0];
+            switchToRoute(firstRouteId);
+          }
+
+          // Update UI
+          updateRouteTabs();
+          updateRouteList();
+
+          const importInfo = importData.exportDate ? 
+            `<br>From: ${new Date(importData.exportDate).toLocaleDateString()}` : '';
+          
+          updateStatus(`<strong>📥 Import Complete</strong><br>Imported ${importedCount} routes${importInfo}`, 'success');
+
+        } catch (error) {
+          console.error('Import error:', error);
+          updateStatus('<strong>❌ Import Failed</strong><br>Invalid or corrupted file', 'error');
+        }
+      };
+
+      reader.onerror = function() {
+        updateStatus('<strong>❌ File Read Error</strong><br>Could not read the file', 'error');
+      };
+
+      reader.readAsText(file);
+      
+      // Clear the input so same file can be imported again
+      event.target.value = '';
     }
 
     // Initialize when page loads
