@@ -497,6 +497,20 @@
       <div class="card-header">🗺️ Map Controls</div>
       
       <div class="input-group">
+        <label>🎨 Map Style:</label>
+        <select id="map-style-select" onchange="RouteFinderApp.mapControls.changeMapStyle()">
+          <option value="mapbox://styles/mapbox/streets-v11">Streets</option>
+          <option value="mapbox://styles/mapbox/outdoors-v11">Outdoors</option>
+          <option value="mapbox://styles/mapbox/light-v10">Light</option>
+          <option value="mapbox://styles/mapbox/dark-v10">Dark</option>
+          <option value="mapbox://styles/mapbox/satellite-v9">Satellite</option>
+          <option value="mapbox://styles/mapbox/satellite-streets-v11">Satellite Streets</option>
+          <option value="mapbox://styles/mapbox/navigation-day-v1">Navigation Day</option>
+          <option value="mapbox://styles/mapbox/navigation-night-v1">Navigation Night</option>
+        </select>
+      </div>
+      
+      <div class="input-group">
         <label>📍 Center Map On:</label>
         <input type="text" id="center-input" placeholder="Enter address or coordinates">
         <div style="display: flex; gap: 5px; margin-top: 5px;">
@@ -1192,6 +1206,31 @@
           }
           
           document.getElementById('center-input').value = centerText;
+        },
+        
+        changeMapStyle() {
+          if (!State.map) return;
+          
+          const selectedStyle = document.getElementById('map-style-select').value;
+          
+          Utils.updateStatus('<strong>🎨 Changing Map Style...</strong><br>Loading new style', 'loading');
+          
+          State.map.setStyle(selectedStyle);
+          
+          // Re-add custom layers after style loads
+          State.map.once('style.load', () => {
+            // Re-add obstacles layer
+            MapManager.setupMapFeatures();
+            
+            // Re-add all route layers
+            State.routes.forEach((route, routeId) => {
+              RouteManager.addRouteToMap(routeId);
+              RouteManager.updateRouteOnMap(routeId);
+            });
+            
+            Utils.updateStatus('<strong>✅ Map Style Changed</strong><br>Style updated successfully', 'success');
+            EventSystem.emit('mapStyleChanged', selectedStyle);
+          });
         }
       };
 
@@ -1675,7 +1714,8 @@
           toggleCrosshair: MapControlsManager.toggleCrosshair.bind(MapControlsManager),
           centerMapOnLocation: MapControlsManager.centerMapOnLocation.bind(MapControlsManager),
           toggleCenterMode: MapControlsManager.toggleCenterMode.bind(MapControlsManager),
-          getCurrentCenter: MapControlsManager.getCurrentCenter.bind(MapControlsManager)
+          getCurrentCenter: MapControlsManager.getCurrentCenter.bind(MapControlsManager),
+          changeMapStyle: MapControlsManager.changeMapStyle.bind(MapControlsManager)
         },
         
         fileManager: {
