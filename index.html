@@ -691,6 +691,11 @@
           console.log('Map loaded successfully');
           console.log('Map style loaded:', map.isStyleLoaded());
           
+          // Add error listener to catch any map errors
+          map.on('error', function(e) {
+            console.error('Map error occurred:', e);
+          });
+          
           setupMapFeatures();
           setupEventHandlers();
           
@@ -975,12 +980,15 @@
         console.log('Added route layer:', `route-${routeId}`);
 
         // Add waypoints source
+        console.log('About to add waypoints source:', `waypoints-${routeId}`);
         map.addSource(`waypoints-${routeId}`, {
           type: 'geojson',
           data: { type: 'FeatureCollection', features: [] }
         });
         console.log('Added waypoints source:', `waypoints-${routeId}`);
 
+        console.log('About to add waypoints layer:', `waypoints-${routeId}`);
+        console.log('Route visible:', route.visible);
         map.addLayer({
           id: `waypoints-${routeId}`,
           type: 'circle',
@@ -990,11 +998,23 @@
             'circle-color': ['get', 'color'],
             'circle-stroke-color': '#ffffff',
             'circle-stroke-width': 2,
-            'circle-opacity': route.visible ? 1 : 0,
-            'circle-stroke-opacity': route.visible ? 1 : 0
+            'circle-opacity': 1, // Force visible for debugging
+            'circle-stroke-opacity': 1 // Force visible for debugging
           }
         });
         console.log('Added waypoint layer:', `waypoints-${routeId}`);
+        
+        // Immediate verification
+        const immediateCheck = map.getLayer(`waypoints-${routeId}`);
+        console.log('Immediate layer check:', !!immediateCheck);
+        
+        if (!immediateCheck) {
+          console.log('❌ Layer was not created immediately after addLayer call');
+          // Try to see if there were any errors
+          console.log('Map error events:', map.listListeners('error'));
+        } else {
+          console.log('✅ Layer created successfully');
+        }
         
         // Verify the layer was actually added
         setTimeout(() => {
