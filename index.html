@@ -194,7 +194,7 @@
     }
 
     .card-header.collapsed .chevron {
-      transform: rotate(-90deg);
+      transform: rotate(90deg);
     }
 
     .card-content {
@@ -678,10 +678,10 @@
       <div class="card" id="route-management" style="display: none;">
         <div class="card-header" onclick="RouteFinderApp.ui.toggleSection('route-management')">
           <div style="display: flex; align-items: center;">
-            <span class="icon">🗺️</span>
+            <span class="icon">⚬</span>
             <span>Route Management</span>
           </div>
-          <span class="chevron">▼</span>
+          <span class="chevron">▷</span>
         </div>
         <div class="card-content collapsible" id="route-management-content">
           <div class="route-tabs" id="route-tabs">
@@ -689,15 +689,15 @@
           </div>
           
           <button class="btn btn-primary btn-full" onclick="RouteFinderApp.routes.createNewRoute()">
-            <span>➕</span> New Route
+            <span>+</span> New Route
           </button>
           
           <div class="button-grid" style="margin-top: var(--space-4);">
             <button class="btn btn-secondary" onclick="RouteFinderApp.fileManager.exportRoutes()">
-              <span>📤</span> Export
+              <span>↑</span> Export
             </button>
             <button class="btn btn-secondary" onclick="RouteFinderApp.fileManager.triggerImportRoutes()">
-              <span>📥</span> Import
+              <span>↓</span> Import
             </button>
           </div>
           
@@ -709,7 +709,7 @@
           </div>
           
           <button class="btn btn-secondary btn-full" onclick="RouteFinderApp.ui.toggleRouteList()" id="route-list-toggle" style="display: none; margin-top: var(--space-3);">
-            📋 Show All Routes
+            ⋯ Show All Routes
           </button>
         </div>
       </div>
@@ -718,37 +718,37 @@
       <div class="card" id="current-route-panel" style="display: none;">
         <div class="card-header" onclick="RouteFinderApp.ui.toggleSection('current-route')">
           <div style="display: flex; align-items: center;">
-            <span class="icon">🎯</span>
+            <span class="icon">○</span>
             <span id="current-route-header">Current Route</span>
           </div>
-          <span class="chevron">▼</span>
+          <span class="chevron">▷</span>
         </div>
         <div class="card-content collapsible" id="current-route-content">
           <div class="form-group">
-            <label class="form-label">🟢 Starting Point</label>
+            <label class="form-label">Starting Point</label>
             <input type="text" class="form-input" id="origin-input" placeholder="Enter address or place name">
             <button class="btn btn-secondary btn-full" onclick="RouteFinderApp.geocoding.geocodeOrigin()" style="margin-top: var(--space-2);">
-              📍 Find Location
+              ◎ Find Location
             </button>
           </div>
           
           <div class="form-group">
-            <label class="form-label">🔴 Destination</label>
+            <label class="form-label">Destination</label>
             <input type="text" class="form-input" id="destination-input" placeholder="Enter address or place name">
             <button class="btn btn-secondary btn-full" onclick="RouteFinderApp.geocoding.geocodeDestination()" style="margin-top: var(--space-2);">
-              📍 Find Location
+              ◎ Find Location
             </button>
           </div>
           
           <div class="form-group">
-            <label class="form-label">🔵 Waypoints</label>
+            <label class="form-label">Waypoints</label>
             <input type="text" class="form-input" id="waypoint-input" placeholder="Enter intermediate stop">
             <div class="button-grid">
               <button class="btn btn-secondary" onclick="RouteFinderApp.waypoints.addWaypoint()">
-                ➕ Add
+                + Add
               </button>
               <button class="btn btn-secondary" onclick="RouteFinderApp.waypoints.toggleWaypointMode()" id="waypoint-mode-btn">
-                📍 Click Map
+                ◉ Click Map
               </button>
             </div>
             
@@ -758,20 +758,20 @@
           </div>
           
           <div class="form-group">
-            <label class="form-label">🚗 Travel Mode</label>
+            <label class="form-label">Travel Mode</label>
             <select class="form-select" id="profile-select">
-              <option value="driving">🚗 Driving</option>
-              <option value="walking">🚶 Walking</option>
-              <option value="cycling">🚴 Cycling</option>
+              <option value="driving">Car</option>
+              <option value="walking">Walk</option>
+              <option value="cycling">Bike</option>
             </select>
           </div>
           
           <div class="button-row">
             <button class="btn btn-primary" onclick="RouteFinderApp.routing.findRoute()" style="flex: 2;">
-              🗺️ Find Route
+              → Find Route
             </button>
             <button class="btn btn-secondary" onclick="RouteFinderApp.routes.clearCurrentRoute()" style="flex: 1;">
-              🗑️ Clear
+              ✕ Clear
             </button>
           </div>
           
@@ -788,14 +788,14 @@
       <div class="card" id="map-controls" style="display: none;">
         <div class="card-header" onclick="RouteFinderApp.ui.toggleSection('map-controls')">
           <div style="display: flex; align-items: center;">
-            <span class="icon">🗺️</span>
+            <span class="icon">◈</span>
             <span>Map Controls</span>
           </div>
-          <span class="chevron">▼</span>
+          <span class="chevron">▷</span>
         </div>
         <div class="card-content collapsible" id="map-controls-content">
           <div class="form-group">
-            <label class="form-label">🎨 Map Style</label>
+            <label class="form-label">Map Style</label>
             <select class="form-select" id="map-style-select" onchange="RouteFinderApp.mapControls.changeMapStyle()">
               <option value="mapbox://styles/cb29/ckxnnmex53n1b14m07t6sum48">Classic Standard</option>
               <option value="mapbox://styles/cb29/ckxnmjiti0rvm14pby8w9si99">Classic Vintage</option>
@@ -826,32 +826,32 @@
           </div>
           
           <div class="form-group">
-            <label class="form-label">📍 Center Map On</label>
+            <label class="form-label">Center Map On</label>
             <input type="text" class="form-input" id="center-input" placeholder="Enter address or coordinates">
             <div class="button-grid">
               <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.centerMapOnLocation()">
-                🎯 Center
+                ◎ Center
               </button>
               <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.toggleCenterMode()" id="center-mode-btn">
-                📍 Click Map
+                ◉ Click Map
               </button>
             </div>
           </div>
           
           <div class="button-grid">
             <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.toggleCrosshair()" id="crosshair-toggle">
-              🎯 Show Center
+              ⊕ Show Center
             </button>
             <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.getCurrentCenter()">
-              📋 Get Center
+              ⧉ Get Center
             </button>
           </div>
           
           <div class="zoom-controls">
             <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.zoomIn()">+</button>
             <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.zoomOut()">-</button>
-            <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.fitToData()" style="flex: 1;">
-              📍 Fit to Routes
+            <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.fitToData()" style="flex: 1; font-size: var(--font-size-sm);">
+              ⬚ Fit to Routes
             </button>
           </div>
         </div>
@@ -861,13 +861,13 @@
       <div class="card" id="init-controls">
         <div class="card-header">
           <div style="display: flex; align-items: center;">
-            <span class="icon">🚀</span>
+            <span class="icon">◯</span>
             <span>Initialize Application</span>
           </div>
         </div>
         <div class="card-content">
           <button class="btn btn-primary btn-full" onclick="RouteFinderApp.init()" id="init-app-btn">
-            🗺️ Start Route Finder
+            → Start Route Finder
           </button>
           <p style="font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin: var(--space-3) 0 0 0; text-align: center;">
             This will load the mapping libraries and start the full application.
@@ -1770,13 +1770,13 @@
             State.collapsedSections.delete(sectionId);
             header.classList.remove('collapsed');
             content.classList.remove('collapsed');
-            chevron.style.transform = 'rotate(0deg)';
+            chevron.textContent = '▽';
           } else {
             // Collapse
             State.collapsedSections.add(sectionId);
             header.classList.add('collapsed');
             content.classList.add('collapsed');
-            chevron.style.transform = 'rotate(-90deg)';
+            chevron.textContent = '▷';
           }
         },
 
@@ -1831,10 +1831,10 @@
               </div>
               <div class="route-controls">
                 <button class="visibility-btn ${route.visible ? '' : 'hidden'}" onclick="RouteFinderApp.routes.toggleRouteVisibility(${id})" title="Toggle visibility">
-                  ${route.visible ? '👁️' : '🚫'}
+                  ${route.visible ? '◉' : '○'}
                 </button>
-                <button class="btn btn-small" onclick="RouteFinderApp.routes.switchToRoute(${id})" title="Edit route">✏️</button>
-                <button class="btn btn-small" onclick="RouteFinderApp.routes.deleteRoute(${id})" title="Delete route">🗑️</button>
+                <button class="btn btn-small" onclick="RouteFinderApp.routes.switchToRoute(${id})" title="Edit route">✎</button>
+                <button class="btn btn-small" onclick="RouteFinderApp.routes.deleteRoute(${id})" title="Delete route">✕</button>
               </div>
             `;
             listContainer.appendChild(item);
@@ -1862,7 +1862,7 @@
               <div class="waypoint-number">${index + 1}</div>
               <div class="waypoint-text">${Utils.formatCoordinates(waypoint)}</div>
               <div class="waypoint-controls">
-                <button class="btn btn-secondary btn-small" onclick="RouteFinderApp.waypoints.removeWaypoint(${index})" title="Remove waypoint">×</button>
+                <button class="btn btn-secondary btn-small" onclick="RouteFinderApp.waypoints.removeWaypoint(${index})" title="Remove waypoint">✕</button>
               </div>
             `;
             waypointsList.appendChild(item);
@@ -1902,7 +1902,7 @@
           
           State.routeListVisible = !State.routeListVisible;
           listContainer.style.display = State.routeListVisible ? 'block' : 'none';
-          toggleBtn.textContent = State.routeListVisible ? '📋 Hide Routes' : '📋 Show All Routes';
+          toggleBtn.textContent = State.routeListVisible ? '⋯ Hide Routes' : '⋯ Show All Routes';
         }
       };
 
