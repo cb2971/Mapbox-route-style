@@ -693,6 +693,13 @@
           setupEventHandlers();
           createNewRoute();
           showApplicationUI();
+          
+          // Set up waypoint interactions after everything is loaded
+          setTimeout(() => {
+            console.log('Setting up waypoint interactions...');
+            setupAllWaypointInteractions();
+          }, 2000);
+          
           updateStatus('<strong>🎉 Ready!</strong><br>Multi-route mapper is ready to use', 'success');
           appInitialized = true;
         });
@@ -733,30 +740,44 @@
     function setupEventHandlers() {
       map.on('click', handleMapClick);
       
-      // Set up waypoint interaction after map is fully loaded
-      setTimeout(() => {
-        setupAllWaypointInteractions();
-      }, 1000);
+      // Global mouse events for waypoint dragging
+      map.on('mousemove', handleWaypointMouseMove);
+      map.on('mouseup', handleWaypointMouseUp);
+      
+      console.log('Basic event handlers set up');
     }
 
     function setupAllWaypointInteractions() {
       console.log('Setting up waypoint interactions for', routes.size, 'routes');
       
+      // Check if routes exist and have layers
       routes.forEach((route, routeId) => {
         const layerId = `waypoints-${routeId}`;
+        
+        // Check if layer exists
+        if (!map.getLayer(layerId)) {
+          console.log('Layer does not exist:', layerId);
+          return;
+        }
+        
         console.log('Setting up interactions for layer:', layerId);
+        
+        // Test if layer has any features
+        const features = map.querySourceFeatures(`waypoints-${routeId}`);
+        console.log('Features in', layerId, ':', features.length);
         
         // Remove any existing listeners first
         map.off('mouseenter', layerId);
         map.off('mouseleave', layerId);
         map.off('mousedown', layerId);
         
-        // Add new listeners
+        // Add new listeners with more debugging
         map.on('mouseenter', layerId, (e) => {
-          console.log('Mouse entered waypoint layer:', layerId);
+          console.log('HOVER: Mouse entered waypoint layer:', layerId, 'features:', e.features.length);
           map.getCanvas().style.cursor = 'grab';
           
           if (e.features && e.features.length > 0) {
+            console.log('Setting hover state for feature:', e.features[0].id);
             map.setFeatureState(
               { source: layerId, id: e.features[0].id },
               { hover: true }
@@ -765,6 +786,7 @@
         });
         
         map.on('mouseleave', layerId, (e) => {
+          console.log('Mouse left waypoint layer:', layerId);
           if (!isDraggingWaypoint) {
             map.getCanvas().style.cursor = '';
           }
@@ -778,14 +800,10 @@
         });
         
         map.on('mousedown', layerId, (e) => {
-          console.log('Mouse down on waypoint layer:', layerId);
+          console.log('CLICK: Mouse down on waypoint layer:', layerId);
           handleWaypointMouseDown(e);
         });
       });
-      
-      // Global mouse events
-      map.on('mousemove', handleWaypointMouseMove);
-      map.on('mouseup', handleWaypointMouseUp);
     }
 
     function showApplicationUI() {
@@ -802,6 +820,8 @@
       const newRoute = createEmptyRoute();
       routes.set(newRoute.id, newRoute);
       
+      console.log(`Creating new route ${newRoute.id}`);
+      
       // Add map sources for this route
       addRouteToMap(newRoute.id);
       
@@ -810,13 +830,6 @@
       
       updateRouteTabs();
       updateRouteList();
-      
-      // Refresh waypoint interactions
-      if (appInitialized) {
-        setTimeout(() => {
-          setupAllWaypointInteractions();
-        }, 100);
-      }
       
       console.log(`Created new route ${newRoute.id}`);
     }
@@ -1293,6 +1306,8 @@
       const route = routes.get(routeId);
       if (!route || !map) return;
       
+      console.log('Updating route on map for route:', routeId);
+      
       // Update route line
       if (route.routeData) {
         const routeGeoJSON = {
@@ -1322,6 +1337,7 @@
           geometry: { type: 'Point', coordinates: route.origin },
           properties: { color: '#00ff00', type: 'origin' }
         });
+        console.log('Added origin waypoint at:', route.origin);
       }
       
       route.waypoints.forEach((waypoint, index) => {
@@ -1331,6 +1347,7 @@
           geometry: { type: 'Point', coordinates: waypoint },
           properties: { color: '#0066ff', type: 'waypoint', index: index }
         });
+        console.log('Added waypoint', index, 'at:', waypoint);
       });
       
       if (route.destination) {
@@ -1340,14 +1357,26 @@
           geometry: { type: 'Point', coordinates: route.destination },
           properties: { color: '#ff0000', type: 'destination' }
         });
+        console.log('Added destination waypoint at:', route.destination);
       }
       
-      map.getSource(`waypoints-${routeId}`).setData({
-        type: 'FeatureCollection',
-        features: waypointFeatures
-      });
+      console.log('Total waypoint features for route', routeId, ':', waypointFeatures.length);
       
-      console.log(`Updated waypoints for route ${routeId}:`, waypointFeatures.length, 'features');
+      const waypointSource = map.getSource(`waypoints-${routeId}`);
+      if (waypointSource) {
+        waypointSource.setData({
+          type: 'FeatureCollection',
+          features: waypointFeatures
+        });
+        console.log('Updated waypoint source data');
+        
+        // Re-setup interactions after updating data
+        setTimeout(() => {
+          setupAllWaypointInteractions();
+        }, 100);
+      } else {
+        console.log('Waypoint source not found for route:', routeId);
+      }
     }
 
     function clearCurrentRoute() {
