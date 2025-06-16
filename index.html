@@ -491,7 +491,10 @@
       <div class="input-group">
         <label>📍 Center Map On:</label>
         <input type="text" id="center-input" placeholder="Enter address or coordinates">
-        <button onclick="centerMapOnLocation()" style="margin-top: 5px; font-size: 12px; height: 30px;">🎯 Center Map</button>
+        <div style="display: flex; gap: 5px; margin-top: 5px;">
+          <button onclick="centerMapOnLocation()" style="flex: 1; font-size: 12px; height: 30px;">🎯 Center Map</button>
+          <button onclick="toggleCenterMode()" id="center-mode-btn" style="flex: 1; font-size: 12px; height: 30px;">📍 Click Map</button>
+        </div>
       </div>
       
       <div style="display: flex; gap: 10px; margin-bottom: 10px;">
@@ -533,6 +536,7 @@
     let isSettingOrigin = true;
     let isAddingWaypoint = false;
     let crosshairVisible = false;
+    let isSettingMapCenter = false;
     
     // Route colors
     const routeColors = [
@@ -944,6 +948,26 @@
       
       const coords = [e.lngLat.lng, e.lngLat.lat];
       
+      if (isSettingMapCenter) {
+        // Center the map on the clicked location
+        map.flyTo({
+          center: coords,
+          duration: 1500
+        });
+        
+        // Update the input field with the new coordinates
+        document.getElementById('center-input').value = `${coords[1].toFixed(6)}, ${coords[0].toFixed(6)}`;
+        
+        // Turn off center mode
+        isSettingMapCenter = false;
+        const btn = document.getElementById('center-mode-btn');
+        btn.textContent = '📍 Click Map';
+        btn.style.backgroundColor = '#007bff';
+        
+        updateStatus('<strong>📍 Map Centered</strong><br>Map centered on clicked location', 'success');
+        return;
+      }
+      
       if (isAddingWaypoint) {
         addWaypointAtCoordinates(coords);
         return;
@@ -1317,6 +1341,19 @@
         });
         updateStatus(`<strong>📍 Map Centered</strong><br>Location found and centered`, 'success');
       });
+    }
+
+    function toggleCenterMode() {
+      isSettingMapCenter = !isSettingMapCenter;
+      const btn = document.getElementById('center-mode-btn');
+      btn.textContent = isSettingMapCenter ? '🛑 Stop Mode' : '📍 Click Map';
+      btn.style.backgroundColor = isSettingMapCenter ? '#dc3545' : '#007bff';
+      
+      if (isSettingMapCenter) {
+        updateStatus('<strong>📍 Center Mode</strong><br>Click on map to center at that location', 'loading');
+      } else {
+        updateStatus('<strong>🎉 Ready!</strong><br>Multi-route mapper is ready to use', 'success');
+      }
     }
 
     function getCurrentCenter() {
