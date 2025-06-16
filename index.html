@@ -188,26 +188,6 @@
       background-color: white;
       margin: 2px;
       border-radius: 3px;
-      cursor: move;
-      transition: all 0.2s ease;
-      user-select: none;
-    }
-
-    .waypoint-item:hover {
-      background-color: #f8f9fa;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .waypoint-item.dragging {
-      opacity: 0.5;
-      transform: rotate(2deg);
-      z-index: 1000;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
-
-    .waypoint-item.drag-over {
-      border-top: 3px solid #007bff;
-      background-color: #e3f2fd;
     }
 
     .waypoint-item:last-child {
@@ -227,11 +207,6 @@
       font-weight: bold;
       margin-right: 10px;
       flex-shrink: 0;
-      cursor: grab;
-    }
-
-    .waypoint-number:active {
-      cursor: grabbing;
     }
 
     .waypoint-text {
@@ -571,6 +546,10 @@
     let crosshairVisible = false;
     let isSettingMapCenter = false;
     
+    // Waypoint dragging state
+    let isDraggingWaypoint = false;
+    let draggedWaypointInfo = null; // {routeId, type, index}
+    
     // Route colors
     const routeColors = [
       '#ff0000', '#00ff00', '#0066ff', '#ff6600', '#ff00ff', 
@@ -753,6 +732,14 @@
 
     function setupEventHandlers() {
       map.on('click', handleMapClick);
+      
+      // Global mouse events for waypoint dragging
+      map.on('mousemove', handleWaypointMouseMove);
+      map.on('mouseup', handleWaypointMouseUp);
+    }
+
+    function setupWaypointDragging() {
+      // This function is no longer needed since we setup per route
     }
 
     function showApplicationUI() {
@@ -809,19 +796,91 @@
         data: { type: 'FeatureCollection', features: [] }
       });
 
+    function addRouteToMap(routeId) {
+      const route = routes.get(routeId);
+      if (!route || !map) return;
+
+      // Add route line source
+      map.addSource(`route-${routeId}`, {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
+
+      map.addLayer({
+        id: `route-${routeId}`,
+        type: 'line',
+        source: `route-${routeId}`,
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 
+          'line-color': route.color, 
+          'line-width': route.width,
+          'line-opacity': route.visible ? 1 : 0
+        }
+      });
+
+      // Add waypoints source
+      map.addSource(`waypoints-${routeId}`, {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
+
       map.addLayer({
         id: `waypoints-${routeId}`,
         type: 'circle',
         source: `waypoints-${routeId}`,
         paint: {
-          'circle-radius': 3,
+          'circle-radius': [
+            'case',
+            ['boolean', ['feature-state', 'hover'], false],
+            6,  // Larger when hovered
+            3   // Normal size
+          ],
           'circle-color': ['get', 'color'],
-          'circle-stroke-color': '#ffffff',
-          'circle-stroke-width': 2,
+          'circle-stroke-color': [
+            'case',
+            ['boolean', ['feature-state', 'hover'], false],
+            '#ffffff',  // White stroke when hovered
+            ['boolean', ['feature-state', 'dragging'], false],
+            '#000000',  // Black stroke when dragging
+            '#ffffff'   // Normal white stroke
+          ],
+          'circle-stroke-width': [
+            'case',
+            ['boolean', ['feature-state', 'hover'], false],
+            3,  // Thicker when hovered
+            ['boolean', ['feature-state', 'dragging'], false],
+            4,  // Thickest when dragging
+            2   // Normal thickness
+          ],
           'circle-opacity': route.visible ? 1 : 0,
           'circle-stroke-opacity': route.visible ? 1 : 0
         }
       });
+      
+      // Setup dragging for this specific route's waypoints
+      setupWaypointDraggingForRoute(routeId);
+    }
+
+    function setupWaypointDraggingForRoute(routeId) {
+      const layerId = `waypoints-${routeId}`;
+      
+      // Mouse events for dragging
+      map.on('mouseenter', layerId, handleWaypointMouseEnter);
+      map.on('mouseleave', layerId, handleWaypointMouseLeave);
+      map.on('mousedown', layerId, handleWaypointMouseDown);
+      
+      // Cursor changes
+      map.on('mouseenter', layerId, () => {
+        if (!isDraggingWaypoint) {
+          map.getCanvas().style.cursor = 'grab';
+        }
+      });
+      map.on('mouseleave', layerId, () => {
+        if (!isDraggingWaypoint) {
+          map.getCanvas().style.cursor = '';
+        }
+      });
+    }
     }
 
     function switchToRoute(routeId) {
@@ -1122,19 +1181,8 @@
       route.waypoints.forEach((waypoint, index) => {
         const item = document.createElement('div');
         item.className = 'waypoint-item';
-        item.draggable = true;
-        item.dataset.index = index;
-        
-        // Add drag event listeners
-        item.addEventListener('dragstart', handleWaypointDragStart);
-        item.addEventListener('dragend', handleWaypointDragEnd);
-        item.addEventListener('dragover', handleWaypointDragOver);
-        item.addEventListener('drop', handleWaypointDrop);
-        item.addEventListener('dragenter', handleWaypointDragEnter);
-        item.addEventListener('dragleave', handleWaypointDragLeave);
-        
         item.innerHTML = `
-          <div class="waypoint-number" title="Drag to reorder">${index + 1}</div>
+          <div class="waypoint-number">${index + 1}</div>
           <div class="waypoint-text">${waypoint[1].toFixed(4)}, ${waypoint[0].toFixed(4)}</div>
           <div class="waypoint-controls">
             <button onclick="removeWaypoint(${index})" title="Remove waypoint">×</button>
@@ -1582,91 +1630,122 @@
       event.target.value = '';
     }
 
-    // Drag and Drop Waypoint Functions
-    let draggedWaypointIndex = null;
-
-    function handleWaypointDragStart(e) {
-      draggedWaypointIndex = parseInt(e.target.dataset.index);
-      e.target.classList.add('dragging');
+    // Map-based Waypoint Dragging Functions
+    function handleWaypointMouseEnter(e) {
+      if (isDraggingWaypoint) return;
       
-      // Set drag effect
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/html', e.target.outerHTML);
-      
-      updateStatus('<strong>🔄 Reordering...</strong><br>Drop waypoint at new position', 'loading');
+      map.setFeatureState(
+        { source: e.target.id, id: e.features[0].id },
+        { hover: true }
+      );
     }
 
-    function handleWaypointDragEnd(e) {
-      e.target.classList.remove('dragging');
+    function handleWaypointMouseLeave(e) {
+      if (isDraggingWaypoint) return;
       
-      // Clean up any remaining drag-over effects
-      document.querySelectorAll('.waypoint-item').forEach(item => {
-        item.classList.remove('drag-over');
-      });
+      map.setFeatureState(
+        { source: e.target.id, id: e.features[0].id },
+        { hover: false }
+      );
+    }
+
+    function handleWaypointMouseDown(e) {
+      if (!appInitialized) return;
       
-      draggedWaypointIndex = null;
-    }
-
-    function handleWaypointDragOver(e) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-    }
-
-    function handleWaypointDragEnter(e) {
-      e.preventDefault();
-      const targetIndex = parseInt(e.target.closest('.waypoint-item')?.dataset.index);
-      
-      if (targetIndex !== undefined && targetIndex !== draggedWaypointIndex) {
-        e.target.closest('.waypoint-item').classList.add('drag-over');
-      }
-    }
-
-    function handleWaypointDragLeave(e) {
-      // Only remove drag-over if we're leaving the entire item
-      if (!e.target.closest('.waypoint-item').contains(e.relatedTarget)) {
-        e.target.closest('.waypoint-item').classList.remove('drag-over');
-      }
-    }
-
-    function handleWaypointDrop(e) {
+      // Prevent map panning
       e.preventDefault();
       
-      const targetElement = e.target.closest('.waypoint-item');
-      if (!targetElement) return;
+      const feature = e.features[0];
+      const layerId = e.target.id;
+      const routeId = parseInt(layerId.split('-')[1]);
       
-      const targetIndex = parseInt(targetElement.dataset.index);
+      // Determine what type of point this is
+      const pointType = feature.properties.type;
+      const pointIndex = feature.properties.index;
       
-      if (draggedWaypointIndex === null || targetIndex === draggedWaypointIndex) {
-        return;
-      }
+      isDraggingWaypoint = true;
+      draggedWaypointInfo = {
+        routeId: routeId,
+        type: pointType,
+        index: pointIndex,
+        originalCoords: feature.geometry.coordinates.slice()
+      };
       
-      const route = routes.get(currentRouteId);
+      // Set dragging state
+      map.setFeatureState(
+        { source: layerId, id: feature.id },
+        { dragging: true }
+      );
+      
+      map.getCanvas().style.cursor = 'grabbing';
+      updateStatus('<strong>🔄 Dragging Point...</strong><br>Move to new location and release', 'loading');
+    }
+
+    function handleWaypointMouseMove(e) {
+      if (!isDraggingWaypoint || !draggedWaypointInfo) return;
+      
+      const coords = [e.lngLat.lng, e.lngLat.lat];
+      const { routeId, type, index } = draggedWaypointInfo;
+      const route = routes.get(routeId);
+      
       if (!route) return;
       
-      // Perform the reorder
-      const waypoints = route.waypoints;
-      const draggedWaypoint = waypoints[draggedWaypointIndex];
-      
-      // Remove the dragged waypoint from its original position
-      waypoints.splice(draggedWaypointIndex, 1);
-      
-      // Insert it at the new position
-      // Adjust target index if we removed an item before it
-      const newTargetIndex = draggedWaypointIndex < targetIndex ? targetIndex - 1 : targetIndex;
-      waypoints.splice(newTargetIndex, 0, draggedWaypoint);
-      
-      // Update the display
-      updateWaypointsList();
-      
-      // Clear any existing route since waypoint order changed
-      if (route.routeData) {
-        route.routeData = null;
-        route.status = 'modified';
-        updateRouteOnMap(currentRouteId);
-        updateRouteList();
+      // Update the coordinate in the route
+      if (type === 'origin') {
+        route.origin = coords;
+      } else if (type === 'destination') {
+        route.destination = coords;
+      } else if (type === 'waypoint') {
+        route.waypoints[index] = coords;
       }
       
-      updateStatus('<strong>✅ Waypoints Reordered</strong><br>Route order updated successfully', 'success');
+      // Update the map display
+      updateRouteOnMap(routeId);
+      
+      // Update the UI if this is the current route
+      if (routeId === currentRouteId) {
+        if (type === 'origin') {
+          document.getElementById('origin-input').value = `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`;
+        } else if (type === 'destination') {
+          document.getElementById('destination-input').value = `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`;
+        }
+        updateWaypointsList();
+      }
+    }
+
+    function handleWaypointMouseUp(e) {
+      if (!isDraggingWaypoint || !draggedWaypointInfo) return;
+      
+      const { routeId } = draggedWaypointInfo;
+      const route = routes.get(routeId);
+      
+      if (route) {
+        // Clear any existing route since points have moved
+        if (route.routeData) {
+          route.routeData = null;
+          route.status = 'modified';
+          updateRouteOnMap(routeId);
+          updateRouteList();
+        }
+      }
+      
+      // Clean up dragging state
+      const layerId = `waypoints-${routeId}`;
+      if (map.getSource(layerId)) {
+        // Remove dragging state from all features
+        map.querySourceFeatures(layerId).forEach(feature => {
+          map.setFeatureState(
+            { source: layerId, id: feature.id },
+            { dragging: false, hover: false }
+          );
+        });
+      }
+      
+      isDraggingWaypoint = false;
+      draggedWaypointInfo = null;
+      map.getCanvas().style.cursor = '';
+      
+      updateStatus('<strong>✅ Point Moved</strong><br>Route updated, recalculate to see new path', 'success');
     }
 
     // Initialize when page loads
