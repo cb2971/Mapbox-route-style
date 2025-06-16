@@ -348,11 +348,65 @@
       font-size: 18px;
       font-weight: bold;
     }
+
+    /* Crosshair center indicator */
+    .map-crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 30px;
+      height: 30px;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .map-crosshair::before,
+    .map-crosshair::after {
+      content: '';
+      position: absolute;
+      background-color: #ff0000;
+      box-shadow: 0 0 0 1px #ffffff;
+    }
+
+    .map-crosshair::before {
+      top: 50%;
+      left: 2px;
+      right: 2px;
+      height: 2px;
+      transform: translateY(-50%);
+    }
+
+    .map-crosshair::after {
+      left: 50%;
+      top: 2px;
+      bottom: 2px;
+      width: 2px;
+      transform: translateX(-50%);
+    }
+
+    .map-crosshair .center-circle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 8px;
+      height: 8px;
+      border: 2px solid #ff0000;
+      border-radius: 50%;
+      background-color: #ffffff;
+      box-shadow: 0 0 0 1px #ffffff;
+    }
   </style>
 </head>
  
 <body>
   <div id="map"></div>
+  
+  <!-- Map crosshair indicator -->
+  <div id="map-crosshair" class="map-crosshair" style="display: none;">
+    <div class="center-circle"></div>
+  </div>
   
   <div class="toggle-btn sidebar-visible" id="toggle-btn" onclick="toggleSidebar()">
     ☰
@@ -434,6 +488,17 @@
     <div class="control-panel" id="map-controls" style="display: none;">
       <div class="card-header">🗺️ Map Controls</div>
       
+      <div class="input-group">
+        <label>📍 Center Map On:</label>
+        <input type="text" id="center-input" placeholder="Enter address or coordinates">
+        <button onclick="centerMapOnLocation()" style="margin-top: 5px; font-size: 12px; height: 30px;">🎯 Center Map</button>
+      </div>
+      
+      <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+        <button onclick="toggleCrosshair()" id="crosshair-toggle" style="flex: 1; font-size: 12px;">🎯 Show Center</button>
+        <button onclick="getCurrentCenter()" style="flex: 1; font-size: 12px;">📋 Get Center</button>
+      </div>
+      
       <div class="zoom-controls">
         <button onclick="zoomIn()">+</button>
         <button onclick="zoomOut()">-</button>
@@ -467,6 +532,7 @@
     // Interaction states
     let isSettingOrigin = true;
     let isAddingWaypoint = false;
+    let crosshairVisible = false;
     
     // Route colors
     const routeColors = [
@@ -711,7 +777,7 @@
         type: 'circle',
         source: `waypoints-${routeId}`,
         paint: {
-          'circle-radius': 8,
+          'circle-radius': 3,
           'circle-color': ['get', 'color'],
           'circle-stroke-color': '#ffffff',
           'circle-stroke-width': 2,
@@ -1204,6 +1270,74 @@
         toggleBtn.classList.remove('sidebar-hidden');
         toggleBtn.classList.add('sidebar-visible');
       }
+    }
+
+    function toggleCrosshair() {
+      crosshairVisible = !crosshairVisible;
+      const crosshair = document.getElementById('map-crosshair');
+      const toggleBtn = document.getElementById('crosshair-toggle');
+      
+      crosshair.style.display = crosshairVisible ? 'block' : 'none';
+      toggleBtn.textContent = crosshairVisible ? '🎯 Hide Center' : '🎯 Show Center';
+      toggleBtn.style.backgroundColor = crosshairVisible ? '#dc3545' : '#007bff';
+    }
+
+    function centerMapOnLocation() {
+      const input = document.getElementById('center-input').value.trim();
+      if (!input) {
+        updateStatus('<strong>❌ No Input</strong><br>Please enter an address or coordinates', 'error');
+        return;
+      }
+      
+      // Check if input looks like coordinates (lat, lng)
+      const coordMatch = input.match(/^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/);
+      if (coordMatch) {
+        const lat = parseFloat(coordMatch[1]);
+        const lng = parseFloat(coordMatch[2]);
+        
+        if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+          map.flyTo({
+            center: [lng, lat],
+            zoom: 14,
+            duration: 2000
+          });
+          updateStatus(`<strong>📍 Map Centered</strong><br>Coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}`, 'success');
+          return;
+        }
+      }
+      
+      // Geocode the address
+      updateStatus('<strong>🔍 Finding Location...</strong><br>Searching for address', 'loading');
+      
+      geocodeAddress(input, (coords) => {
+        map.flyTo({
+          center: coords,
+          zoom: 14,
+          duration: 2000
+        });
+        updateStatus(`<strong>📍 Map Centered</strong><br>Location found and centered`, 'success');
+      });
+    }
+
+    function getCurrentCenter() {
+      if (!map) return;
+      
+      const center = map.getCenter();
+      const centerText = `${center.lat.toFixed(6)}, ${center.lng.toFixed(6)}`;
+      
+      // Copy to clipboard if possible
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(centerText).then(() => {
+          updateStatus(`<strong>📋 Center Copied</strong><br>${centerText}`, 'success');
+        }).catch(() => {
+          updateStatus(`<strong>📍 Map Center</strong><br>${centerText}`, 'success');
+        });
+      } else {
+        updateStatus(`<strong>📍 Map Center</strong><br>${centerText}`, 'success');
+      }
+      
+      // Also update the input field
+      document.getElementById('center-input').value = centerText;
     }
 
     // Initialize when page loads
