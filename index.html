@@ -188,6 +188,26 @@
       background-color: white;
       margin: 2px;
       border-radius: 3px;
+      cursor: move;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .waypoint-item:hover {
+      background-color: #f8f9fa;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .waypoint-item.dragging {
+      opacity: 0.5;
+      transform: rotate(2deg);
+      z-index: 1000;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .waypoint-item.drag-over {
+      border-top: 3px solid #007bff;
+      background-color: #e3f2fd;
     }
 
     .waypoint-item:last-child {
@@ -207,6 +227,11 @@
       font-weight: bold;
       margin-right: 10px;
       flex-shrink: 0;
+      cursor: grab;
+    }
+
+    .waypoint-number:active {
+      cursor: grabbing;
     }
 
     .waypoint-text {
@@ -1097,8 +1122,19 @@
       route.waypoints.forEach((waypoint, index) => {
         const item = document.createElement('div');
         item.className = 'waypoint-item';
+        item.draggable = true;
+        item.dataset.index = index;
+        
+        // Add drag event listeners
+        item.addEventListener('dragstart', handleWaypointDragStart);
+        item.addEventListener('dragend', handleWaypointDragEnd);
+        item.addEventListener('dragover', handleWaypointDragOver);
+        item.addEventListener('drop', handleWaypointDrop);
+        item.addEventListener('dragenter', handleWaypointDragEnter);
+        item.addEventListener('dragleave', handleWaypointDragLeave);
+        
         item.innerHTML = `
-          <div class="waypoint-number">${index + 1}</div>
+          <div class="waypoint-number" title="Drag to reorder">${index + 1}</div>
           <div class="waypoint-text">${waypoint[1].toFixed(4)}, ${waypoint[0].toFixed(4)}</div>
           <div class="waypoint-controls">
             <button onclick="removeWaypoint(${index})" title="Remove waypoint">×</button>
@@ -1544,6 +1580,93 @@
       
       // Clear the input so same file can be imported again
       event.target.value = '';
+    }
+
+    // Drag and Drop Waypoint Functions
+    let draggedWaypointIndex = null;
+
+    function handleWaypointDragStart(e) {
+      draggedWaypointIndex = parseInt(e.target.dataset.index);
+      e.target.classList.add('dragging');
+      
+      // Set drag effect
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/html', e.target.outerHTML);
+      
+      updateStatus('<strong>🔄 Reordering...</strong><br>Drop waypoint at new position', 'loading');
+    }
+
+    function handleWaypointDragEnd(e) {
+      e.target.classList.remove('dragging');
+      
+      // Clean up any remaining drag-over effects
+      document.querySelectorAll('.waypoint-item').forEach(item => {
+        item.classList.remove('drag-over');
+      });
+      
+      draggedWaypointIndex = null;
+    }
+
+    function handleWaypointDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    }
+
+    function handleWaypointDragEnter(e) {
+      e.preventDefault();
+      const targetIndex = parseInt(e.target.closest('.waypoint-item')?.dataset.index);
+      
+      if (targetIndex !== undefined && targetIndex !== draggedWaypointIndex) {
+        e.target.closest('.waypoint-item').classList.add('drag-over');
+      }
+    }
+
+    function handleWaypointDragLeave(e) {
+      // Only remove drag-over if we're leaving the entire item
+      if (!e.target.closest('.waypoint-item').contains(e.relatedTarget)) {
+        e.target.closest('.waypoint-item').classList.remove('drag-over');
+      }
+    }
+
+    function handleWaypointDrop(e) {
+      e.preventDefault();
+      
+      const targetElement = e.target.closest('.waypoint-item');
+      if (!targetElement) return;
+      
+      const targetIndex = parseInt(targetElement.dataset.index);
+      
+      if (draggedWaypointIndex === null || targetIndex === draggedWaypointIndex) {
+        return;
+      }
+      
+      const route = routes.get(currentRouteId);
+      if (!route) return;
+      
+      // Perform the reorder
+      const waypoints = route.waypoints;
+      const draggedWaypoint = waypoints[draggedWaypointIndex];
+      
+      // Remove the dragged waypoint from its original position
+      waypoints.splice(draggedWaypointIndex, 1);
+      
+      // Insert it at the new position
+      // Adjust target index if we removed an item before it
+      const newTargetIndex = draggedWaypointIndex < targetIndex ? targetIndex - 1 : targetIndex;
+      waypoints.splice(newTargetIndex, 0, draggedWaypoint);
+      
+      // Update the display
+      updateWaypointsList();
+      
+      // Clear any existing route since waypoint order changed
+      if (route.routeData) {
+        route.routeData = null;
+        route.status = 'modified';
+        updateRouteOnMap(currentRouteId);
+        updateRouteList();
+      }
+      
+      updateStatus('<strong>✅ Waypoints Reordered</strong><br>Route order updated successfully', 'success');
     }
 
     // Initialize when page loads
