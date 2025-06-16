@@ -689,19 +689,27 @@
         
         map.on('load', function() {
           console.log('Map loaded successfully');
+          console.log('Map style loaded:', map.isStyleLoaded());
+          console.log('Map source loaded:', map.areTilesLoaded());
+          
           setupMapFeatures();
           setupEventHandlers();
-          createNewRoute();
-          showApplicationUI();
           
-          // Set up waypoint interactions after everything is loaded
+          // Wait a bit longer before creating the first route to ensure map is fully ready
           setTimeout(() => {
-            console.log('Setting up waypoint interactions...');
-            setupAllWaypointInteractions();
-          }, 2000);
-          
-          updateStatus('<strong>🎉 Ready!</strong><br>Multi-route mapper is ready to use', 'success');
-          appInitialized = true;
+            console.log('Creating initial route...');
+            createNewRoute();
+            showApplicationUI();
+            
+            // Set up waypoint interactions after everything is loaded
+            setTimeout(() => {
+              console.log('Setting up waypoint interactions...');
+              setupAllWaypointInteractions();
+            }, 2000);
+            
+            updateStatus('<strong>🎉 Ready!</strong><br>Multi-route mapper is ready to use', 'success');
+            appInitialized = true;
+          }, 1000);
         });
         
         map.on('error', function(e) {
@@ -864,70 +872,66 @@
 
     function addRouteToMap(routeId) {
       const route = routes.get(routeId);
-      if (!route || !map) return;
+      if (!route || !map) {
+        console.log('Cannot add route to map - route or map missing');
+        return;
+      }
 
       console.log('Adding route to map:', routeId);
 
-      // Add route line source
-      map.addSource(`route-${routeId}`, {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: [] }
-      });
+      try {
+        // Add route line source
+        map.addSource(`route-${routeId}`, {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: [] }
+        });
+        console.log('Added route source:', `route-${routeId}`);
 
-      map.addLayer({
-        id: `route-${routeId}`,
-        type: 'line',
-        source: `route-${routeId}`,
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 
-          'line-color': route.color, 
-          'line-width': route.width,
-          'line-opacity': route.visible ? 1 : 0
+        map.addLayer({
+          id: `route-${routeId}`,
+          type: 'line',
+          source: `route-${routeId}`,
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: { 
+            'line-color': route.color, 
+            'line-width': route.width,
+            'line-opacity': route.visible ? 1 : 0
+          }
+        });
+        console.log('Added route layer:', `route-${routeId}`);
+
+        // Add waypoints source
+        map.addSource(`waypoints-${routeId}`, {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: [] }
+        });
+        console.log('Added waypoints source:', `waypoints-${routeId}`);
+
+        map.addLayer({
+          id: `waypoints-${routeId}`,
+          type: 'circle',
+          source: `waypoints-${routeId}`,
+          paint: {
+            'circle-radius': 8,
+            'circle-color': ['get', 'color'],
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-width': 2,
+            'circle-opacity': route.visible ? 1 : 0,
+            'circle-stroke-opacity': route.visible ? 1 : 0
+          }
+        });
+        console.log('Added waypoint layer:', `waypoints-${routeId}`);
+        
+        // Verify the layer was actually added
+        if (map.getLayer(`waypoints-${routeId}`)) {
+          console.log('✅ Waypoint layer successfully created:', `waypoints-${routeId}`);
+        } else {
+          console.log('❌ Failed to create waypoint layer:', `waypoints-${routeId}`);
         }
-      });
-
-      // Add waypoints source
-      map.addSource(`waypoints-${routeId}`, {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: [] }
-      });
-
-      map.addLayer({
-        id: `waypoints-${routeId}`,
-        type: 'circle',
-        source: `waypoints-${routeId}`,
-        paint: {
-          'circle-radius': [
-            'case',
-            ['boolean', ['feature-state', 'hover'], false],
-            8,  // Larger when hovered
-            ['boolean', ['feature-state', 'dragging'], false],
-            10, // Largest when dragging
-            6   // Normal size - increased for easier clicking
-          ],
-          'circle-color': ['get', 'color'],
-          'circle-stroke-color': [
-            'case',
-            ['boolean', ['feature-state', 'hover'], false],
-            '#ffffff',  // White stroke when hovered
-            ['boolean', ['feature-state', 'dragging'], false],
-            '#000000',  // Black stroke when dragging
-            '#ffffff'   // Normal white stroke
-          ],
-          'circle-stroke-width': [
-            'case',
-            ['boolean', ['feature-state', 'hover'], false],
-            3,  // Thicker when hovered
-            ['boolean', ['feature-state', 'dragging'], false],
-            4,  // Thickest when dragging
-            2   // Normal thickness
-          ],
-          'circle-opacity': route.visible ? 1 : 0,
-          'circle-stroke-opacity': route.visible ? 1 : 0
-        }
-      });
-      
-      console.log('Added waypoint layer:', `waypoints-${routeId}`);
+        
+      } catch (error) {
+        console.error('Error adding route to map:', error);
+      }
     }
     }
 
