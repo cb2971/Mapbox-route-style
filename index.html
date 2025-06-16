@@ -979,62 +979,57 @@
         });
         console.log('Added route layer:', `route-${routeId}`);
 
-        // Add waypoints source
-        console.log('About to add waypoints source:', `waypoints-${routeId}`);
+        // Create a test waypoint to see if the issue is with the layer creation
+        console.log('Creating test waypoint source and layer...');
+        
+        // Add waypoints source with a test feature
         map.addSource(`waypoints-${routeId}`, {
           type: 'geojson',
-          data: { type: 'FeatureCollection', features: [] }
+          data: {
+            type: 'FeatureCollection',
+            features: [{
+              type: 'Feature',
+              id: 0,
+              geometry: { type: 'Point', coordinates: [-84.5, 38.05] },
+              properties: { color: '#ff0000' }
+            }]
+          }
         });
-        console.log('Added waypoints source:', `waypoints-${routeId}`);
+        console.log('✅ Added waypoints source with test data');
 
-        console.log('About to add waypoints layer:', `waypoints-${routeId}`);
-        console.log('Route visible:', route.visible);
+        // Simple layer creation
         map.addLayer({
           id: `waypoints-${routeId}`,
           type: 'circle',
           source: `waypoints-${routeId}`,
           paint: {
-            'circle-radius': 8,
-            'circle-color': ['get', 'color'],
+            'circle-radius': 10,
+            'circle-color': '#ff0000',
             'circle-stroke-color': '#ffffff',
             'circle-stroke-width': 2,
-            'circle-opacity': 1, // Force visible for debugging
-            'circle-stroke-opacity': 1 // Force visible for debugging
+            'circle-opacity': 1,
+            'circle-stroke-opacity': 1
           }
         });
-        console.log('Added waypoint layer:', `waypoints-${routeId}`);
         
-        // Immediate verification
-        const immediateCheck = map.getLayer(`waypoints-${routeId}`);
-        console.log('Immediate layer check:', !!immediateCheck);
-        
-        if (!immediateCheck) {
-          console.log('❌ Layer was not created immediately after addLayer call');
-          // Try to see if there were any errors
-          console.log('Map error events:', map.listListeners('error'));
-        } else {
-          console.log('✅ Layer created successfully');
-        }
-        
-        // Verify the layer was actually added
+        // Verify layer was created
         setTimeout(() => {
           const layerCheck = map.getLayer(`waypoints-${routeId}`);
           if (layerCheck) {
-            console.log('✅ Waypoint layer successfully created and verified:', `waypoints-${routeId}`);
+            console.log('✅ SUCCESS! Waypoint layer created:', `waypoints-${routeId}`);
+            console.log('Layer info:', layerCheck);
+            
+            // Now set up interactions
+            setupWaypointInteractionsForRoute(routeId);
           } else {
-            console.log('❌ Waypoint layer creation failed or was removed:', `waypoints-${routeId}`);
+            console.log('❌ FAILED! Waypoint layer not created');
+            console.log('All layers now:', map.getStyle().layers.map(l => l.id));
           }
         }, 100);
         
       } catch (error) {
-        console.error('Error adding route to map:', error);
+        console.error('❌ Error adding route to map:', error);
       }
-      
-      // Set up interactions immediately after layer creation
-      setTimeout(() => {
-        console.log('Setting up interactions for newly created route:', routeId);
-        setupWaypointInteractionsForRoute(routeId);
-      }, 200);
     }
     }
 
