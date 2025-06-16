@@ -900,6 +900,9 @@
       // Update waypoints display
       updateWaypointsList();
       
+      // Update map display
+      updateRouteOnMap(routeId);
+      
       // Update header
       document.getElementById('current-route-header').textContent = `🎯 ${route.name}`;
       
@@ -1073,11 +1076,13 @@
         document.getElementById('origin-input').value = `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`;
         isSettingOrigin = false;
         updateStatus('<strong>✅ Origin Set</strong><br>Click on map to set destination', 'success');
+        updateRouteOnMap(currentRouteId); // Add this line
       } else {
         route.destination = coords;
         document.getElementById('destination-input').value = `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`;
         isSettingOrigin = true;
         updateStatus('<strong>✅ Destination Set</strong><br>Ready to find route', 'success');
+        updateRouteOnMap(currentRouteId); // Add this line
       }
       
       updateWaypointsList();
@@ -1148,6 +1153,7 @@
       
       route.waypoints.push(coords);
       updateWaypointsList();
+      updateRouteOnMap(currentRouteId); // Add this line
       updateStatus('<strong>✅ Waypoint Added</strong><br>Intermediate stop added to route', 'success');
     }
 
@@ -1272,10 +1278,12 @@
       
       // Update waypoints
       const waypointFeatures = [];
+      let featureId = 0;
       
       if (route.origin) {
         waypointFeatures.push({
           type: 'Feature',
+          id: featureId++,
           geometry: { type: 'Point', coordinates: route.origin },
           properties: { color: '#00ff00', type: 'origin' }
         });
@@ -1284,6 +1292,7 @@
       route.waypoints.forEach((waypoint, index) => {
         waypointFeatures.push({
           type: 'Feature',
+          id: featureId++,
           geometry: { type: 'Point', coordinates: waypoint },
           properties: { color: '#0066ff', type: 'waypoint', index: index }
         });
@@ -1292,6 +1301,7 @@
       if (route.destination) {
         waypointFeatures.push({
           type: 'Feature',
+          id: featureId++,
           geometry: { type: 'Point', coordinates: route.destination },
           properties: { color: '#ff0000', type: 'destination' }
         });
@@ -1301,6 +1311,8 @@
         type: 'FeatureCollection',
         features: waypointFeatures
       });
+      
+      console.log(`Updated waypoints for route ${routeId}:`, waypointFeatures.length, 'features');
     }
 
     function clearCurrentRoute() {
@@ -1634,17 +1646,25 @@
     function handleWaypointMouseEnter(e) {
       if (isDraggingWaypoint) return;
       
+      const feature = e.features[0];
+      const layerId = e.target.id;
+      
       map.setFeatureState(
-        { source: e.target.id, id: e.features[0].id },
+        { source: layerId, id: feature.id },
         { hover: true }
       );
+      
+      console.log('Mouse enter waypoint:', feature.properties.type);
     }
 
     function handleWaypointMouseLeave(e) {
       if (isDraggingWaypoint) return;
       
+      const feature = e.features[0];
+      const layerId = e.target.id;
+      
       map.setFeatureState(
-        { source: e.target.id, id: e.features[0].id },
+        { source: layerId, id: feature.id },
         { hover: false }
       );
     }
@@ -1654,6 +1674,7 @@
       
       // Prevent map panning
       e.preventDefault();
+      map.dragPan.disable();
       
       const feature = e.features[0];
       const layerId = e.target.id;
@@ -1668,6 +1689,8 @@
         routeId: routeId,
         type: pointType,
         index: pointIndex,
+        featureId: feature.id,
+        layerId: layerId,
         originalCoords: feature.geometry.coordinates.slice()
       };
       
@@ -1679,6 +1702,8 @@
       
       map.getCanvas().style.cursor = 'grabbing';
       updateStatus('<strong>🔄 Dragging Point...</strong><br>Move to new location and release', 'loading');
+      
+      console.log('Started dragging:', pointType, 'from route', routeId);
     }
 
     function handleWaypointMouseMove(e) {
@@ -1716,8 +1741,11 @@
     function handleWaypointMouseUp(e) {
       if (!isDraggingWaypoint || !draggedWaypointInfo) return;
       
-      const { routeId } = draggedWaypointInfo;
+      const { routeId, layerId, featureId } = draggedWaypointInfo;
       const route = routes.get(routeId);
+      
+      // Re-enable map panning
+      map.dragPan.enable();
       
       if (route) {
         // Clear any existing route since points have moved
@@ -1730,15 +1758,11 @@
       }
       
       // Clean up dragging state
-      const layerId = `waypoints-${routeId}`;
       if (map.getSource(layerId)) {
-        // Remove dragging state from all features
-        map.querySourceFeatures(layerId).forEach(feature => {
-          map.setFeatureState(
-            { source: layerId, id: feature.id },
-            { dragging: false, hover: false }
-          );
-        });
+        map.setFeatureState(
+          { source: layerId, id: featureId },
+          { dragging: false, hover: false }
+        );
       }
       
       isDraggingWaypoint = false;
@@ -1746,6 +1770,8 @@
       map.getCanvas().style.cursor = '';
       
       updateStatus('<strong>✅ Point Moved</strong><br>Route updated, recalculate to see new path', 'success');
+      
+      console.log('Finished dragging waypoint');
     }
 
     // Initialize when page loads
