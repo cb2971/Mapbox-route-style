@@ -758,17 +758,25 @@
     function setupAllWaypointInteractions() {
       console.log('Setting up waypoint interactions for', routes.size, 'routes');
       
+      // List all current layers to see what actually exists
+      const allLayers = map.getStyle().layers.map(layer => layer.id);
+      console.log('All map layers:', allLayers);
+      
       // Check if routes exist and have layers
       routes.forEach((route, routeId) => {
         const layerId = `waypoints-${routeId}`;
         
         // Check if layer exists
-        if (!map.getLayer(layerId)) {
-          console.log('Layer does not exist:', layerId);
+        const layerExists = map.getLayer(layerId);
+        console.log('Checking layer:', layerId, 'exists:', !!layerExists);
+        
+        if (!layerExists) {
+          console.log('❌ Layer does not exist:', layerId);
+          console.log('Available layers containing "waypoint":', allLayers.filter(l => l.includes('waypoint')));
           return;
         }
         
-        console.log('Setting up interactions for layer:', layerId);
+        console.log('✅ Layer exists, setting up interactions for:', layerId);
         
         // Test if layer has any features
         const features = map.querySourceFeatures(`waypoints-${routeId}`);
@@ -811,6 +819,8 @@
           console.log('CLICK: Mouse down on waypoint layer:', layerId);
           handleWaypointMouseDown(e);
         });
+        
+        console.log('✅ Event listeners attached to:', layerId);
       });
     }
 
@@ -829,9 +839,13 @@
       routes.set(newRoute.id, newRoute);
       
       console.log(`Creating new route ${newRoute.id}`);
+      console.log('Map is style loaded:', map.isStyleLoaded());
+      console.log('Current layers before adding route:', map.getStyle().layers.map(l => l.id));
       
       // Add map sources for this route
       addRouteToMap(newRoute.id);
+      
+      console.log('Current layers after adding route:', map.getStyle().layers.map(l => l.id));
       
       // Switch to new route
       switchToRoute(newRoute.id);
@@ -839,7 +853,7 @@
       updateRouteTabs();
       updateRouteList();
       
-      console.log(`Created new route ${newRoute.id}`);
+      console.log(`Finished creating route ${newRoute.id}`);
     }
 
     function addRouteToMap(routeId) {
@@ -923,11 +937,14 @@
         console.log('Added waypoint layer:', `waypoints-${routeId}`);
         
         // Verify the layer was actually added
-        if (map.getLayer(`waypoints-${routeId}`)) {
-          console.log('✅ Waypoint layer successfully created:', `waypoints-${routeId}`);
-        } else {
-          console.log('❌ Failed to create waypoint layer:', `waypoints-${routeId}`);
-        }
+        setTimeout(() => {
+          const layerCheck = map.getLayer(`waypoints-${routeId}`);
+          if (layerCheck) {
+            console.log('✅ Waypoint layer successfully created and verified:', `waypoints-${routeId}`);
+          } else {
+            console.log('❌ Waypoint layer creation failed or was removed:', `waypoints-${routeId}`);
+          }
+        }, 100);
         
       } catch (error) {
         console.error('Error adding route to map:', error);
