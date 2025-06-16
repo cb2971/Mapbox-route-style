@@ -711,7 +711,7 @@
         type: 'circle',
         source: `waypoints-${routeId}`,
         paint: {
-          'circle-radius': 2,
+          'circle-radius': 8,
           'circle-color': ['get', 'color'],
           'circle-stroke-color': '#ffffff',
           'circle-stroke-width': 2,
@@ -866,4 +866,350 @@
       }
       if (map.getLayer(`waypoints-${routeId}`)) {
         map.setPaintProperty(`waypoints-${routeId}`, 'circle-opacity', route.visible ? 1 : 0);
+        map.setPaintProperty(`waypoints-${routeId}`, 'circle-stroke-opacity', route.visible ? 1 : 0);
+      }
+      
+      updateRouteList();
+    }
+
+    // Additional functions needed for the application
+    function handleMapClick(e) {
+      if (!appInitialized) return;
+      
+      const coords = [e.lngLat.lng, e.lngLat.lat];
+      
+      if (isAddingWaypoint) {
+        addWaypointAtCoordinates(coords);
+        return;
+      }
+      
+      const route = routes.get(currentRouteId);
+      if (!route) return;
+      
+      if (isSettingOrigin) {
+        route.origin = coords;
+        document.getElementById('origin-input').value = `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`;
+        isSettingOrigin = false;
+        updateStatus('<strong>✅ Origin Set</strong><br>Click on map to set destination', 'success');
+      } else {
+        route.destination = coords;
+        document.getElementById('destination-input').value = `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`;
+        isSettingOrigin = true;
+        updateStatus('<strong>✅ Destination Set</strong><br>Ready to find route', 'success');
+      }
+      
+      updateWaypointsList();
+    }
+
+    function geocodeOrigin() {
+      const address = document.getElementById('origin-input').value;
+      if (!address.trim()) return;
+      
+      geocodeAddress(address, (coords) => {
+        const route = routes.get(currentRouteId);
+        if (route) {
+          route.origin = coords;
+          document.getElementById('origin-input').value = `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`;
+          updateStatus('<strong>✅ Origin Found</strong><br>Location geocoded successfully', 'success');
+          updateWaypointsList();
+        }
+      });
+    }
+
+    function geocodeDestination() {
+      const address = document.getElementById('destination-input').value;
+      if (!address.trim()) return;
+      
+      geocodeAddress(address, (coords) => {
+        const route = routes.get(currentRouteId);
+        if (route) {
+          route.destination = coords;
+          document.getElementById('destination-input').value = `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`;
+          updateStatus('<strong>✅ Destination Found</strong><br>Location geocoded successfully', 'success');
+          updateWaypointsList();
+        }
+      });
+    }
+
+    function geocodeAddress(address, callback) {
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${mapboxgl.accessToken}`;
+      
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          if (data.features && data.features.length > 0) {
+            const coords = data.features[0].center;
+            callback(coords);
+          } else {
+            updateStatus('<strong>❌ Location Not Found</strong><br>Could not geocode the address', 'error');
+          }
+        })
+        .catch(error => {
+          console.error('Geocoding error:', error);
+          updateStatus('<strong>❌ Geocoding Error</strong><br>Failed to find location', 'error');
+        });
+    }
+
+    function addWaypoint() {
+      const address = document.getElementById('waypoint-input').value;
+      if (!address.trim()) return;
+      
+      geocodeAddress(address, (coords) => {
+        addWaypointAtCoordinates(coords);
+        document.getElementById('waypoint-input').value = '';
+      });
+    }
+
+    function addWaypointAtCoordinates(coords) {
+      const route = routes.get(currentRouteId);
+      if (!route) return;
+      
+      route.waypoints.push(coords);
+      updateWaypointsList();
+      updateStatus('<strong>✅ Waypoint Added</strong><br>Intermediate stop added to route', 'success');
+    }
+
+    function toggleWaypointMode() {
+      isAddingWaypoint = !isAddingWaypoint;
+      const btn = document.getElementById('waypoint-mode-btn');
+      btn.textContent = isAddingWaypoint ? '🛑 Stop Adding' : '📍 Click Map';
+      btn.style.backgroundColor = isAddingWaypoint ? '#dc3545' : '#007bff';
+      
+      if (isAddingWaypoint) {
+        updateStatus('<strong>📍 Waypoint Mode</strong><br>Click on map to add waypoints', 'loading');
+      } else {
+        updateStatus('<strong>🎉 Ready!</strong><br>Multi-route mapper is ready to use', 'success');
+      }
+    }
+
+    function updateWaypointsList() {
+      const route = routes.get(currentRouteId);
+      if (!route) return;
+      
+      const waypointsList = document.getElementById('waypoint-list');
+      
+      if (route.waypoints.length === 0) {
+        waypointsList.style.display = 'none';
+        return;
+      }
+      
+      waypointsList.style.display = 'block';
+      waypointsList.innerHTML = '';
+      
+      route.waypoints.forEach((waypoint, index) => {
+        const item = document.createElement('div');
+        item.className = 'waypoint-item';
+        item.innerHTML = `
+          <div class="waypoint-number">${index + 1}</div>
+          <div class="waypoint-text">${waypoint[1].toFixed(4)}, ${waypoint[0].toFixed(4)}</div>
+          <div class="waypoint-controls">
+            <button onclick="removeWaypoint(${index})" title="Remove waypoint">×</button>
+          </div>
+        `;
+        waypointsList.appendChild(item);
+      });
+    }
+
+    function removeWaypoint(index) {
+      const route = routes.get(currentRouteId);
+      if (!route) return;
+      
+      route.waypoints.splice(index, 1);
+      updateWaypointsList();
+      
+      // Clear route if it exists
+      if (route.routeData) {
+        route.routeData = null;
+        updateRouteOnMap(currentRouteId);
+      }
+    }
+
+    function findRoute() {
+      const route = routes.get(currentRouteId);
+      if (!route || !route.origin || !route.destination) {
+        updateStatus('<strong>❌ Missing Data</strong><br>Need both origin and destination', 'error');
+        return;
+      }
+      
+      updateStatus('<strong>🔍 Finding Route...</strong><br>Calculating best path', 'loading');
+      
+      // Build coordinates string for API
+      let coordinates = [route.origin];
+      coordinates = coordinates.concat(route.waypoints);
+      coordinates.push(route.destination);
+      
+      const coordsString = coordinates.map(coord => `${coord[0]},${coord[1]}`).join(';');
+      const profile = route.profile;
+      
+      const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coordsString}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
+      
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          if (data.routes && data.routes.length > 0) {
+            route.routeData = data.routes[0];
+            route.status = 'calculated';
+            updateRouteOnMap(currentRouteId);
+            
+            const duration = Math.round(route.routeData.duration / 60);
+            const distance = (route.routeData.distance / 1000).toFixed(1);
+            updateStatus(`<strong>✅ Route Found!</strong><br>${duration} minutes, ${distance} km`, 'success');
+            
+            updateRouteList();
+          } else {
+            updateStatus('<strong>❌ No Route Found</strong><br>Could not calculate route', 'error');
+          }
+        })
+        .catch(error => {
+          console.error('Routing error:', error);
+          updateStatus('<strong>❌ Routing Error</strong><br>Failed to calculate route', 'error');
+        });
+    }
+
+    function updateRouteOnMap(routeId) {
+      const route = routes.get(routeId);
+      if (!route || !map) return;
+      
+      // Update route line
+      if (route.routeData) {
+        const routeGeoJSON = {
+          type: 'Feature',
+          geometry: route.routeData.geometry
+        };
         
+        map.getSource(`route-${routeId}`).setData({
+          type: 'FeatureCollection',
+          features: [routeGeoJSON]
+        });
+      } else {
+        map.getSource(`route-${routeId}`).setData({
+          type: 'FeatureCollection',
+          features: []
+        });
+      }
+      
+      // Update waypoints
+      const waypointFeatures = [];
+      
+      if (route.origin) {
+        waypointFeatures.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: route.origin },
+          properties: { color: '#00ff00', type: 'origin' }
+        });
+      }
+      
+      route.waypoints.forEach((waypoint, index) => {
+        waypointFeatures.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: waypoint },
+          properties: { color: '#0066ff', type: 'waypoint', index: index }
+        });
+      });
+      
+      if (route.destination) {
+        waypointFeatures.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: route.destination },
+          properties: { color: '#ff0000', type: 'destination' }
+        });
+      }
+      
+      map.getSource(`waypoints-${routeId}`).setData({
+        type: 'FeatureCollection',
+        features: waypointFeatures
+      });
+    }
+
+    function clearCurrentRoute() {
+      const route = routes.get(currentRouteId);
+      if (!route) return;
+      
+      route.origin = null;
+      route.destination = null;
+      route.waypoints = [];
+      route.routeData = null;
+      route.status = 'empty';
+      
+      document.getElementById('origin-input').value = '';
+      document.getElementById('destination-input').value = '';
+      document.getElementById('waypoint-input').value = '';
+      
+      updateWaypointsList();
+      updateRouteOnMap(currentRouteId);
+      updateRouteList();
+      
+      updateStatus('<strong>🗑️ Route Cleared</strong><br>All data removed from current route', 'success');
+    }
+
+    function updateCurrentRouteStyle() {
+      const route = routes.get(currentRouteId);
+      if (!route) return;
+      
+      route.color = document.getElementById('routeColor').value;
+      route.width = parseInt(document.getElementById('routeWidth').value);
+      
+      // Update map style
+      if (map.getLayer(`route-${currentRouteId}`)) {
+        map.setPaintProperty(`route-${currentRouteId}`, 'line-color', route.color);
+        map.setPaintProperty(`route-${currentRouteId}`, 'line-width', route.width);
+      }
+      
+      updateRouteTabs();
+      updateRouteList();
+    }
+
+    function zoomIn() {
+      if (map) map.zoomIn();
+    }
+
+    function zoomOut() {
+      if (map) map.zoomOut();
+    }
+
+    function fitToData() {
+      if (!map) return;
+      
+      const coordinates = [];
+      
+      routes.forEach(route => {
+        if (route.visible && route.routeData) {
+          const routeCoords = route.routeData.geometry.coordinates;
+          coordinates.push(...routeCoords);
+        }
+      });
+      
+      if (coordinates.length === 0) {
+        updateStatus('<strong>ℹ️ No Data</strong><br>No visible routes to fit to', 'loading');
+        return;
+      }
+      
+      const bounds = coordinates.reduce((bounds, coord) => {
+        return bounds.extend(coord);
+      }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
+      
+      map.fitBounds(bounds, { padding: 50 });
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const toggleBtn = document.getElementById('toggle-btn');
+      
+      sidebar.classList.toggle('hidden');
+      
+      if (sidebar.classList.contains('hidden')) {
+        toggleBtn.classList.remove('sidebar-visible');
+        toggleBtn.classList.add('sidebar-hidden');
+      } else {
+        toggleBtn.classList.remove('sidebar-hidden');
+        toggleBtn.classList.add('sidebar-visible');
+      }
+    }
+
+    // Initialize when page loads
+    window.addEventListener('load', function() {
+      console.log('Page loaded, ready for initialization');
+    });
+  </script>
+</body>
+</html>
