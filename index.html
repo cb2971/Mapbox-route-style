@@ -1594,3 +1594,116 @@
           State.map.flyTo({ center: coords, duration: 1500 });
           document.getElementById('center-input').value = Utils.formatCoordinates(coords, 6);
           
+          State.interactions.settingMapCenter = false;
+          const btn = document.getElementById('center-mode-btn');
+          btn.textContent = '📍 Click Map';
+          btn.style.backgroundColor = '#007bff';
+          
+          Utils.updateStatus('<strong>📍 Map Centered</strong><br>Map centered on clicked location', 'success');
+        }
+      };
+
+      // Main Application Initialization
+      const App = {
+        async init() {
+          console.log('=== Multi-Route Mapper Starting ===');
+          
+          try {
+            // Load required libraries
+            const librariesLoaded = await LibraryLoader.loadLibraries();
+            if (!librariesLoaded) {
+              throw new Error('Failed to load required libraries');
+            }
+            
+            // Initialize UI event system
+            UIManager.init();
+            MapClickHandler.init();
+            
+            // Initialize map
+            MapManager.init();
+            
+            // Set up completion handler
+            EventSystem.on('mapLoaded', () => {
+              setTimeout(() => {
+                RouteManager.createNewRoute();
+                Utils.updateStatus('<strong>🎉 Ready!</strong><br>Multi-route mapper is ready to use', 'success');
+                State.appInitialized = true;
+              }, Config.timing.mapLoadDelay);
+            });
+            
+          } catch (error) {
+            console.error('Initialization error:', error);
+            Utils.updateStatus('<strong>❌ Initialization Failed</strong><br>' + error.message, 'error');
+          }
+        }
+      };
+
+      // Public API - Expose modules for HTML onclick handlers
+      return {
+        // Core initialization
+        init: App.init,
+        
+        // Module access for HTML onclick handlers
+        routes: {
+          createNewRoute: RouteManager.createNewRoute.bind(RouteManager),
+          deleteRoute: RouteManager.deleteRoute.bind(RouteManager),
+          switchToRoute: RouteManager.switchToRoute.bind(RouteManager),
+          clearCurrentRoute: RouteManager.clearCurrentRoute.bind(RouteManager),
+          updateCurrentRouteStyle: RouteManager.updateCurrentRouteStyle.bind(RouteManager),
+          toggleRouteVisibility: RouteManager.toggleRouteVisibility.bind(RouteManager)
+        },
+        
+        geocoding: {
+          geocodeOrigin: GeocodingManager.geocodeOrigin.bind(GeocodingManager),
+          geocodeDestination: GeocodingManager.geocodeDestination.bind(GeocodingManager)
+        },
+        
+        waypoints: {
+          addWaypoint: WaypointManager.addWaypoint.bind(WaypointManager),
+          removeWaypoint: WaypointManager.removeWaypoint.bind(WaypointManager),
+          toggleWaypointMode: WaypointManager.toggleWaypointMode.bind(WaypointManager)
+        },
+        
+        routing: {
+          findRoute: RoutingManager.findRoute.bind(RoutingManager)
+        },
+        
+        mapControls: {
+          zoomIn: MapControlsManager.zoomIn.bind(MapControlsManager),
+          zoomOut: MapControlsManager.zoomOut.bind(MapControlsManager),
+          fitToData: MapControlsManager.fitToData.bind(MapControlsManager),
+          toggleCrosshair: MapControlsManager.toggleCrosshair.bind(MapControlsManager),
+          centerMapOnLocation: MapControlsManager.centerMapOnLocation.bind(MapControlsManager),
+          toggleCenterMode: MapControlsManager.toggleCenterMode.bind(MapControlsManager),
+          getCurrentCenter: MapControlsManager.getCurrentCenter.bind(MapControlsManager)
+        },
+        
+        fileManager: {
+          exportRoutes: FileManager.exportRoutes.bind(FileManager),
+          triggerImportRoutes: FileManager.triggerImportRoutes.bind(FileManager),
+          importRoutes: FileManager.importRoutes.bind(FileManager)
+        },
+        
+        ui: {
+          toggleSidebar: UIManager.toggleSidebar.bind(UIManager),
+          toggleRouteList: UIManager.toggleRouteList.bind(UIManager)
+        },
+        
+        // Development/debugging access
+        _internal: {
+          Config,
+          State,
+          EventSystem,
+          Utils
+        }
+      };
+    })();
+
+    // Initialize when page loads
+    window.addEventListener('load', function() {
+      console.log('Page loaded, ready for initialization');
+    });
+  </script>
+</body>
+</html>
+          
