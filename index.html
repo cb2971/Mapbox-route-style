@@ -1050,8 +1050,8 @@
       // Update waypoints display
       updateWaypointsList();
       
-      // Update map display
-      updateRouteOnMap(routeId);
+      // Don't update map during initial creation - let the test data stay
+      console.log('Switching to route', routeId, '- NOT updating map to preserve test data');
       
       // Update header
       document.getElementById('current-route-header').textContent = `🎯 ${route.name}`;
