@@ -6,11 +6,83 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   
   <style type="text/css">
+    /* Modern Design System */
+    :root {
+      /* Typography Scale */
+      --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+      --font-size-xs: 12px;
+      --font-size-sm: 14px;
+      --font-size-base: 16px;
+      --font-size-lg: 20px;
+      --font-size-xl: 24px;
+      
+      /* Font Weights */
+      --font-weight-normal: 400;
+      --font-weight-medium: 500;
+      --font-weight-semibold: 600;
+      
+      /* Spacing System (4px base) */
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --space-10: 40px;
+      --space-12: 48px;
+      
+      /* Color System */
+      --color-primary: #007AFF;
+      --color-primary-hover: #0056CC;
+      --color-secondary: #5856D6;
+      --color-success: #34C759;
+      --color-warning: #FF9500;
+      --color-error: #FF3B30;
+      
+      --color-bg-primary: #FFFFFF;
+      --color-bg-secondary: #F2F2F7;
+      --color-bg-tertiary: #FFFFFF;
+      
+      --color-text-primary: #000000;
+      --color-text-secondary: #3C3C43;
+      --color-text-tertiary: #8E8E93;
+      
+      --color-border: #C6C6C8;
+      --color-border-light: #E5E5EA;
+      
+      /* Shadows */
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+      --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+      
+      /* Border Radius */
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+      
+      /* Transitions */
+      --transition-fast: 150ms ease-out;
+      --transition-base: 300ms ease-out;
+      --transition-slow: 500ms ease-out;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       padding: 0;
-      font-family: 'Open Sans', sans-serif;
-      background-color: #f0f0f0;
+      font-family: var(--font-family);
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+      color: var(--color-text-primary);
+      background-color: var(--color-bg-secondary);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
      
     #map {
@@ -22,18 +94,18 @@
      
     .sidebar {
       position: absolute;
-      margin: 20px 20px 30px 20px;
-      width: 15%;
-      min-width: 320px;
-      max-height: calc(100vh - 100px);
+      margin: var(--space-5);
+      width: 380px;
+      max-height: calc(100vh - var(--space-10));
       top: 0;
-      padding: 20px;
-      background-color: #fff;
+      padding: 0;
+      background-color: var(--color-bg-primary);
       overflow-y: auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      border-radius: 5px;
+      box-shadow: var(--shadow-lg);
+      border-radius: var(--radius-xl);
       z-index: 1000;
-      transition: transform 0.3s ease;
+      transition: transform var(--transition-base);
+      border: 1px solid var(--color-border-light);
     }
 
     .sidebar.hidden {
@@ -42,152 +114,336 @@
 
     .toggle-btn {
       position: absolute;
-      top: 20px;
-      left: 20px;
-      width: 40px;
-      height: 40px;
-      background-color: #fff;
-      border: 2px solid #007bff;
-      border-radius: 5px;
+      top: var(--space-5);
+      left: var(--space-5);
+      width: var(--space-10);
+      height: var(--space-10);
+      background-color: var(--color-bg-primary);
+      border: 1px solid var(--color-border-light);
+      border-radius: var(--radius-md);
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
+      font-size: var(--font-size-lg);
       z-index: 1001;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      transition: left 0.3s ease;
+      box-shadow: var(--shadow-md);
+      transition: all var(--transition-fast);
+      color: var(--color-text-secondary);
+    }
+
+    .toggle-btn:hover {
+      background-color: var(--color-bg-secondary);
+      box-shadow: var(--shadow-lg);
     }
 
     .toggle-btn.sidebar-hidden {
-      left: 20px;
+      left: var(--space-5);
     }
 
     .toggle-btn.sidebar-visible {
-      left: 380px;
+      left: 420px;
     }
-     
+
+    /* Card System */
+    .card {
+      background-color: var(--color-bg-primary);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-border-light);
+      margin-bottom: var(--space-4);
+      overflow: hidden;
+      transition: box-shadow var(--transition-fast);
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-md);
+    }
+
     .card-header {
-      font-weight: bold;
-      padding: 6px;
-      background-color: #f8f9fa;
-      border-radius: 3px;
-      margin-bottom: 8px;
-    }
-     
-    .control-panel {
-      background-color: #ffffff;
-      padding: 15px;
-      border-radius: 5px;
-      box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-    }
-
-    .input-group {
-      margin-bottom: 10px;
-    }
-
-    .input-group label {
-      display: block;
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
-
-    .input-group input, .input-group select {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-sizing: border-box;
-    }
-
-    .route-controls {
+      padding: var(--space-4) var(--space-5);
+      background-color: var(--color-bg-secondary);
+      border-bottom: 1px solid var(--color-border-light);
+      font-weight: var(--font-weight-semibold);
+      font-size: var(--font-size-base);
+      color: var(--color-text-primary);
       display: flex;
-      gap: 10px;
       align-items: center;
-      margin-top: 10px;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
 
-    .route-controls input[type="color"] {
-      width: 40px;
-      height: 30px;
-      padding: 0;
-      border: none;
+    .card-header:hover {
+      background-color: #EBEBF0;
     }
 
-    .route-controls input[type="number"] {
-      width: 60px;
+    .card-header .icon {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-tertiary);
+      margin-right: var(--space-2);
     }
 
+    .card-header .chevron {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-tertiary);
+      transition: transform var(--transition-fast);
+    }
+
+    .card-header.collapsed .chevron {
+      transform: rotate(-90deg);
+    }
+
+    .card-content {
+      padding: var(--space-5);
+    }
+
+    .card-content.collapsible {
+      max-height: 1000px;
+      overflow: hidden;
+      transition: max-height var(--transition-base), padding var(--transition-base);
+    }
+
+    .card-content.collapsed {
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
+    /* Main Container */
+    .sidebar-container {
+      padding: var(--space-5);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    /* Status Message */
     .status-message {
-      padding: 15px;
-      border-radius: 5px;
-      margin-bottom: 20px;
-      font-size: 14px;
+      padding: var(--space-4);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-4);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      border: 1px solid;
     }
 
     .status-loading {
-      background-color: #fff3cd;
-      border: 1px solid #ffeaa7;
-      color: #856404;
+      background-color: #FFF4E6;
+      border-color: #FFE4B3;
+      color: #8B5A00;
     }
 
     .status-success {
-      background-color: #d4edda;
-      border: 1px solid #c3e6cb;
-      color: #155724;
+      background-color: #F0FDF4;
+      border-color: #BBF7D0;
+      color: #166534;
     }
 
     .status-error {
-      background-color: #f8d7da;
-      border: 1px solid #f5c6cb;
-      color: #721c24;
+      background-color: #FEF2F2;
+      border-color: #FECACA;
+      color: #991B1B;
     }
 
-    button {
+    /* Form Elements */
+    .form-group {
+      margin-bottom: var(--space-4);
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .form-label {
+      display: block;
+      font-weight: var(--font-weight-medium);
+      font-size: var(--font-size-sm);
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-2);
+    }
+
+    .form-input,
+    .form-select {
       width: 100%;
-      padding: 10px;
-      margin: 5px 0;
+      padding: var(--space-3) var(--space-4);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
+      font-family: var(--font-family);
+      background-color: var(--color-bg-primary);
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .form-input:focus,
+    .form-select:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+    }
+
+    /* Button System */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-3) var(--space-4);
       border: none;
-      border-radius: 4px;
-      background-color: #007bff;
-      color: white;
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      font-family: var(--font-family);
       cursor: pointer;
-      font-size: 14px;
+      transition: all var(--transition-fast);
+      text-decoration: none;
+      gap: var(--space-2);
     }
 
-    button:hover {
-      background-color: #0056b3;
+    .btn-primary {
+      background-color: var(--color-primary);
+      color: white;
     }
 
-    button:disabled {
-      background-color: #6c757d;
+    .btn-primary:hover {
+      background-color: var(--color-primary-hover);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-secondary {
+      background-color: var(--color-bg-secondary);
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-border);
+    }
+
+    .btn-secondary:hover {
+      background-color: #EBEBF0;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-small {
+      padding: var(--space-2) var(--space-3);
+      font-size: var(--font-size-xs);
+    }
+
+    .btn-full {
+      width: 100%;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
       cursor: not-allowed;
+      transform: none !important;
     }
 
-    .small-btn {
-      width: auto;
-      padding: 5px 10px;
-      margin: 2px;
-      font-size: 12px;
+    /* Route Controls */
+    .route-controls {
+      display: flex;
+      gap: var(--space-3);
+      align-items: center;
+      margin-top: var(--space-4);
     }
 
+    .route-controls input[type="color"] {
+      width: var(--space-8);
+      height: var(--space-8);
+      padding: 0;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+
+    .route-controls input[type="number"] {
+      width: 80px;
+    }
+
+    /* Route Tabs */
+    .route-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-bottom: var(--space-4);
+      padding-bottom: var(--space-4);
+      border-bottom: 1px solid var(--color-border-light);
+    }
+
+    .route-tab {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background-color: var(--color-bg-secondary);
+      cursor: pointer;
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-medium);
+      transition: all var(--transition-fast);
+      min-width: 80px;
+      justify-content: center;
+    }
+
+    .route-tab:hover {
+      background-color: #EBEBF0;
+      transform: translateY(-1px);
+    }
+
+    .route-tab.active {
+      background-color: var(--color-primary);
+      color: white;
+      border-color: var(--color-primary);
+    }
+
+    .route-tab .color-indicator {
+      width: var(--space-3);
+      height: var(--space-3);
+      border-radius: 50%;
+      border: 1px solid rgba(0,0,0,0.2);
+    }
+
+    .route-tab .close-btn {
+      background: none;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+      padding: 0;
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      width: var(--space-4);
+      height: var(--space-4);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color var(--transition-fast);
+    }
+
+    .route-tab .close-btn:hover {
+      background-color: rgba(255,255,255,0.2);
+    }
+
+    /* Waypoint List */
     .waypoint-list {
       max-height: 200px;
       overflow-y: auto;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background-color: #f9f9f9;
+      border: 1px solid var(--color-border-light);
+      border-radius: var(--radius-md);
+      background-color: var(--color-bg-secondary);
+      margin-top: var(--space-3);
     }
 
     .waypoint-item {
       display: flex;
       align-items: center;
-      padding: 8px;
-      border-bottom: 1px solid #eee;
-      background-color: white;
-      margin: 2px;
-      border-radius: 3px;
+      padding: var(--space-3);
+      border-bottom: 1px solid var(--color-border-light);
+      background-color: var(--color-bg-primary);
+      margin: var(--space-1);
+      border-radius: var(--radius-sm);
     }
 
     .waypoint-item:last-child {
@@ -195,23 +451,24 @@
     }
 
     .waypoint-number {
-      width: 25px;
-      height: 25px;
+      width: var(--space-6);
+      height: var(--space-6);
       border-radius: 50%;
-      background-color: #007bff;
+      background-color: var(--color-primary);
       color: white;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
-      font-weight: bold;
-      margin-right: 10px;
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-semibold);
+      margin-right: var(--space-3);
       flex-shrink: 0;
     }
 
     .waypoint-text {
       flex: 1;
-      font-size: 12px;
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -219,90 +476,41 @@
 
     .waypoint-controls {
       display: flex;
-      gap: 5px;
+      gap: var(--space-2);
       flex-shrink: 0;
     }
 
     .waypoint-controls button {
-      width: 25px;
-      height: 25px;
+      width: var(--space-6);
+      height: var(--space-6);
       padding: 0;
-      font-size: 12px;
-      margin: 0;
+      font-size: var(--font-size-xs);
+      border-radius: var(--radius-sm);
     }
 
-    /* Route Management Styles */
-    .route-tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      margin-bottom: 15px;
-      border-bottom: 2px solid #dee2e6;
-      padding-bottom: 10px;
-    }
-
-    .route-tab {
-      padding: 8px 12px;
-      border: 1px solid #dee2e6;
-      border-radius: 4px 4px 0 0;
-      background-color: #f8f9fa;
-      cursor: pointer;
-      font-size: 12px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      min-width: 80px;
-      justify-content: center;
-    }
-
-    .route-tab.active {
-      background-color: #007bff;
-      color: white;
-      border-color: #007bff;
-    }
-
-    .route-tab .color-indicator {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      border: 1px solid rgba(0,0,0,0.2);
-    }
-
-    .route-tab .close-btn {
-      margin-left: 5px;
-      background: none;
-      border: none;
-      color: inherit;
-      cursor: pointer;
-      padding: 0;
-      width: auto;
-      height: auto;
-      font-size: 14px;
-      font-weight: bold;
-    }
-
-    .route-tab .close-btn:hover {
-      background-color: rgba(255,255,255,0.2);
-      border-radius: 50%;
-    }
-
+    /* Route List */
     .route-list {
       max-height: 300px;
       overflow-y: auto;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background-color: #f9f9f9;
-      margin-top: 10px;
+      border: 1px solid var(--color-border-light);
+      border-radius: var(--radius-md);
+      background-color: var(--color-bg-secondary);
+      margin-top: var(--space-3);
     }
 
     .route-list-item {
       display: flex;
       align-items: center;
-      padding: 10px;
-      border-bottom: 1px solid #eee;
-      background-color: white;
-      margin: 2px;
-      border-radius: 3px;
+      padding: var(--space-3);
+      border-bottom: 1px solid var(--color-border-light);
+      background-color: var(--color-bg-primary);
+      margin: var(--space-1);
+      border-radius: var(--radius-sm);
+      transition: background-color var(--transition-fast);
+    }
+
+    .route-list-item:hover {
+      background-color: var(--color-bg-secondary);
     }
 
     .route-list-item:last-child {
@@ -311,45 +519,47 @@
 
     .route-info {
       flex: 1;
-      font-size: 12px;
+      font-size: var(--font-size-xs);
     }
 
     .route-name {
-      font-weight: bold;
-      margin-bottom: 2px;
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-1);
     }
 
     .route-status {
-      color: #666;
-      font-size: 11px;
+      color: var(--color-text-tertiary);
+      font-size: var(--font-size-xs);
     }
 
     .visibility-btn {
-      width: 30px;
-      height: 30px;
+      width: var(--space-8);
+      height: var(--space-8);
       padding: 0;
-      font-size: 14px;
-      margin: 0;
+      font-size: var(--font-size-sm);
+      margin-right: var(--space-2);
+      border-radius: var(--radius-sm);
     }
 
     .visibility-btn.hidden {
-      background-color: #6c757d;
+      background-color: var(--color-text-tertiary);
     }
 
+    /* Map Controls */
     .zoom-controls {
       display: flex;
-      gap: 10px;
-      margin-top: 10px;
+      gap: var(--space-3);
+      margin-top: var(--space-4);
     }
 
     .zoom-controls button {
-      width: 50px;
-      height: 40px;
-      font-size: 18px;
-      font-weight: bold;
+      height: var(--space-10);
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
     }
 
-    /* Crosshair center indicator */
+    /* Crosshair */
     .map-crosshair {
       position: absolute;
       top: 50%;
@@ -397,6 +607,51 @@
       background-color: #ffffff;
       box-shadow: 0 0 0 1px #ffffff;
     }
+
+    /* Button Grid */
+    .button-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-2);
+      margin-top: var(--space-3);
+    }
+
+    .button-row {
+      display: flex;
+      gap: var(--space-2);
+      margin-top: var(--space-3);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: calc(100vw - var(--space-10));
+        margin: var(--space-3);
+      }
+      
+      .toggle-btn.sidebar-visible {
+        left: calc(100vw - var(--space-5) - var(--space-10));
+      }
+    }
+
+    /* Animation Classes */
+    .fade-in {
+      animation: fadeIn var(--transition-base) ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .slide-down {
+      animation: slideDown var(--transition-base) ease-out;
+    }
+
+    @keyframes slideDown {
+      from { max-height: 0; opacity: 0; }
+      to { max-height: 1000px; opacity: 1; }
+    }
   </style>
 </head>
  
@@ -413,146 +668,212 @@
   </div>
   
   <div class="sidebar" id="sidebar">
-    <div id="status-message" class="status-message status-loading">
-      <strong>🔄 Initializing...</strong><br>
-      Loading mapping application...
-    </div>
+    <div class="sidebar-container">
+      <div id="status-message" class="status-message status-loading">
+        <strong>🔄 Initializing...</strong><br>
+        Loading mapping application...
+      </div>
 
-    <!-- Route Management Section -->
-    <div class="control-panel" id="route-management" style="display: none;">
-      <div class="card-header">🗺️ Route Management</div>
-      
-      <div class="route-tabs" id="route-tabs">
-        <!-- Route tabs will be dynamically generated -->
-      </div>
-      
-      <button onclick="RouteFinderApp.routes.createNewRoute()">➕ New Route</button>
-      
-      <div style="display: flex; gap: 5px; margin: 5px 0;">
-        <button onclick="RouteFinderApp.fileManager.exportRoutes()" style="flex: 1; font-size: 12px; height: 35px;">📤 Export Routes</button>
-        <button onclick="RouteFinderApp.fileManager.triggerImportRoutes()" style="flex: 1; font-size: 12px; height: 35px;">📥 Import Routes</button>
-      </div>
-      
-      <!-- Hidden file input for importing -->
-      <input type="file" id="import-file-input" accept=".json" style="display: none;" onchange="RouteFinderApp.fileManager.importRoutes(event)">
-      
-      <div class="route-list" id="route-list" style="display: none;">
-        <!-- Route list items will be dynamically generated -->
-      </div>
-      
-      <button onclick="RouteFinderApp.ui.toggleRouteList()" id="route-list-toggle" style="display: none;">📋 Show All Routes</button>
-    </div>
-
-    <!-- Current Route Controls -->
-    <div class="control-panel" id="current-route-panel" style="display: none;">
-      <div class="card-header" id="current-route-header">🎯 Current Route</div>
-      
-      <div class="input-group">
-        <label>🟢 Starting Point:</label>
-        <input type="text" id="origin-input" placeholder="Enter address or place name">
-        <button onclick="RouteFinderApp.geocoding.geocodeOrigin()" style="margin-top: 5px; font-size: 12px; height: 30px;">📍 Find Location</button>
-      </div>
-      
-      <div class="input-group">
-        <label>🔴 Destination:</label>
-        <input type="text" id="destination-input" placeholder="Enter address or place name">
-        <button onclick="RouteFinderApp.geocoding.geocodeDestination()" style="margin-top: 5px; font-size: 12px; height: 30px;">📍 Find Location</button>
-      </div>
-      
-      <div class="input-group">
-        <label>🔵 Waypoints:</label>
-        <input type="text" id="waypoint-input" placeholder="Enter intermediate stop">
-        <div style="display: flex; gap: 5px; margin-top: 5px;">
-          <button onclick="RouteFinderApp.waypoints.addWaypoint()" style="flex: 1; font-size: 12px; height: 30px;">➕ Add Waypoint</button>
-          <button onclick="RouteFinderApp.waypoints.toggleWaypointMode()" id="waypoint-mode-btn" style="flex: 1; font-size: 12px; height: 30px;">📍 Click Map</button>
+      <!-- Route Management Section -->
+      <div class="card" id="route-management" style="display: none;">
+        <div class="card-header" onclick="RouteFinderApp.ui.toggleSection('route-management')">
+          <div style="display: flex; align-items: center;">
+            <span class="icon">🗺️</span>
+            <span>Route Management</span>
+          </div>
+          <span class="chevron">▼</span>
         </div>
-        
-        <div id="waypoint-list" class="waypoint-list" style="margin-top: 10px; display: none;">
-          <!-- Waypoints will be added here dynamically -->
+        <div class="card-content collapsible" id="route-management-content">
+          <div class="route-tabs" id="route-tabs">
+            <!-- Route tabs will be dynamically generated -->
+          </div>
+          
+          <button class="btn btn-primary btn-full" onclick="RouteFinderApp.routes.createNewRoute()">
+            <span>➕</span> New Route
+          </button>
+          
+          <div class="button-grid" style="margin-top: var(--space-4);">
+            <button class="btn btn-secondary" onclick="RouteFinderApp.fileManager.exportRoutes()">
+              <span>📤</span> Export
+            </button>
+            <button class="btn btn-secondary" onclick="RouteFinderApp.fileManager.triggerImportRoutes()">
+              <span>📥</span> Import
+            </button>
+          </div>
+          
+          <!-- Hidden file input for importing -->
+          <input type="file" id="import-file-input" accept=".json" style="display: none;" onchange="RouteFinderApp.fileManager.importRoutes(event)">
+          
+          <div class="route-list" id="route-list" style="display: none;">
+            <!-- Route list items will be dynamically generated -->
+          </div>
+          
+          <button class="btn btn-secondary btn-full" onclick="RouteFinderApp.ui.toggleRouteList()" id="route-list-toggle" style="display: none; margin-top: var(--space-3);">
+            📋 Show All Routes
+          </button>
         </div>
       </div>
-      
-      <div class="input-group">
-        <label>🚗 Travel Mode:</label>
-        <select id="profile-select">
-          <option value="driving">🚗 Driving</option>
-          <option value="walking">🚶 Walking</option>
-          <option value="cycling">🚴 Cycling</option>
-        </select>
-      </div>
-      
-      <button onclick="RouteFinderApp.routing.findRoute()">🗺️ Find Route</button>
-      <button onclick="RouteFinderApp.routes.clearCurrentRoute()">🗑️ Clear Route</button>
-      
-      <div class="route-controls">
-        <label>Color:</label>
-        <input type="color" id="routeColor" value="#ff0000" onchange="RouteFinderApp.routes.updateCurrentRouteStyle()">
-        <label>Width:</label>
-        <input type="number" id="routeWidth" value="8" min="1" max="20" onchange="RouteFinderApp.routes.updateCurrentRouteStyle()">
-      </div>
-    </div>
 
-    <!-- Map Controls -->
-    <div class="control-panel" id="map-controls" style="display: none;">
-      <div class="card-header">🗺️ Map Controls</div>
-      
-      <div class="input-group">
-        <label>🎨 Map Style:</label>
-        <select id="map-style-select" onchange="RouteFinderApp.mapControls.changeMapStyle()">
-          <option value="mapbox://styles/cb29/ckxnnmex53n1b14m07t6sum48">Classic Standard</option>
-          <option value="mapbox://styles/cb29/ckxnmjiti0rvm14pby8w9si99">Classic Vintage</option>
-          <option value="mapbox://styles/cb29/ckxov33jj3le314ueu15gl6yh">Dark Digital</option>
-          <option value="mapbox://styles/cb29/ckxmhuc4k2gxm14s0eq1htzns">Dark Monochrome</option>
-          <option value="mapbox://styles/cb29/ckxs1bfov2cay14mnx6nvrzxt">Dark Night Mode</option>
-          <option value="mapbox://styles/cb29/ckwgtu6ly20cr15qiy9i2ftsz">Light Engraved</option>
-          <option value="mapbox://styles/cb29/ckxntkwjq4flv14ld7uisp5b1">Light High Contrast</option>
-          <option value="mapbox://styles/cb29/ckxouv50s02lw14r2jiyvnvxh">Light Pencil Sketch</option>
-          <option value="mapbox://styles/cb29/ckxtl08qj2gb215p8y2blzxur">Pastel Blue</option>
-          <option value="mapbox://styles/cb29/ckxtkuk8l10zj14pk8irf7owt">Pastel Cool</option>
-          <option value="mapbox://styles/cb29/ckxtl2a2s0yot14nw9pbn2733">Pastel Pink</option>
-          <option value="mapbox://styles/cb29/ckxtl35nk4hsb15mry8rwlg4l">Pastel Yellow</option>
-          <option value="mapbox://styles/cb29/ckxmjckme2if514s0v3xq4vxy">Satellite Streets</option>
-          <option value="mapbox://styles/cb29/ckxrnuq691z6h14mnuy5jpk5c">Topography Colorful</option>
-          <option value="mapbox://styles/cb29/ckxnp39kb5eyw14oaan01mkp0">Topography Globe</option>
-          <option value="mapbox://styles/cb29/ckxnkf6rs60r214uc0j42vbj4">Topography Outdoor</option>
-          <option value="mapbox://styles/cb29/ckxnqwyww0sri14p9skglgshs">Topography Subtle</option>
-          <option value="mapbox://styles/cb29/ckxno9jbk3nn714s6vjah6fwb">Topography Vintage</option>
-          <option value="mapbox://styles/cb29/ckxrrtfqk0oir15my0y9tpjvj">Unique Colorful</option>
-          <option value="mapbox://styles/cb29/ckxovchyg4tfj14s6d7u559tj">Unique Comic Book 1</option>
-          <option value="mapbox://styles/cb29/ckxov6vgm66g214o064dp3vda">Unique Comic Book 2</option>
-          <option value="mapbox://styles/cb29/ckxove5sy174l15mq6h82hwxk">Unique Dusty Western</option>
-          <option value="mapbox://styles/cb29/ckxoup98z4sv514m0q988ltie">Unique Picture Book</option>
-          <option value="mapbox://styles/cb29/ckxov1ris0n2415p4e9gn8oxu">Unique Treasure Map</option>
-          <option value="mapbox://styles/cb29/ckxous4km02k114m523qh0k9y">Unique Woodcut</option>
-        </select>
-      </div>
-      
-      <div class="input-group">
-        <label>📍 Center Map On:</label>
-        <input type="text" id="center-input" placeholder="Enter address or coordinates">
-        <div style="display: flex; gap: 5px; margin-top: 5px;">
-          <button onclick="RouteFinderApp.mapControls.centerMapOnLocation()" style="flex: 1; font-size: 12px; height: 30px;">🎯 Center Map</button>
-          <button onclick="RouteFinderApp.mapControls.toggleCenterMode()" id="center-mode-btn" style="flex: 1; font-size: 12px; height: 30px;">📍 Click Map</button>
+      <!-- Current Route Controls -->
+      <div class="card" id="current-route-panel" style="display: none;">
+        <div class="card-header" onclick="RouteFinderApp.ui.toggleSection('current-route')">
+          <div style="display: flex; align-items: center;">
+            <span class="icon">🎯</span>
+            <span id="current-route-header">Current Route</span>
+          </div>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-content collapsible" id="current-route-content">
+          <div class="form-group">
+            <label class="form-label">🟢 Starting Point</label>
+            <input type="text" class="form-input" id="origin-input" placeholder="Enter address or place name">
+            <button class="btn btn-secondary btn-full" onclick="RouteFinderApp.geocoding.geocodeOrigin()" style="margin-top: var(--space-2);">
+              📍 Find Location
+            </button>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">🔴 Destination</label>
+            <input type="text" class="form-input" id="destination-input" placeholder="Enter address or place name">
+            <button class="btn btn-secondary btn-full" onclick="RouteFinderApp.geocoding.geocodeDestination()" style="margin-top: var(--space-2);">
+              📍 Find Location
+            </button>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">🔵 Waypoints</label>
+            <input type="text" class="form-input" id="waypoint-input" placeholder="Enter intermediate stop">
+            <div class="button-grid">
+              <button class="btn btn-secondary" onclick="RouteFinderApp.waypoints.addWaypoint()">
+                ➕ Add
+              </button>
+              <button class="btn btn-secondary" onclick="RouteFinderApp.waypoints.toggleWaypointMode()" id="waypoint-mode-btn">
+                📍 Click Map
+              </button>
+            </div>
+            
+            <div id="waypoint-list" class="waypoint-list" style="display: none;">
+              <!-- Waypoints will be added here dynamically -->
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">🚗 Travel Mode</label>
+            <select class="form-select" id="profile-select">
+              <option value="driving">🚗 Driving</option>
+              <option value="walking">🚶 Walking</option>
+              <option value="cycling">🚴 Cycling</option>
+            </select>
+          </div>
+          
+          <div class="button-row">
+            <button class="btn btn-primary" onclick="RouteFinderApp.routing.findRoute()" style="flex: 2;">
+              🗺️ Find Route
+            </button>
+            <button class="btn btn-secondary" onclick="RouteFinderApp.routes.clearCurrentRoute()" style="flex: 1;">
+              🗑️ Clear
+            </button>
+          </div>
+          
+          <div class="route-controls">
+            <label style="font-size: var(--font-size-xs); color: var(--color-text-secondary);">Color:</label>
+            <input type="color" id="routeColor" value="#ff0000" onchange="RouteFinderApp.routes.updateCurrentRouteStyle()">
+            <label style="font-size: var(--font-size-xs); color: var(--color-text-secondary);">Width:</label>
+            <input type="number" class="form-input" id="routeWidth" value="8" min="1" max="20" onchange="RouteFinderApp.routes.updateCurrentRouteStyle()">
+          </div>
         </div>
       </div>
-      
-      <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-        <button onclick="RouteFinderApp.mapControls.toggleCrosshair()" id="crosshair-toggle" style="flex: 1; font-size: 12px;">🎯 Show Center</button>
-        <button onclick="RouteFinderApp.mapControls.getCurrentCenter()" style="flex: 1; font-size: 12px;">📋 Get Center</button>
-      </div>
-      
-      <div class="zoom-controls">
-        <button onclick="RouteFinderApp.mapControls.zoomIn()">+</button>
-        <button onclick="RouteFinderApp.mapControls.zoomOut()">-</button>
-        <button onclick="RouteFinderApp.mapControls.fitToData()" style="width: auto; flex: 1; font-size: 14px;">📍 Fit to Routes</button>
-      </div>
-    </div>
 
-    <!-- Initialization Controls -->
-    <div class="control-panel" id="init-controls">
-      <div class="card-header">🚀 Initialize Application</div>
-      <button onclick="RouteFinderApp.init()" id="init-app-btn">🗺️ Start Route Finder</button>
-      <p style="font-size: 12px; color: #666; margin: 10px 0;">This will load the mapping libraries and start the full application.</p>
+      <!-- Map Controls -->
+      <div class="card" id="map-controls" style="display: none;">
+        <div class="card-header" onclick="RouteFinderApp.ui.toggleSection('map-controls')">
+          <div style="display: flex; align-items: center;">
+            <span class="icon">🗺️</span>
+            <span>Map Controls</span>
+          </div>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-content collapsible" id="map-controls-content">
+          <div class="form-group">
+            <label class="form-label">🎨 Map Style</label>
+            <select class="form-select" id="map-style-select" onchange="RouteFinderApp.mapControls.changeMapStyle()">
+              <option value="mapbox://styles/cb29/ckxnnmex53n1b14m07t6sum48">Classic Standard</option>
+              <option value="mapbox://styles/cb29/ckxnmjiti0rvm14pby8w9si99">Classic Vintage</option>
+              <option value="mapbox://styles/cb29/ckxov33jj3le314ueu15gl6yh">Dark Digital</option>
+              <option value="mapbox://styles/cb29/ckxmhuc4k2gxm14s0eq1htzns">Dark Monochrome</option>
+              <option value="mapbox://styles/cb29/ckxs1bfov2cay14mnx6nvrzxt">Dark Night Mode</option>
+              <option value="mapbox://styles/cb29/ckwgtu6ly20cr15qiy9i2ftsz">Light Engraved</option>
+              <option value="mapbox://styles/cb29/ckxntkwjq4flv14ld7uisp5b1">Light High Contrast</option>
+              <option value="mapbox://styles/cb29/ckxouv50s02lw14r2jiyvnvxh">Light Pencil Sketch</option>
+              <option value="mapbox://styles/cb29/ckxtl08qj2gb215p8y2blzxur">Pastel Blue</option>
+              <option value="mapbox://styles/cb29/ckxtkuk8l10zj14pk8irf7owt">Pastel Cool</option>
+              <option value="mapbox://styles/cb29/ckxtl2a2s0yot14nw9pbn2733">Pastel Pink</option>
+              <option value="mapbox://styles/cb29/ckxtl35nk4hsb15mry8rwlg4l">Pastel Yellow</option>
+              <option value="mapbox://styles/cb29/ckxmjckme2if514s0v3xq4vxy">Satellite Streets</option>
+              <option value="mapbox://styles/cb29/ckxrnuq691z6h14mnuy5jpk5c">Topography Colorful</option>
+              <option value="mapbox://styles/cb29/ckxnp39kb5eyw14oaan01mkp0">Topography Globe</option>
+              <option value="mapbox://styles/cb29/ckxnkf6rs60r214uc0j42vbj4">Topography Outdoor</option>
+              <option value="mapbox://styles/cb29/ckxnqwyww0sri14p9skglgshs">Topography Subtle</option>
+              <option value="mapbox://styles/cb29/ckxno9jbk3nn714s6vjah6fwb">Topography Vintage</option>
+              <option value="mapbox://styles/cb29/ckxrrtfqk0oir15my0y9tpjvj">Unique Colorful</option>
+              <option value="mapbox://styles/cb29/ckxovchyg4tfj14s6d7u559tj">Unique Comic Book 1</option>
+              <option value="mapbox://styles/cb29/ckxov6vgm66g214o064dp3vda">Unique Comic Book 2</option>
+              <option value="mapbox://styles/cb29/ckxove5sy174l15mq6h82hwxk">Unique Dusty Western</option>
+              <option value="mapbox://styles/cb29/ckxoup98z4sv514m0q988ltie">Unique Picture Book</option>
+              <option value="mapbox://styles/cb29/ckxov1ris0n2415p4e9gn8oxu">Unique Treasure Map</option>
+              <option value="mapbox://styles/cb29/ckxous4km02k114m523qh0k9y">Unique Woodcut</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">📍 Center Map On</label>
+            <input type="text" class="form-input" id="center-input" placeholder="Enter address or coordinates">
+            <div class="button-grid">
+              <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.centerMapOnLocation()">
+                🎯 Center
+              </button>
+              <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.toggleCenterMode()" id="center-mode-btn">
+                📍 Click Map
+              </button>
+            </div>
+          </div>
+          
+          <div class="button-grid">
+            <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.toggleCrosshair()" id="crosshair-toggle">
+              🎯 Show Center
+            </button>
+            <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.getCurrentCenter()">
+              📋 Get Center
+            </button>
+          </div>
+          
+          <div class="zoom-controls">
+            <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.zoomIn()">+</button>
+            <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.zoomOut()">-</button>
+            <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.fitToData()" style="flex: 1;">
+              📍 Fit to Routes
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Initialization Controls -->
+      <div class="card" id="init-controls">
+        <div class="card-header">
+          <div style="display: flex; align-items: center;">
+            <span class="icon">🚀</span>
+            <span>Initialize Application</span>
+          </div>
+        </div>
+        <div class="card-content">
+          <button class="btn btn-primary btn-full" onclick="RouteFinderApp.init()" id="init-app-btn">
+            🗺️ Start Route Finder
+          </button>
+          <p style="font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin: var(--space-3) 0 0 0; text-align: center;">
+            This will load the mapping libraries and start the full application.
+          </p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -595,19 +916,19 @@
       // Event System - Centralized Event Management
       const EventSystem = {
         events: {},
-        
+
         on(event, callback) {
           if (!this.events[event]) {
             this.events[event] = [];
           }
           this.events[event].push(callback);
         },
-        
+
         off(event, callback) {
           if (!this.events[event]) return;
           this.events[event] = this.events[event].filter(cb => cb !== callback);
         },
-        
+
         emit(event, data) {
           if (!this.events[event]) return;
           this.events[event].forEach(callback => {
@@ -644,11 +965,14 @@
           crosshairVisible: false
         },
         
+        // UI state
+        collapsedSections: new Set(),
+        
         // Getters
         getCurrentRoute() {
           return this.routes.get(this.currentRouteId);
         },
-        
+
         getAllRoutes() {
           return Array.from(this.routes.values());
         }
@@ -665,7 +989,7 @@
           console.log('STATUS: ' + message);
           EventSystem.emit('statusUpdated', { message, type });
         },
-        
+
         createEmptyRoute(id = null) {
           const routeId = id || State.nextRouteId++;
           return {
@@ -682,7 +1006,7 @@
             status: 'empty'
           };
         },
-        
+
         formatCoordinates(coords, precision = 4) {
           return `${coords[1].toFixed(precision)}, ${coords[0].toFixed(precision)}`;
         }
@@ -694,7 +1018,7 @@
           if (!State.librariesLoaded.mapbox || !State.librariesLoaded.turf) {
             throw new Error('Required libraries not loaded');
           }
-          
+
           Utils.updateStatus('<strong>🗺️ Initializing Map...</strong><br>Creating map instance...', 'loading');
           
           mapboxgl.accessToken = Config.mapbox.accessToken;
@@ -719,11 +1043,11 @@
             EventSystem.emit('mapError', e);
           });
         },
-        
+
         setupMapFeatures() {
           // Add obstacles
           const obstacle = turf.buffer(this.getClearanceData(), 0.25, { units: 'kilometers' });
-          
+
           State.map.addSource('obstacles', {
             type: 'geojson',
             data: obstacle
@@ -741,11 +1065,11 @@
           
           console.log('Map features setup complete');
         },
-        
+
         setupEventHandlers() {
           State.map.on('click', (e) => EventSystem.emit('mapClicked', e));
         },
-        
+
         getClearanceData() {
           return {
             type: 'FeatureCollection',
@@ -776,7 +1100,7 @@
           
           console.log(`Created new route ${newRoute.id}`);
         },
-        
+
         addRouteToMap(routeId) {
           const route = State.routes.get(routeId);
           if (!route || !State.map) return;
@@ -819,7 +1143,7 @@
             }
           });
         },
-        
+
         switchToRoute(routeId) {
           State.currentRouteId = routeId;
           const route = State.routes.get(routeId);
@@ -836,7 +1160,7 @@
           EventSystem.emit('routeSwitched', route);
           EventSystem.emit('waypointsUpdated');
         },
-        
+
         updateRouteOnMap(routeId) {
           const route = State.routes.get(routeId);
           if (!route || !State.map) return;
@@ -891,7 +1215,7 @@
             features: waypointFeatures
           });
         },
-        
+
         deleteRoute(routeId) {
           if (State.routes.size <= 1) {
             Utils.updateStatus('<strong>❌ Cannot Delete</strong><br>Must have at least one route', 'error');
@@ -916,7 +1240,7 @@
           EventSystem.emit('routeDeleted', routeId);
           EventSystem.emit('routesUpdated');
         },
-        
+
         clearCurrentRoute() {
           const route = State.getCurrentRoute();
           if (!route) return;
@@ -937,7 +1261,7 @@
           
           Utils.updateStatus('<strong>🗑️ Route Cleared</strong><br>All data removed from current route', 'success');
         },
-        
+
         updateCurrentRouteStyle() {
           const route = State.getCurrentRoute();
           if (!route) return;
@@ -952,7 +1276,7 @@
           
           EventSystem.emit('routeStyleUpdated', route);
         },
-        
+
         toggleRouteVisibility(routeId) {
           const route = State.routes.get(routeId);
           if (!route) return;
@@ -993,7 +1317,7 @@
             }
           });
         },
-        
+
         geocodeDestination() {
           const address = document.getElementById('destination-input').value;
           if (!address.trim()) return;
@@ -1009,7 +1333,7 @@
             }
           });
         },
-        
+
         geocodeAddress(address, callback) {
           const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${mapboxgl.accessToken}`;
           
@@ -1040,7 +1364,7 @@
             document.getElementById('waypoint-input').value = '';
           });
         },
-        
+
         addWaypointAtCoordinates(coords) {
           const route = State.getCurrentRoute();
           if (!route) return;
@@ -1050,7 +1374,7 @@
           EventSystem.emit('waypointAdded', coords);
           Utils.updateStatus('<strong>✅ Waypoint Added</strong><br>Intermediate stop added to route', 'success');
         },
-        
+
         removeWaypoint(index) {
           const route = State.getCurrentRoute();
           if (!route) return;
@@ -1064,12 +1388,12 @@
           
           EventSystem.emit('waypointRemoved', { index, waypoint: removed });
         },
-        
+
         toggleWaypointMode() {
           State.interactions.addingWaypoint = !State.interactions.addingWaypoint;
           const btn = document.getElementById('waypoint-mode-btn');
           btn.textContent = State.interactions.addingWaypoint ? '🛑 Stop Adding' : '📍 Click Map';
-          btn.style.backgroundColor = State.interactions.addingWaypoint ? '#dc3545' : '#007bff';
+          btn.className = State.interactions.addingWaypoint ? 'btn btn-secondary' : 'btn btn-secondary';
           
           if (State.interactions.addingWaypoint) {
             Utils.updateStatus('<strong>📍 Waypoint Mode</strong><br>Click on map to add waypoints', 'loading');
@@ -1130,11 +1454,11 @@
         zoomIn() {
           if (State.map) State.map.zoomIn();
         },
-        
+
         zoomOut() {
           if (State.map) State.map.zoomOut();
         },
-        
+
         fitToData() {
           if (!State.map) return;
           
@@ -1156,7 +1480,7 @@
           
           State.map.fitBounds(bounds, { padding: 50 });
         },
-        
+
         toggleCrosshair() {
           State.interactions.crosshairVisible = !State.interactions.crosshairVisible;
           const crosshair = document.getElementById('map-crosshair');
@@ -1164,9 +1488,8 @@
           
           crosshair.style.display = State.interactions.crosshairVisible ? 'block' : 'none';
           toggleBtn.textContent = State.interactions.crosshairVisible ? '🎯 Hide Center' : '🎯 Show Center';
-          toggleBtn.style.backgroundColor = State.interactions.crosshairVisible ? '#dc3545' : '#007bff';
         },
-        
+
         centerMapOnLocation() {
           const input = document.getElementById('center-input').value.trim();
           if (!input) {
@@ -1192,12 +1515,11 @@
             Utils.updateStatus(`<strong>📍 Map Centered</strong><br>Location found and centered`, 'success');
           });
         },
-        
+
         toggleCenterMode() {
           State.interactions.settingMapCenter = !State.interactions.settingMapCenter;
           const btn = document.getElementById('center-mode-btn');
           btn.textContent = State.interactions.settingMapCenter ? '🛑 Stop Mode' : '📍 Click Map';
-          btn.style.backgroundColor = State.interactions.settingMapCenter ? '#dc3545' : '#007bff';
           
           if (State.interactions.settingMapCenter) {
             Utils.updateStatus('<strong>📍 Center Mode</strong><br>Click on map to center at that location', 'loading');
@@ -1205,7 +1527,7 @@
             Utils.updateStatus('<strong>🎉 Ready!</strong><br>Multi-route mapper is ready to use', 'success');
           }
         },
-        
+
         getCurrentCenter() {
           if (!State.map) return;
           
@@ -1224,7 +1546,7 @@
           
           document.getElementById('center-input').value = centerText;
         },
-        
+
         changeMapStyle() {
           if (!State.map) return;
           
@@ -1301,11 +1623,11 @@
             Utils.updateStatus('<strong>❌ Export Failed</strong><br>Could not export routes', 'error');
           }
         },
-        
+
         triggerImportRoutes() {
           document.getElementById('import-file-input').click();
         },
-        
+
         importRoutes(event) {
           const file = event.target.files[0];
           if (!file) return;
@@ -1403,8 +1725,9 @@
       const UIManager = {
         init() {
           this.setupEventListeners();
+          this.setupCollapsibleSections();
         },
-        
+
         setupEventListeners() {
           // Route events
           EventSystem.on('routeCreated', () => this.updateRouteTabs());
@@ -1420,14 +1743,50 @@
             this.updateRouteList();
           });
         },
-        
+
+        setupCollapsibleSections() {
+          // Initialize all sections as expanded
+          const sections = ['route-management', 'current-route', 'map-controls'];
+          sections.forEach(sectionId => {
+            const header = document.querySelector(`#${sectionId} .card-header`);
+            const content = document.querySelector(`#${sectionId}-content`);
+            if (header && content) {
+              header.setAttribute('data-section', sectionId);
+            }
+          });
+        },
+
+        toggleSection(sectionId) {
+          const header = document.querySelector(`[data-section="${sectionId}"]`);
+          const content = document.getElementById(`${sectionId}-content`);
+          const chevron = header?.querySelector('.chevron');
+          
+          if (!header || !content || !chevron) return;
+          
+          const isCollapsed = State.collapsedSections.has(sectionId);
+          
+          if (isCollapsed) {
+            // Expand
+            State.collapsedSections.delete(sectionId);
+            header.classList.remove('collapsed');
+            content.classList.remove('collapsed');
+            chevron.style.transform = 'rotate(0deg)';
+          } else {
+            // Collapse
+            State.collapsedSections.add(sectionId);
+            header.classList.add('collapsed');
+            content.classList.add('collapsed');
+            chevron.style.transform = 'rotate(-90deg)';
+          }
+        },
+
         showApplicationUI() {
           document.getElementById('init-controls').style.display = 'none';
           document.getElementById('route-management').style.display = 'block';
           document.getElementById('current-route-panel').style.display = 'block';
           document.getElementById('map-controls').style.display = 'block';
         },
-        
+
         updateRouteTabs() {
           const tabsContainer = document.getElementById('route-tabs');
           tabsContainer.innerHTML = '';
@@ -1453,7 +1812,7 @@
             State.routeListVisible = false;
           }
         },
-        
+
         updateRouteList() {
           const listContainer = document.getElementById('route-list');
           listContainer.innerHTML = '';
@@ -1474,14 +1833,14 @@
                 <button class="visibility-btn ${route.visible ? '' : 'hidden'}" onclick="RouteFinderApp.routes.toggleRouteVisibility(${id})" title="Toggle visibility">
                   ${route.visible ? '👁️' : '🚫'}
                 </button>
-                <button class="small-btn" onclick="RouteFinderApp.routes.switchToRoute(${id})" title="Edit route">✏️</button>
-                <button class="small-btn" onclick="RouteFinderApp.routes.deleteRoute(${id})" title="Delete route">🗑️</button>
+                <button class="btn btn-small" onclick="RouteFinderApp.routes.switchToRoute(${id})" title="Edit route">✏️</button>
+                <button class="btn btn-small" onclick="RouteFinderApp.routes.deleteRoute(${id})" title="Delete route">🗑️</button>
               </div>
             `;
             listContainer.appendChild(item);
           });
         },
-        
+
         updateWaypointsList() {
           const route = State.getCurrentRoute();
           if (!route) return;
@@ -1503,13 +1862,13 @@
               <div class="waypoint-number">${index + 1}</div>
               <div class="waypoint-text">${Utils.formatCoordinates(waypoint)}</div>
               <div class="waypoint-controls">
-                <button onclick="RouteFinderApp.waypoints.removeWaypoint(${index})" title="Remove waypoint">×</button>
+                <button class="btn btn-secondary btn-small" onclick="RouteFinderApp.waypoints.removeWaypoint(${index})" title="Remove waypoint">×</button>
               </div>
             `;
             waypointsList.appendChild(item);
           });
         },
-        
+
         getRouteStatusText(route) {
           if (!route.origin && !route.destination) return 'Empty route';
           if (!route.origin) return 'Missing origin';
@@ -1521,7 +1880,7 @@
           }
           return 'Ready to calculate';
         },
-        
+
         toggleSidebar() {
           const sidebar = document.getElementById('sidebar');
           const toggleBtn = document.getElementById('toggle-btn');
@@ -1536,7 +1895,7 @@
             toggleBtn.classList.add('sidebar-visible');
           }
         },
-        
+
         toggleRouteList() {
           const listContainer = document.getElementById('route-list');
           const toggleBtn = document.getElementById('route-list-toggle');
@@ -1561,7 +1920,7 @@
             return false;
           }
         },
-        
+
         loadMapboxGL() {
           return new Promise((resolve, reject) => {
             const script = document.createElement('script');
@@ -1584,7 +1943,7 @@
             document.head.appendChild(script);
           });
         },
-        
+
         loadTurf() {
           return new Promise((resolve, reject) => {
             const script = document.createElement('script');
@@ -1610,7 +1969,7 @@
             EventSystem.on('mapClicked', this.handleMapClick.bind(this));
           });
         },
-        
+
         handleMapClick(e) {
           if (!State.appInitialized) return;
           
@@ -1645,7 +2004,7 @@
           
           EventSystem.emit('waypointsUpdated');
         },
-        
+
         handleCenterMapClick(coords) {
           State.map.flyTo({ center: coords, duration: 1500 });
           document.getElementById('center-input').value = Utils.formatCoordinates(coords, 6);
@@ -1653,7 +2012,6 @@
           State.interactions.settingMapCenter = false;
           const btn = document.getElementById('center-mode-btn');
           btn.textContent = '📍 Click Map';
-          btn.style.backgroundColor = '#007bff';
           
           Utils.updateStatus('<strong>📍 Map Centered</strong><br>Map centered on clicked location', 'success');
         }
@@ -1743,7 +2101,8 @@
         
         ui: {
           toggleSidebar: UIManager.toggleSidebar.bind(UIManager),
-          toggleRouteList: UIManager.toggleRouteList.bind(UIManager)
+          toggleRouteList: UIManager.toggleRouteList.bind(UIManager),
+          toggleSection: UIManager.toggleSection.bind(UIManager)
         },
         
         // Development/debugging access
@@ -1763,4 +2122,3 @@
   </script>
 </body>
 </html>
-          
