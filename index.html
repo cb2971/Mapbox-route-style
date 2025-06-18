@@ -1,812 +1,1938 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Route Finder with Multiple Routes</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  
-  <style type="text/css">
-    /* Modern Design System */
-    :root {
-      /* Typography Scale */
-      --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
-      --font-size-xs: 12px;
-      --font-size-sm: 14px;
-      --font-size-base: 16px;
-      --font-size-lg: 20px;
-      --font-size-xl: 24px;
-      
-      /* Font Weights */
-      --font-weight-normal: 400;
-      --font-weight-medium: 500;
-      --font-weight-semibold: 600;
-      
-      /* Spacing System (4px base) */
-      --space-1: 4px;
-      --space-2: 8px;
-      --space-3: 12px;
-      --space-4: 16px;
-      --space-5: 20px;
-      --space-6: 24px;
-      --space-8: 32px;
-      --space-10: 40px;
-      --space-12: 48px;
-      
-      /* Color System */
-      --color-primary: #007AFF;
-      --color-primary-hover: #0056CC;
-      --color-secondary: #5856D6;
-      --color-success: #34C759;
-      --color-warning: #FF9500;
-      --color-error: #FF3B30;
-      
-      --color-bg-primary: #FFFFFF;
-      --color-bg-secondary: #F2F2F7;
-      --color-bg-tertiary: #FFFFFF;
-      
-      --color-text-primary: #000000;
-      --color-text-secondary: #3C3C43;
-      --color-text-tertiary: #8E8E93;
-      
-      --color-border: #C6C6C8;
-      --color-border-light: #E5E5EA;
-      
-      /* Shadows */
-      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-      --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
-      --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
-      
-      /* Border Radius */
-      --radius-sm: 6px;
-      --radius-md: 8px;
-      --radius-lg: 12px;
-      --radius-xl: 16px;
-      
-      /* Transitions */
-      --transition-fast: 150ms ease-out;
-      --transition-base: 300ms ease-out;
-      --transition-slow: 500ms ease-out;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: var(--font-family);
-      font-size: var(--font-size-base);
-      font-weight: var(--font-weight-normal);
-      line-height: 1.5;
-      color: var(--color-text-primary);
-      background-color: var(--color-bg-secondary);
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-     
-    #map {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 100%;
-    }
-     
-    .sidebar {
-      position: absolute;
-      margin: var(--space-5);
-      width: 380px;
-      max-height: calc(100vh - var(--space-10));
-      top: 0;
-      padding: 0;
-      background-color: var(--color-bg-primary);
-      overflow-y: auto;
-      box-shadow: var(--shadow-lg);
-      border-radius: var(--radius-xl);
-      z-index: 1000;
-      transition: transform var(--transition-base);
-      border: 1px solid var(--color-border-light);
-    }
-
-    .sidebar.hidden {
-      transform: translateX(-100%);
-    }
-
-    .toggle-btn {
-      position: absolute;
-      top: var(--space-5);
-      left: var(--space-5);
-      width: var(--space-10);
-      height: var(--space-10);
-      background-color: var(--color-bg-primary);
-      border: 1px solid var(--color-border-light);
-      border-radius: var(--radius-md);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: var(--font-size-lg);
-      z-index: 1001;
-      box-shadow: var(--shadow-md);
-      transition: all var(--transition-fast);
-      color: var(--color-text-secondary);
-    }
-
-    .toggle-btn:hover {
-      background-color: var(--color-bg-secondary);
-      box-shadow: var(--shadow-lg);
-    }
-
-    .toggle-btn.sidebar-hidden {
-      left: var(--space-5);
-    }
-
-    .toggle-btn.sidebar-visible {
-      left: 420px;
-    }
-
-    /* Card System */
-    .card {
-      background-color: var(--color-bg-primary);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--color-border-light);
-      margin-bottom: var(--space-4);
-      overflow: hidden;
-      transition: box-shadow var(--transition-fast);
-    }
-
-    .card:hover {
-      box-shadow: var(--shadow-md);
-    }
-
-    .card-header {
-      padding: var(--space-4) var(--space-5);
-      background-color: var(--color-bg-secondary);
-      border-bottom: 1px solid var(--color-border-light);
-      font-weight: var(--font-weight-semibold);
-      font-size: var(--font-size-base);
-      color: var(--color-text-primary);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      cursor: pointer;
-      user-select: none;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-
-    .card-header:hover {
-      background-color: #EBEBF0;
-    }
-
-    .card-header .icon {
-      font-size: var(--font-size-sm);
-      color: var(--color-text-tertiary);
-      margin-right: var(--space-2);
-    }
-
-    .card-header .chevron {
-      font-size: var(--font-size-sm);
-      color: var(--color-text-tertiary);
-      transition: transform var(--transition-fast);
-    }
-
-    .card-header.collapsed .chevron {
-      transform: rotate(90deg);
-    }
-
-    .card-content {
-      padding: var(--space-5);
-    }
-
-    .card-content.collapsible {
-      max-height: 1000px;
-      overflow: hidden;
-      transition: max-height var(--transition-base), padding var(--transition-base);
-    }
-
-    .card-content.collapsed {
-      max-height: 0;
-      padding-top: 0;
-      padding-bottom: 0;
-    }
-
-    /* Main Container */
-    .sidebar-container {
-      padding: var(--space-5);
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-4);
-    }
-
-    /* Status Message */
-    .status-message {
-      padding: var(--space-4);
-      border-radius: var(--radius-md);
-      margin-bottom: var(--space-4);
-      font-size: var(--font-size-sm);
-      font-weight: var(--font-weight-medium);
-      border: 1px solid;
-    }
-
-    .status-loading {
-      background-color: #FFF4E6;
-      border-color: #FFE4B3;
-      color: #8B5A00;
-    }
-
-    .status-success {
-      background-color: #F0FDF4;
-      border-color: #BBF7D0;
-      color: #166534;
-    }
-
-    .status-error {
-      background-color: #FEF2F2;
-      border-color: #FECACA;
-      color: #991B1B;
-    }
-
-    /* Form Elements */
-    .form-group {
-      margin-bottom: var(--space-4);
-    }
-
-    .form-group:last-child {
-      margin-bottom: 0;
-    }
-
-    .form-label {
-      display: block;
-      font-weight: var(--font-weight-medium);
-      font-size: var(--font-size-sm);
-      color: var(--color-text-primary);
-      margin-bottom: var(--space-2);
-    }
-
-    .form-input,
-    .form-select {
-      width: 100%;
-      padding: var(--space-3) var(--space-4);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      font-size: var(--font-size-sm);
-      font-family: var(--font-family);
-      background-color: var(--color-bg-primary);
-      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-    }
-
-    .form-input:focus,
-    .form-select:focus {
-      outline: none;
-      border-color: var(--color-primary);
-      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
-    }
-
-    /* Button System */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: var(--space-3) var(--space-4);
-      border: none;
-      border-radius: var(--radius-md);
-      font-size: var(--font-size-sm);
-      font-weight: var(--font-weight-medium);
-      font-family: var(--font-family);
-      cursor: pointer;
-      transition: all var(--transition-fast);
-      text-decoration: none;
-      gap: var(--space-2);
-    }
-
-    .btn-primary {
-      background-color: var(--color-primary);
-      color: white;
-    }
-
-    .btn-primary:hover {
-      background-color: var(--color-primary-hover);
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-md);
-    }
-
-    .btn-secondary {
-      background-color: var(--color-bg-secondary);
-      color: var(--color-text-primary);
-      border: 1px solid var(--color-border);
-    }
-
-    .btn-secondary:hover {
-      background-color: #EBEBF0;
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .btn-small {
-      padding: var(--space-2) var(--space-3);
-      font-size: var(--font-size-xs);
-    }
-
-    .btn-full {
-      width: 100%;
-    }
-
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none !important;
-    }
-
-    /* Route Controls */
-    .route-controls {
-      display: flex;
-      gap: var(--space-3);
-      align-items: center;
-      margin-top: var(--space-4);
-    }
-
-    .route-controls input[type="color"] {
-      width: var(--space-8);
-      height: var(--space-8);
-      padding: 0;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-    }
-
-    .route-controls input[type="number"] {
-      width: 80px;
-    }
-
-    /* Route Tabs */
-    .route-tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-2);
-      margin-bottom: var(--space-4);
-      padding-bottom: var(--space-4);
-      border-bottom: 1px solid var(--color-border-light);
-    }
-
-    .route-tab {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      padding: var(--space-2) var(--space-3);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      background-color: var(--color-bg-secondary);
-      cursor: pointer;
-      font-size: var(--font-size-xs);
-      font-weight: var(--font-weight-medium);
-      transition: all var(--transition-fast);
-      min-width: 80px;
-      justify-content: center;
-    }
-
-    .route-tab:hover {
-      background-color: #EBEBF0;
-      transform: translateY(-1px);
-    }
-
-    .route-tab.active {
-      background-color: var(--color-primary);
-      color: white;
-      border-color: var(--color-primary);
-    }
-
-    .route-tab .color-indicator {
-      width: var(--space-3);
-      height: var(--space-3);
-      border-radius: 50%;
-      border: 1px solid rgba(0,0,0,0.2);
-    }
-
-    .route-tab .close-btn {
-      background: none;
-      border: none;
-      color: inherit;
-      cursor: pointer;
-      padding: 0;
-      font-size: var(--font-size-sm);
-      font-weight: var(--font-weight-semibold);
-      width: var(--space-4);
-      height: var(--space-4);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background-color var(--transition-fast);
-    }
-
-    .route-tab .close-btn:hover {
-      background-color: rgba(255,255,255,0.2);
-    }
-
-    /* Waypoint List */
-    .waypoint-list {
-      max-height: 200px;
-      overflow-y: auto;
-      border: 1px solid var(--color-border-light);
-      border-radius: var(--radius-md);
-      background-color: var(--color-bg-secondary);
-      margin-top: var(--space-3);
-    }
-
-    .waypoint-item {
-      display: flex;
-      align-items: center;
-      padding: var(--space-3);
-      border-bottom: 1px solid var(--color-border-light);
-      background-color: var(--color-bg-primary);
-      margin: var(--space-1);
-      border-radius: var(--radius-sm);
-    }
-
-    .waypoint-item:last-child {
-      border-bottom: none;
-    }
-
-    .waypoint-number {
-      width: var(--space-6);
-      height: var(--space-6);
-      border-radius: 50%;
-      background-color: var(--color-primary);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: var(--font-size-xs);
-      font-weight: var(--font-weight-semibold);
-      margin-right: var(--space-3);
-      flex-shrink: 0;
-    }
-
-    .waypoint-text {
-      flex: 1;
-      font-size: var(--font-size-xs);
-      color: var(--color-text-secondary);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .waypoint-controls {
-      display: flex;
-      gap: var(--space-2);
-      flex-shrink: 0;
-    }
-
-    .waypoint-controls button {
-      width: var(--space-6);
-      height: var(--space-6);
-      padding: 0;
-      font-size: var(--font-size-xs);
-      border-radius: var(--radius-sm);
-    }
-
-    /* Route List */
-    .route-list {
-      max-height: 300px;
-      overflow-y: auto;
-      border: 1px solid var(--color-border-light);
-      border-radius: var(--radius-md);
-      background-color: var(--color-bg-secondary);
-      margin-top: var(--space-3);
-    }
-
-    .route-list-item {
-      display: flex;
-      align-items: center;
-      padding: var(--space-3);
-      border-bottom: 1px solid var(--color-border-light);
-      background-color: var(--color-bg-primary);
-      margin: var(--space-1);
-      border-radius: var(--radius-sm);
-      transition: background-color var(--transition-fast);
-    }
-
-    .route-list-item:hover {
-      background-color: var(--color-bg-secondary);
-    }
-
-    .route-list-item:last-child {
-      border-bottom: none;
-    }
-
-    .route-info {
-      flex: 1;
-      font-size: var(--font-size-xs);
-    }
-
-    .route-name {
-      font-weight: var(--font-weight-semibold);
-      color: var(--color-text-primary);
-      margin-bottom: var(--space-1);
-    }
-
-    .route-status {
-      color: var(--color-text-tertiary);
-      font-size: var(--font-size-xs);
-    }
-
-    .visibility-btn {
-      width: var(--space-8);
-      height: var(--space-8);
-      padding: 0;
-      font-size: var(--font-size-sm);
-      margin-right: var(--space-2);
-      border-radius: var(--radius-sm);
-    }
-
-    .visibility-btn.hidden {
-      background-color: var(--color-text-tertiary);
-    }
-
-    /* Map Controls */
-    .zoom-controls {
-      display: flex;
-      gap: var(--space-3);
-      margin-top: var(--space-4);
-    }
-
-    .zoom-controls button {
-      height: var(--space-10);
-      font-size: var(--font-size-lg);
-      font-weight: var(--font-weight-semibold);
-    }
-
-    /* Crosshair */
-    .map-crosshair {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 30px;
-      height: 30px;
-      pointer-events: none;
-      z-index: 1000;
-    }
-
-    .map-crosshair::before,
-    .map-crosshair::after {
-      content: '';
-      position: absolute;
-      background-color: #ff0000;
-      box-shadow: 0 0 0 1px #ffffff;
-    }
-
-    .map-crosshair::before {
-      top: 50%;
-      left: 2px;
-      right: 2px;
-      height: 2px;
-      transform: translateY(-50%);
-    }
-
-    .map-crosshair::after {
-      left: 50%;
-      top: 2px;
-      bottom: 2px;
-      width: 2px;
-      transform: translateX(-50%);
-    }
-
-    .map-crosshair .center-circle {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 8px;
-      height: 8px;
-      border: 2px solid #ff0000;
-      border-radius: 50%;
-      background-color: #ffffff;
-      box-shadow: 0 0 0 1px #ffffff;
-    }
-
-    /* Button Grid */
-    .button-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: var(--space-2);
-      margin-top: var(--space-3);
-    }
-
-    .button-row {
-      display: flex;
-      gap: var(--space-2);
-      margin-top: var(--space-3);
-    }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-      .sidebar {
-        width: calc(100vw - var(--space-10));
-        margin: var(--space-3);
-      }
-      
-      .toggle-btn.sidebar-visible {
-        left: calc(100vw - var(--space-5) - var(--space-10));
-      }
-    }
-
-    /* Animation Classes */
-    .fade-in {
-      animation: fadeIn var(--transition-base) ease-out;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .slide-down {
-      animation: slideDown var(--transition-base) ease-out;
-    }
-
-    @keyframes slideDown {
-      from { max-height: 0; opacity: 0; }
-      to { max-height: 1000px; opacity: 1; }
-    }
-  </style>
+  <meta charset="utf-8" />
+  <title>Route Finder with Multiple Routes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style type="text/css">
+        /* Modern Design System */
+        :root {
+            /* Typography Scale */
+            --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+            --font-size-xs: 12px;
+            --font-size-sm: 14px;
+            --font-size-base: 16px;
+            --font-size-lg: 20px;
+            --font-size-xl: 24px;
+            /* Font Weights */
+            --font-weight-normal: 400;
+            --font-weight-medium: 500;
+            --font-weight-semibold: 600;
+            /* Spacing System (4px base) */
+            --space-1: 4px;
+            --space-2: 8px;
+            --space-3: 12px;
+            --space-4: 16px;
+            --space-5: 20px;
+            --space-6: 24px;
+            --space-8: 32px;
+            --space-10: 40px;
+            --space-12: 48px;
+            /* Color System */
+            --color-primary: #007AFF;
+            --color-primary-hover: #0056CC;
+            --color-secondary: #5856D6;
+            --color-success: #34C759;
+            --color-warning: #FF9500;
+            --color-error: #FF3B30;
+            --color-bg-primary: #FFFFFF;
+            --color-bg-secondary: #F2F2F7;
+            --color-bg-tertiary: #FFFFFF;
+            --color-text-primary: #000000;
+            --color-text-secondary: #3C3C43;
+            --color-text-tertiary: #8E8E93;
+            --color-border: #C6C6C8;
+            --color-border-light: #E5E5EA;
+            /* Shadows */
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+            /* Border Radius */
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            /* Transitions */
+            --transition-fast: 150ms ease-out;
+            --transition-base: 300ms ease-out;
+            --transition-slow: 500ms ease-out;
+    }    
+        * {
+            box-sizing: border-box;
+    }    
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-normal);
+            line-height: 1.5;
+            color: var(--color-text-primary);
+            background-color: var(--color-bg-secondary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+    }    
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+    }    
+        .sidebar {
+            position: absolute;
+            margin: var(--space-5);
+            width: 380px;
+            max-height: calc(100vh - var(--space-10));
+            top: 0;
+            padding: 0;
+            background-color: var(--color-bg-primary);
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            border-radius: var(--radius-xl);
+            z-index: 1000;
+            transition: transform var(--transition-base);
+            border: 1px solid var(--color-border-light);
+    }    
+        .sidebar.hidden {
+            transform: translateX(-100%);
+    }    
+        .toggle-btn {
+            position: absolute;
+            top: var(--space-5);
+            left: var(--space-5);
+            width: var(--space-10);
+            height: var(--space-10);
+            background-color: var(--color-bg-primary);
+            border: 1px solid var(--color-border-light);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-size-lg);
+            z-index: 1001;
+            box-shadow: var(--shadow-md);
+            transition: all var(--transition-fast);
+            color: var(--color-text-secondary);
+    }    
+        .toggle-btn:hover {
+            background-color: var(--color-bg-secondary);
+            box-shadow: var(--shadow-lg);
+    }    
+        .toggle-btn.sidebar-hidden {
+            left: var(--space-5);
+    }    
+        .toggle-btn.sidebar-visible {
+            left: 420px;
+    }    
+        /* Card System */
+        .card {
+            background-color: var(--color-bg-primary);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--color-border-light);
+            margin-bottom: var(--space-4);
+            overflow: hidden;
+            transition: box-shadow var(--transition-fast);
+    }    
+        .card:hover {
+            box-shadow: var(--shadow-md);
+    }    
+        .card-header {
+            padding: var(--space-4) var(--space-5);
+            background-color: var(--color-bg-secondary);
+            border-bottom: 1px solid var(--color-border-light);
+            font-weight: var(--font-weight-semibold);
+            font-size: var(--font-size-base);
+            color: var(--color-text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+    }    
+        .card-header:hover {
+            background-color: #EBEBF0;
+    }    
+        .card-header .icon {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-tertiary);
+            margin-right: var(--space-2);
+    }    
+        .card-header .chevron {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-tertiary);
+            transition: transform var(--transition-fast);
+    }    
+        .card-header.collapsed .chevron {
+            transform: rotate(90deg);
+    }    
+        .card-content {
+            padding: var(--space-5);
+    }    
+        .card-content.collapsible {
+            max-height: 1000px;
+            overflow: hidden;
+            transition: max-height var(--transition-base), padding var(--transition-base);
+    }    
+        .card-content.collapsed {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+    }    
+        /* Main Container */
+        .sidebar-container {
+            padding: var(--space-5);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-4);
+    }    
+        /* Status Message */
+        .status-message {
+            padding: var(--space-4);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--space-4);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+            border: 1px solid;
+    }    
+        .status-loading {
+            background-color: #FFF4E6;
+            border-color: #FFE4B3;
+            color: #8B5A00;
+    }    
+        .status-success {
+            background-color: #F0FDF4;
+            border-color: #BBF7D0;
+            color: #166534;
+    }    
+        .status-error {
+            background-color: #FEF2F2;
+            border-color: #FECACA;
+            color: #991B1B;
+    }    
+        /* Form Elements */
+        .form-group {
+            margin-bottom: var(--space-4);
+    }    
+        .form-group:last-child {
+            margin-bottom: 0;
+    }    
+        .form-label {
+            display: block;
+            font-weight: var(--font-weight-medium);
+            font-size: var(--font-size-sm);
+            color: var(--color-text-primary);
+            margin-bottom: var(--space-2);
+    }    
+        .form-input,
+    .form-select     {
+            width: 100%;
+            padding: var(--space-3) var(--space-4);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-sm);
+            font-family: var(--font-family);
+            background-color: var(--color-bg-primary);
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }    
+        .form-input:focus,
+    .form-select:focus     {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+    }    
+        /* Button System */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-3) var(--space-4);
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+            font-family: var(--font-family);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            text-decoration: none;
+            gap: var(--space-2);
+    }    
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: white;
+    }    
+        .btn-primary:hover {
+            background-color: var(--color-primary-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+    }    
+        .btn-secondary {
+            background-color: var(--color-bg-secondary);
+            color: var(--color-text-primary);
+            border: 1px solid var(--color-border);
+    }    
+        .btn-secondary:hover {
+            background-color: #EBEBF0;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+    }    
+        .btn-small {
+            padding: var(--space-2) var(--space-3);
+            font-size: var(--font-size-xs);
+    }    
+        .btn-full {
+            width: 100%;
+    }    
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+    }    
+        /* Route Controls */
+        .route-controls {
+            display: flex;
+            gap: var(--space-3);
+            align-items: center;
+            margin-top: var(--space-4);
+    }    
+        .route-controls input[type="color"] {
+            width: var(--space-8);
+            height: var(--space-8);
+            padding: 0;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+    }    
+        .route-controls input[type="number"] {
+            width: 80px;
+    }    
+        /* Route Tabs */
+        .route-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-2);
+            margin-bottom: var(--space-4);
+            padding-bottom: var(--space-4);
+            border-bottom: 1px solid var(--color-border-light);
+    }    
+        .route-tab {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-3);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            background-color: var(--color-bg-secondary);
+            cursor: pointer;
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+            transition: all var(--transition-fast);
+            min-width: 80px;
+            justify-content: center;
+    }    
+        .route-tab:hover {
+            background-color: #EBEBF0;
+            transform: translateY(-1px);
+    }    
+        .route-tab.active {
+            background-color: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+    }    
+        .route-tab .color-indicator {
+            width: var(--space-3);
+            height: var(--space-3);
+            border-radius: 50%;
+            border: 1px solid rgba(0,0,0,0.2);
+    }    
+        .route-tab .close-btn {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            padding: 0;
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-semibold);
+            width: var(--space-4);
+            height: var(--space-4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color var(--transition-fast);
+    }    
+        .route-tab .close-btn:hover {
+            background-color: rgba(255,255,255,0.2);
+    }    
+        /* Waypoint List */
+        .waypoint-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--color-border-light);
+            border-radius: var(--radius-md);
+            background-color: var(--color-bg-secondary);
+            margin-top: var(--space-3);
+    }    
+        .waypoint-item {
+            display: flex;
+            align-items: center;
+            padding: var(--space-3);
+            border-bottom: 1px solid var(--color-border-light);
+            background-color: var(--color-bg-primary);
+            margin: var(--space-1);
+            border-radius: var(--radius-sm);
+    }    
+        .waypoint-item:last-child {
+            border-bottom: none;
+    }    
+        .waypoint-number {
+            width: var(--space-6);
+            height: var(--space-6);
+            border-radius: 50%;
+            background-color: var(--color-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-semibold);
+            margin-right: var(--space-3);
+            flex-shrink: 0;
+    }    
+        .waypoint-text {
+            flex: 1;
+            font-size: var(--font-size-xs);
+            color: var(--color-text-secondary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+    }    
+        .waypoint-controls {
+            display: flex;
+            gap: var(--space-2);
+            flex-shrink: 0;
+    }    
+        .waypoint-controls button {
+            width: var(--space-6);
+            height: var(--space-6);
+            padding: 0;
+            font-size: var(--font-size-xs);
+            border-radius: var(--radius-sm);
+    }    
+        /* Route List */
+        .route-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--color-border-light);
+            border-radius: var(--radius-md);
+            background-color: var(--color-bg-secondary);
+            margin-top: var(--space-3);
+    }    
+        .route-list-item {
+            display: flex;
+            align-items: center;
+            padding: var(--space-3);
+            border-bottom: 1px solid var(--color-border-light);
+            background-color: var(--color-bg-primary);
+            margin: var(--space-1);
+            border-radius: var(--radius-sm);
+            transition: background-color var(--transition-fast);
+    }    
+        .route-list-item:hover {
+            background-color: var(--color-bg-secondary);
+    }    
+        .route-list-item:last-child {
+            border-bottom: none;
+    }    
+        .route-info {
+            flex: 1;
+            font-size: var(--font-size-xs);
+    }    
+        .route-name {
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-primary);
+            margin-bottom: var(--space-1);
+    }    
+        .route-status {
+            color: var(--color-text-tertiary);
+            font-size: var(--font-size-xs);
+    }    
+        .visibility-btn {
+            width: var(--space-8);
+            height: var(--space-8);
+            padding: 0;
+            font-size: var(--font-size-sm);
+            margin-right: var(--space-2);
+            border-radius: var(--radius-sm);
+    }    
+        .visibility-btn.hidden {
+            background-color: var(--color-text-tertiary);
+    }    
+        /* Map Controls */
+        .zoom-controls {
+            display: flex;
+            gap: var(--space-3);
+            margin-top: var(--space-4);
+    }    
+        .zoom-controls button {
+            height: var(--space-10);
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+    }    
+        /* Crosshair */
+        .map-crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            pointer-events: none;
+            z-index: 1000;
+    }    
+        .map-crosshair::before,
+    .map-crosshair::after     {
+            content: '';
+            position: absolute;
+            background-color: #ff0000;
+            box-shadow: 0 0 0 1px #ffffff;
+    }    
+        .map-crosshair::before {
+            top: 50%;
+            left: 2px;
+            right: 2px;
+            height: 2px;
+            transform: translateY(-50%);
+    }    
+        .map-crosshair::after {
+            left: 50%;
+            top: 2px;
+            bottom: 2px;
+            width: 2px;
+            transform: translateX(-50%);
+    }    
+        .map-crosshair .center-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            border: 2px solid #ff0000;
+            border-radius: 50%;
+            background-color: #ffffff;
+            box-shadow: 0 0 0 1px #ffffff;
+    }    
+        /* Button Grid */
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-2);
+            margin-top: var(--space-3);
+    }    
+        .button-row {
+            display: flex;
+            gap: var(--space-2);
+            margin-top: var(--space-3);
+    }    
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: calc(100vw - var(--space-10));
+                margin: var(--space-3);
+      }      
+            .toggle-btn.sidebar-visible {
+                left: calc(100vw - var(--space-5) - var(--space-10));
+      }      
+    }    
+        /* Animation Classes */
+        .fade-in {
+            animation: fadeIn var(--transition-base) ease-out;
+    }    
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+    }    
+        .slide-down {
+            animation: slideDown var(--transition-base) ease-out;
+    }    
+        @keyframes slideDown {
+            from { max-height: 0; opacity: 0; }
+            to { max-height: 1000px; opacity: 1; }
+    }    
+
+        /* Monoline Icon Styles - Style Option 2: Medium Weight Rounded */
+        .monoline-icon {
+          display: inline-block;
+          width: 16px;
+          height: 16px;
+          stroke: #333;
+          stroke-width: 2.5px;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          fill: none;
+          vertical-align: middle;
+        }
+
+        .monoline-icon-sm {
+          width: 14px;
+          height: 14px;
+        }
+
+        .monoline-icon-lg {
+          width: 20px;
+          height: 20px;
+        }
+  </lt;/style>
 </head>
- 
 <body>
-  <div id="map"></div>
-  
-  <!-- Map crosshair indicator -->
-  <div id="map-crosshair" class="map-crosshair" style="display: none;">
-    <div class="center-circle"></div>
-  </div>
-  
-  <div class="toggle-btn sidebar-visible" id="toggle-btn" onclick="RouteFinderApp.ui.toggleSidebar()">
-    ☰
-  </div>
-  
-  <div class="sidebar" id="sidebar">
-    <div class="sidebar-container">
-      <div id="status-message" class="status-message status-loading">
-        <strong>🔄 Initializing...</strong><br>
-        Loading mapping application...
-      </div>
+  <div id="map"></div>
+    <!-- Map crosshair indicator -->
+  <div id="map-crosshair" class="map-crosshair" style="display: none;">
+    <div class="center-circle"></div>
+  </div>
+  <div class="toggle-btn sidebar-visible" id="toggle-btn" onclick="RouteFinderApp.ui.toggleSidebar()">
+    ☰    
+  </div>
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-container">
+      <div id="status-message" class="status-message status-loading">
+        <strong>🔄 Initializing...</strong><br>
+        Loading mapping application...        
+      </div>
+            <!-- Route Management Section -->
+      <div class="card" id="route-management" style="display: none;">
+        <div class="card-header" onclick="RouteFinderApp.ui.toggleSection('route-management')">
+          <div style="display: flex; align-items: center;">
+            <span class="icon">⚬</span>
+            <span>Route Management</span>
+          </div>
+          <span class="chevron">▷</span>
+        </div>
+        <div class="card-content collapsible" id="route-management-content">
+          <div class="route-tabs" id="route-tabs">
+                        <!-- Route tabs will be dynamically generated -->
+          </div>
+          <button class="btn btn-primary btn-full" onclick="RouteFinderApp.routes.createNewRoute()">
+            <span>+</span> New Route
+          </button>
+          <div class="button-grid" style="margin-top: var(--space-4);">
+            <button class="btn btn-secondary" onclick="RouteFinderApp.fileManager.exportRoutes()">
+              <span>↑</span> Export
+            </button>
+            <button class="btn btn-secondary" onclick="RouteFinderApp.fileManager.triggerImportRoutes()">
+              <span>↓</span> Import
+            </button>
+          </div>
+                    <!-- Hidden file input for importing -->
+          <input type="file" id="import-file-input" accept=".json" style="display: none;" onchange="RouteFinderApp.fileManager.importRoutes(event)">
+          <div class="route-list" id="route-list" style="display: none;">
+                        <!-- Route list items will be dynamically generated -->
+          </div>
+          <button class="btn btn-secondary btn-full" onclick="RouteFinderApp.ui.toggleRouteList()" id="route-list-toggle" style="display: none; margin-top: var(--space-3);">
+            ⋯ Show All Routes            
+          </button>
+        </div>
+      </div>
+            <!-- Current Route Controls -->
+      <div class="card" id="current-route-panel" style="display: none;">
+        <div class="card-header" onclick="RouteFinderApp.ui.toggleSection('current-route')">
+          <div style="display: flex; align-items: center;">
+            <span class="icon">○</span>
+            <span id="current-route-header">Current Route</span>
+          </div>
+          <span class="chevron">▷</span>
+        </div>
+        <div class="card-content collapsible" id="current-route-content">
+          <div class="form-group">
+            <label class="form-label">Starting Point</label>
+            <input type="text" class="form-input" id="origin-input" placeholder="Enter address or place name">
+            <button class="btn btn-secondary btn-full" onclick="RouteFinderApp.geocoding.geocodeOrigin()" style="margin-top: var(--space-2);">
+              ◎ Find Location              
+            </button>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Destination</label>
+            <input type="text" class="form-input" id="destination-input" placeholder="Enter address or place name">
+            <button class="btn btn-secondary btn-full" onclick="RouteFinderApp.geocoding.geocodeDestination()" style="margin-top: var(--space-2);">
+              ◎ Find Location              
+            </button>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Waypoints</label>
+            <input type="text" class="form-input" id="waypoint-input" placeholder="Enter intermediate stop">
+            <div class="button-grid">
+              <button class="btn btn-secondary" onclick="RouteFinderApp.waypoints.addWaypoint()">
+                + Add                
+              </button>
+              <button class="btn btn-secondary" onclick="RouteFinderApp.waypoints.toggleWaypointMode()" id="waypoint-mode-btn">
+                ◉ Click Map                
+              </button>
+            </div>
+            <div id="waypoint-list" class="waypoint-list" style="display: none;">
+                            <!-- Waypoints will be added here dynamically -->
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Travel Mode</label>
+            <select class="form-select" id="profile-select">
+              <option value="driving">Car</option>
+              <option value="walking">Walk</option>
+              <option value="cycling">Bike</option>
+            </select>
+          </div>
+          <div class="button-row">
+            <button class="btn btn-primary" onclick="RouteFinderApp.routing.findRoute()" style="flex: 2;">
+              → Find Route              
+            </button>
+            <button class="btn btn-secondary" onclick="RouteFinderApp.routes.clearCurrentRoute()" style="flex: 1;">
+              ✕ Clear              
+            </button>
+          </div>
+          <div class="route-controls">
+            <label style="font-size: var(--font-size-xs); color: var(--color-text-secondary);">Color:</label>
+            <input type="color" id="routeColor" value="#ff0000" onchange="RouteFinderApp.routes.updateCurrentRouteStyle()">
+            <label style="font-size: var(--font-size-xs); color: var(--color-text-secondary);">Width:</label>
+            <input type="number" class="form-input" id="routeWidth" value="8" min="1" max="20" onchange="RouteFinderApp.routes.updateCurrentRouteStyle()">
+          </div>
+        </div>
+      </div>
+            <!-- Map Controls -->
+      <div class="card" id="map-controls" style="display: none;">
+        <div class="card-header" onclick="RouteFinderApp.ui.toggleSection('map-controls')">
+          <div style="display: flex; align-items: center;">
+            <span class="icon">◈</span>
+            <span>Map Controls</span>
+          </div>
+          <span class="chevron">▷</span>
+        </div>
+        <div class="card-content collapsible" id="map-controls-content">
+          <div class="form-group">
+            <label class="form-label">Map Style</label>
+            <select class="form-select" id="map-style-select" onchange="RouteFinderApp.mapControls.changeMapStyle()">
+              <option value="mapbox://styles/cb29/ckxnnmex53n1b14m07t6sum48">Classic Standard</option>
+              <option value="mapbox://styles/cb29/ckxnmjiti0rvm14pby8w9si99">Classic Vintage</option>
+              <option value="mapbox://styles/cb29/ckxov33jj3le314ueu15gl6yh">Dark Digital</option>
+              <option value="mapbox://styles/cb29/ckxmhuc4k2gxm14s0eq1htzns">Dark Monochrome</option>
+              <option value="mapbox://styles/cb29/ckxs1bfov2cay14mnx6nvrzxt">Dark Night Mode</option>
+              <option value="mapbox://styles/cb29/ckwgtu6ly20cr15qiy9i2ftsz">Light Engraved</option>
+              <option value="mapbox://styles/cb29/ckxntkwjq4flv14ld7uisp5b1">Light High Contrast</option>
+              <option value="mapbox://styles/cb29/ckxouv50s02lw14r2jiyvnvxh">Light Pencil Sketch</option>
+              <option value="mapbox://styles/cb29/ckxtl08qj2gb215p8y2blzxur">Pastel Blue</option>
+              <option value="mapbox://styles/cb29/ckxtkuk8l10zj14pk8irf7owt">Pastel Cool</option>
+              <option value="mapbox://styles/cb29/ckxtl2a2s0yot14nw9pbn2733">Pastel Pink</option>
+              <option value="mapbox://styles/cb29/ckxtl35nk4hsb15mry8rwlg4l">Pastel Yellow</option>
+              <option value="mapbox://styles/cb29/ckxmjckme2if514s0v3xq4vxy">Satellite Streets</option>
+              <option value="mapbox://styles/cb29/ckxrnuq691z6h14mnuy5jpk5c">Topography Colorful</option>
+              <option value="mapbox://styles/cb29/ckxnp39kb5eyw14oaan01mkp0">Topography Globe</option>
+              <option value="mapbox://styles/cb29/ckxnkf6rs60r214uc0j42vbj4">Topography Outdoor</option>
+              <option value="mapbox://styles/cb29/ckxnqwyww0sri14p9skglgshs">Topography Subtle</option>
+              <option value="mapbox://styles/cb29/ckxno9jbk3nn714s6vjah6fwb">Topography Vintage</option>
+              <option value="mapbox://styles/cb29/ckxrrtfqk0oir15my0y9tpjvj">Unique Colorful</option>
+              <option value="mapbox://styles/cb29/ckxovchyg4tfj14s6d7u559tj">Unique Comic Book 1</option>
+              <option value="mapbox://styles/cb29/ckxov6vgm66g214o064dp3vda">Unique Comic Book 2</option>
+              <option value="mapbox://styles/cb29/ckxove5sy174l15mq6h82hwxk">Unique Dusty Western</option>
+              <option value="mapbox://styles/cb29/ckxoup98z4sv514m0q988ltie">Unique Picture Book</option>
+              <option value="mapbox://styles/cb29/ckxov1ris0n2415p4e9gn8oxu">Unique Treasure Map</option>
+              <option value="mapbox://styles/cb29/ckxous4km02k114m523qh0k9y">Unique Woodcut</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Center Map On</label>
+            <input type="text" class="form-input" id="center-input" placeholder="Enter address or coordinates">
+            <div class="button-grid">
+              <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.centerMapOnLocation()">
+                ◎ Center                
+              </button>
+              <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.toggleCenterMode()" id="center-mode-btn">
+                ◉ Click Map                
+              </button>
+            </div>
+          </div>
+          <div class="button-grid">
+            <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.toggleCrosshair()" id="crosshair-toggle">
+              ⊕ Show Center              
+            </button>
+            <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.getCurrentCenter()">
+              ⧉ Get Center              
+            </button>
+          </div>
+          <div class="zoom-controls">
+            <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.zoomIn()">+</button>
+            <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.zoomOut()">-</button>
+            <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.fitToData()" style="flex: 1; font-size: var(--font-size-sm);">
+              ⬚ Fit to Routes              
+            </button>
+          </div>
+        </div>
+      </div>
+            <!-- Initialization Controls -->
+      <div class="card" id="init-controls">
+        <div class="card-header">
+          <div style="display: flex; align-items: center;">
+            <span class="icon">◯</span>
+            <span>Initialize Application</span>
+          </div>
+        </div>
+        <div class="card-content">
+          <button class="btn btn-primary btn-full" onclick="RouteFinderApp.init()" id="init-app-btn">
+            → Start Route Finder            
+          </button>
+          <p style="font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin: var(--space-3) 0 0 0; text-align: center;">
+            This will load the mapping libraries and start the full application.            
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+        // Main Application Object with Modular Architecture
+        const RouteFinderApp = (function() {
+            'use strict';
+            // Configuration Object - Centralized Settings
+            const Config = {
+                // Map Configuration
+                mapbox: {
+                    accessToken: 'pk.eyJ1IjoiY2IyOSIsImEiOiJja3E4OHo3anowZGx1Mm9tcXF3ZmhyaWtwIn0.IQ5rY622AU9GOETrqa9NBw',
+                    style: 'mapbox://styles/cb29/ckxnnmex53n1b14m07t6sum48', // Classic Standard as default
+                    center: [-84.5, 38.05],
+                    zoom: 10
+        },        
+                // Route Configuration
+                routes: {
+                    colors: ['#ff0000', '#00ff00', '#0066ff', '#ff6600', '#ff00ff', '#00ffff', '#ffff00', '#990000', '#009900', '#000099'],
+                    defaultWidth: 8,
+                    defaultProfile: 'driving'
+        },        
+                // UI Configuration
+                ui: {
+                    sidebarTransitionDuration: 300,
+                    statusMessageDuration: 5000
+        },        
+                // Timing Configuration
+                timing: {
+                    mapLoadDelay: 1000,
+                    libraryLoadTimeout: 30000,
+                    geocodingDelay: 500
+        }        
+      };      
+            // Event System - Centralized Event Management
+            const EventSystem = {
+                events: {},
+                on(event, callback) {
+                    if (!this.events[event]) {
+                        this.events[event] = [];
+          }          
+                    this.events[event].push(callback);
+        },        
+                off(event, callback) {
+                    if (!this.events[event]) return;
+                    this.events[event] = this.events[event].filter(cb => cb !== callback);
+        },        
+                emit(event, data) {
+                    if (!this.events[event]) return;
+                    this.events[event].forEach(callback => {
+                        try {
+                            callback(data);
+            }             catch (error) {
+                            console.error('Event callback error:', error);
+            }            
+          });          
+        }        
+      };      
+            // Application State - Centralized State Management
+            const State = {
+                // Core state
+                map: null,
+                appInitialized: false,
+                librariesLoaded: {
+                    mapbox: false,
+                    turf: false
+        },        
+                // Route state
+                routes: new Map(),
+                currentRouteId: null,
+                nextRouteId: 1,
+                routeListVisible: false,
+                // Interaction state
+                interactions: {
+                    settingOrigin: true,
+                    addingWaypoint: false,
+                    settingMapCenter: false,
+                    crosshairVisible: false
+        },        
+                // UI state
+                collapsedSections: new Set(),
+                // Getters
+                getCurrentRoute() {
+                    return this.routes.get(this.currentRouteId);
+        },        
+                getAllRoutes() {
+                    return Array.from(this.routes.values());
+        }        
+      };      
+            // Utility Functions
+            const Utils = {
+                updateStatus(message, type) {
+                    const statusEl = document.getElementById('status-message');
+                    if (statusEl) {
+            statusEl.className             = 'status-message status-' + type;
+            statusEl.innerHTML             = message;
+          }          
+                    console.log('STATUS: ' + message);
+          EventSystem.          emit('statusUpdated', { message, type });
+        },        
+                createEmptyRoute(id = null) {
+                    const routeId = id || State.nextRouteId++;
+                    return {
+                        id: routeId,
+                        name: `Route ${routeId}`,
+                        origin: null,
+                        destination: null,
+                        waypoints: [],
+                        profile: Config.routes.defaultProfile,
+                        color: Config.routes.colors[(routeId - 1) % Config.routes.colors.length],
+                        width: Config.routes.defaultWidth,
+                        routeData: null,
+                        visible: true,
+                        status: 'empty'
+          };          
+        },        
+                formatCoordinates(coords, precision = 4) {
+                    return `${coords[1].toFixed(precision)}, ${coords[0].toFixed(precision)}`;
+        }        
+      };      
+            // Map Management Module
+            const MapManager = {
+                init() {
+                    if (!State.librariesLoaded.mapbox || !State.librariesLoaded.turf) {
+                        throw new Error('Required libraries not loaded');
+          }          
+          Utils.          updateStatus('<strong>🗺️ Initializing Map...</strong><br>Creating map instance...', 'loading');
+          mapboxgl.accessToken           = Config.mapbox.accessToken;
+          State.map           = new mapboxgl.Map({
+                        container: 'map',
+                        style: Config.mapbox.style,
+                        center: Config.mapbox.center,
+                        zoom: Config.mapbox.zoom
+          });          
+          State.map.          on('load', () => {
+                        console.log('Map loaded successfully');
+                        this.setupMapFeatures();
+                        this.setupEventHandlers();
+            EventSystem.            emit('mapLoaded');
+          });          
+          State.map.          on('error', (e) => {
+                        console.error('Map error:', e);
+            Utils.            updateStatus('<strong>❌ Map Error</strong><br>Failed to initialize map', 'error');
+            EventSystem.            emit('mapError', e);
+          });          
+        },        
+                setupMapFeatures() {
+                    // Add obstacles
+                    const obstacle = turf.buffer(this.getClearanceData(), 0.25, { units: 'kilometers' });
+          State.map.          addSource('obstacles', {
+                        type: 'geojson',
+                        data: obstacle
+          });          
+          State.map.          addLayer({
+                        id: 'obstacles',
+                        type: 'fill',
+                        source: 'obstacles',
+                        paint: {
+                            'fill-color': '#ff0000',
+                            'fill-opacity': 0.3
+            }            
+          });          
+                    console.log('Map features setup complete');
+        },        
+                setupEventHandlers() {
+          State.map.          on('click', (e) => EventSystem.emit('mapClicked', e));
+        },        
+                getClearanceData() {
+                    return {
+                        type: 'FeatureCollection',
+                        features: [
+              {               type: 'Feature', geometry: { type: 'Point', coordinates: [-84.47426, 38.06673] }, properties: { clearance: "13' 2\"" } },
+              {               type: 'Feature', geometry: { type: 'Point', coordinates: [-84.47208, 38.06694] }, properties: { clearance: "13' 7\"" } },
+              {               type: 'Feature', geometry: { type: 'Point', coordinates: [-84.60485, 38.12184] }, properties: { clearance: "13' 7\"" } },
+              {               type: 'Feature', geometry: { type: 'Point', coordinates: [-84.61905, 37.87504] }, properties: { clearance: "12' 0\"" } },
+              {               type: 'Feature', geometry: { type: 'Point', coordinates: [-84.55946, 38.30213] }, properties: { clearance: "13' 6\"" } },
+              {               type: 'Feature', geometry: { type: 'Point', coordinates: [-84.27235, 38.04954] }, properties: { clearance: "13' 6\"" } },
+              {               type: 'Feature', geometry: { type: 'Point', coordinates: [-84.27264, 37.82917] }, properties: { clearance: "11' 6\"" } }
+            ]            
+          };          
+        }        
+      };      
+            // Route Management Module
+            const RouteManager = {
+                createNewRoute() {
+                    const newRoute = Utils.createEmptyRoute();
+          State.routes.          set(newRoute.id, newRoute);
+                    this.addRouteToMap(newRoute.id);
+                    this.switchToRoute(newRoute.id);
+          EventSystem.          emit('routeCreated', newRoute);
+          EventSystem.          emit('routesUpdated');
+                    console.log(`Created new route ${newRoute.id}`);
+        },        
+                addRouteToMap(routeId) {
+                    const route = State.routes.get(routeId);
+                    if (!route || !State.map) return;
+                    // Add route line source and layer
+          State.map.          addSource(`route-${routeId}`, {
+                        type: 'geojson',
+                        data: { type: 'FeatureCollection', features: [] }
+          });          
+          State.map.          addLayer({
+                        id: `route-${routeId}`,
+                        type: 'line',
+                        source: `route-${routeId}`,
+                        layout: { 'line-join': 'round', 'line-cap': 'round' },
+                        paint: {  
+                            'line-color': route.color,  
+                            'line-width': route.width,
+                            'line-opacity': route.visible ? 1 : 0
+            }            
+          });          
+                    // Add waypoints source and layer
+          State.map.          addSource(`waypoints-${routeId}`, {
+                        type: 'geojson',
+                        data: { type: 'FeatureCollection', features: [] }
+          });          
+          State.map.          addLayer({
+                        id: `waypoints-${routeId}`,
+                        type: 'circle',
+                        source: `waypoints-${routeId}`,
+                        paint: {
+                            'circle-radius': 6,
+                            'circle-color': ['get', 'color'],
+                            'circle-stroke-color': '#ffffff',
+                            'circle-stroke-width': 2,
+                            'circle-opacity': route.visible ? 1 : 0,
+                            'circle-stroke-opacity': route.visible ? 1 : 0
+            }            
+          });          
+        },        
+                switchToRoute(routeId) {
+          State.currentRouteId           = routeId;
+                    const route = State.routes.get(routeId);
+                    if (!route) return;
+                    // Update UI
+                    document.getElementById('origin-input').value = route.origin ? Utils.formatCoordinates(route.origin) : '';
+                    document.getElementById('destination-input').value = route.destination ? Utils.formatCoordinates(route.destination) : '';
+                    document.getElementById('profile-select').value = route.profile;
+                    document.getElementById('routeColor').value = route.color;
+                    document.getElementById('routeWidth').value = route.width;
+                    document.getElementById('current-route-header').textContent = `🎯 ${route.name}`;
+          EventSystem.          emit('routeSwitched', route);
+          EventSystem.          emit('waypointsUpdated');
+        },        
+                updateRouteOnMap(routeId) {
+                    const route = State.routes.get(routeId);
+                    if (!route || !State.map) return;
+                    // Update route line
+                    const routeFeatures = [];
+                    if (route.routeData) {
+            routeFeatures.            push({
+                            type: 'Feature',
+                            geometry: route.routeData.geometry
+            });            
+          }          
+          State.map.          getSource(`route-${routeId}`).setData({
+                        type: 'FeatureCollection',
+                        features: routeFeatures
+          });          
+                    // Update waypoints
+                    const waypointFeatures = [];
+                    let featureId = 0;
+                    if (route.origin) {
+            waypointFeatures.            push({
+                            type: 'Feature',
+                            id: featureId++,
+                            geometry: { type: 'Point', coordinates: route.origin },
+                            properties: { color: '#00ff00', type: 'origin' }
+            });            
+          }          
+          route.waypoints.          forEach((waypoint, index) => {
+            waypointFeatures.            push({
+                            type: 'Feature',
+                            id: featureId++,
+                            geometry: { type: 'Point', coordinates: waypoint },
+                            properties: { color: '#0066ff', type: 'waypoint', index: index }
+            });            
+          });          
+                    if (route.destination) {
+            waypointFeatures.            push({
+                            type: 'Feature',
+                            id: featureId++,
+                            geometry: { type: 'Point', coordinates: route.destination },
+                            properties: { color: '#ff0000', type: 'destination' }
+            });            
+          }          
+          State.map.          getSource(`waypoints-${routeId}`).setData({
+                        type: 'FeatureCollection',
+                        features: waypointFeatures
+          });          
+        },        
+                deleteRoute(routeId) {
+                    if (State.routes.size <= 1) {
+            Utils.            updateStatus('<strong>❌ Cannot Delete</strong><br>Must have at least one route', 'error');
+                        return;
+          }          
+                    // Remove from map
+          [          'route', 'waypoints'].forEach(type => {
+                        const layerId = `${type}-${routeId}`;
+                        if (State.map.getLayer(layerId)) State.map.removeLayer(layerId);
+                        if (State.map.getSource(layerId)) State.map.removeSource(layerId);
+          });          
+          State.routes.          delete(routeId);
+                    // Switch to another route if we deleted the current one
+                    if (State.currentRouteId === routeId) {
+                        const remainingRoutes = Array.from(State.routes.keys());
+                        this.switchToRoute(remainingRoutes[0]);
+          }          
+          EventSystem.          emit('routeDeleted', routeId);
+          EventSystem.          emit('routesUpdated');
+        },        
+                clearCurrentRoute() {
+                    const route = State.getCurrentRoute();
+                    if (!route) return;
+          route.origin           = null;
+          route.destination           = null;
+          route.waypoints           = [];
+          route.routeData           = null;
+          route.status           = 'empty';
+                    document.getElementById('origin-input').value = '';
+                    document.getElementById('destination-input').value = '';
+                    document.getElementById('waypoint-input').value = '';
+                    this.updateRouteOnMap(State.currentRouteId);
+          EventSystem.          emit('routeCleared', route);
+          EventSystem.          emit('waypointsUpdated');
+          Utils.          updateStatus('<strong>🗑️ Route Cleared</strong><br>All data removed from current route', 'success');
+        },        
+                updateCurrentRouteStyle() {
+                    const route = State.getCurrentRoute();
+                    if (!route) return;
+          route.color           = document.getElementById('routeColor').value;
+          route.width           = parseInt(document.getElementById('routeWidth').value);
+                    if (State.map.getLayer(`route-${State.currentRouteId}`)) {
+            State.map.            setPaintProperty(`route-${State.currentRouteId}`, 'line-color', route.color);
+            State.map.            setPaintProperty(`route-${State.currentRouteId}`, 'line-width', route.width);
+          }          
+          EventSystem.          emit('routeStyleUpdated', route);
+        },        
+                toggleRouteVisibility(routeId) {
+                    const route = State.routes.get(routeId);
+                    if (!route) return;
+          route.visible           = !route.visible;
+          [          'route', 'waypoints'].forEach(type => {
+                        const layerId = `${type}-${routeId}`;
+                        if (State.map.getLayer(layerId)) {
+                            const opacityProperty = type === 'route' ? 'line-opacity' : 'circle-opacity';
+                            const strokeOpacityProperty = type === 'waypoints' ? 'circle-stroke-opacity' : null;
+              State.map.              setPaintProperty(layerId, opacityProperty, route.visible ? 1 : 0);
+                            if (strokeOpacityProperty) {
+                State.map.                setPaintProperty(layerId, strokeOpacityProperty, route.visible ? 1 : 0);
+              }              
+            }            
+          });          
+          EventSystem.          emit('routeVisibilityToggled', route);
+        }        
+      };      
+            // Geocoding Module
+            const GeocodingManager = {
+                geocodeOrigin() {
+                    const address = document.getElementById('origin-input').value;
+                    if (!address.trim()) return;
+                    this.geocodeAddress(address, (coords) => {
+                        const route = State.getCurrentRoute();
+                        if (route) {
+              route.origin               = coords;
+                            document.getElementById('origin-input').value = Utils.formatCoordinates(coords);
+              RouteManager.              updateRouteOnMap(State.currentRouteId);
+              Utils.              updateStatus('<strong>✅ Origin Found</strong><br>Location geocoded successfully', 'success');
+              EventSystem.              emit('originSet', coords);
+            }            
+          });          
+        },        
+                geocodeDestination() {
+                    const address = document.getElementById('destination-input').value;
+                    if (!address.trim()) return;
+                    this.geocodeAddress(address, (coords) => {
+                        const route = State.getCurrentRoute();
+                        if (route) {
+              route.destination               = coords;
+                            document.getElementById('destination-input').value = Utils.formatCoordinates(coords);
+              RouteManager.              updateRouteOnMap(State.currentRouteId);
+              Utils.              updateStatus('<strong>✅ Destination Found</strong><br>Location geocoded successfully', 'success');
+              EventSystem.              emit('destinationSet', coords);
+            }            
+          });          
+        },        
+                geocodeAddress(address, callback) {
+                    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${mapboxgl.accessToken}`;
+                    fetch(url)
+            .            then(response => response.json())
+            .            then(data => {
+                            if (data.features && data.features.length> 0) {
+                                callback(data.features[0].center);
+              }               else {
+                Utils.                updateStatus('<strong>❌ Location Not Found</strong><br>Could not geocode the address', 'error');
+              }              
+            })            
+            .            catch(error => {
+                            console.error('Geocoding error:', error);
+              Utils.              updateStatus('<strong>❌ Geocoding Error</strong><br>Failed to find location', 'error');
+            });            
+        }        
+      };      
+            // Waypoint Management Module
+            const WaypointManager = {
+                addWaypoint() {
+                    const address = document.getElementById('waypoint-input').value;
+                    if (!address.trim()) return;
+          GeocodingManager.          geocodeAddress(address, (coords) => {
+                        this.addWaypointAtCoordinates(coords);
+                        document.getElementById('waypoint-input').value = '';
+          });          
+        },        
+                addWaypointAtCoordinates(coords) {
+                    const route = State.getCurrentRoute();
+                    if (!route) return;
+          route.waypoints.          push(coords);
+          RouteManager.          updateRouteOnMap(State.currentRouteId);
+          EventSystem.          emit('waypointAdded', coords);
+          Utils.          updateStatus('<strong>✅ Waypoint Added</strong><br>Intermediate stop added to route', 'success');
+        },        
+                removeWaypoint(index) {
+                    const route = State.getCurrentRoute();
+                    if (!route) return;
+                    const removed = route.waypoints.splice(index, 1)[0];
+                    if (route.routeData) {
+            route.routeData             = null;
+            RouteManager.            updateRouteOnMap(State.currentRouteId);
+          }          
+          EventSystem.          emit('waypointRemoved', { index, waypoint: removed });
+        },        
+                toggleWaypointMode() {
+          State.interactions.addingWaypoint           = !State.interactions.addingWaypoint;
+                    const btn = document.getElementById('waypoint-mode-btn');
+          btn.textContent           = State.interactions.addingWaypoint ? '🛑 Stop Adding' : '📍 Click Map';
+          btn.className           = State.interactions.addingWaypoint ? 'btn btn-secondary' : 'btn btn-secondary';
+                    if (State.interactions.addingWaypoint) {
+            Utils.            updateStatus('<strong>📍 Waypoint Mode</strong><br>Click on map to add waypoints', 'loading');
+          }           else {
+            Utils.            updateStatus('<strong>🎉 Ready!</strong><br>Multi-route mapper is ready to use', 'success');
+          }          
+          EventSystem.          emit('waypointModeToggled', State.interactions.addingWaypoint);
+        }        
+      };      
+            // Routing Module
+            const RoutingManager = {
+                findRoute() {
+                    const route = State.getCurrentRoute();
+                    if (!route || !route.origin || !route.destination) {
+            Utils.            updateStatus('<strong>❌ Missing Data</strong><br>Need both origin and destination', 'error');
+                        return;
+          }          
+          Utils.          updateStatus('<strong>🔍 Finding Route...</strong><br>Calculating best path', 'loading');
+                    let coordinates = [route.origin];
+          coordinates           = coordinates.concat(route.waypoints);
+          coordinates.          push(route.destination);
+                    const coordsString = coordinates.map(coord => `${coord[0]},${coord[1]}`).join(';');
+                    const profile = route.profile;
+                    const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coordsString}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
+                    fetch(url)
+            .            then(response => response.json())
+            .            then(data => {
+                            if (data.routes && data.routes.length> 0) {
+                route.routeData                 = data.routes[0];
+                route.status                 = 'calculated';
+                RouteManager.                updateRouteOnMap(State.currentRouteId);
+                                const duration = Math.round(route.routeData.duration / 60);
+                                const distance = (route.routeData.distance / 1000).toFixed(1);
+                Utils.                updateStatus(`<strong>✅ Route Found!</strong><br>${duration} minutes, ${distance} km`, 'success');
+                EventSystem.                emit('routeCalculated', route);
+              }               else {
+                Utils.                updateStatus('<strong>❌ No Route Found</strong><br>Could not calculate route', 'error');
+              }              
+            })            
+            .            catch(error => {
+                            console.error('Routing error:', error);
+              Utils.              updateStatus('<strong>❌ Routing Error</strong><br>Failed to calculate route', 'error');
+            });            
+        }        
+      };      
+            // Map Controls Module
+            const MapControlsManager = {
+                zoomIn() {
+                    if (State.map) State.map.zoomIn();
+        },        
+                zoomOut() {
+                    if (State.map) State.map.zoomOut();
+        },        
+                fitToData() {
+                    if (!State.map) return;
+                    const coordinates = [];
+          State.routes.          forEach(route => {
+                        if (route.visible && route.routeData) {
+              coordinates.              push(...route.routeData.geometry.coordinates);
+            }            
+          });          
+                    if (coordinates.length === 0) {
+            Utils.            updateStatus('<strong>ℹ️ No Data</strong><br>No visible routes to fit to', 'loading');
+                        return;
+          }          
+                    const bounds = coordinates.reduce((bounds, coord) => {
+                        return bounds.extend(coord);
+          },           new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
+          State.map.          fitBounds(bounds, { padding: 50 });
+        },        
+                toggleCrosshair() {
+          State.interactions.crosshairVisible           = !State.interactions.crosshairVisible;
+                    const crosshair = document.getElementById('map-crosshair');
+                    const toggleBtn = document.getElementById('crosshair-toggle');
+          crosshair.style.display           = State.interactions.crosshairVisible ? 'block' : 'none';
+          toggleBtn.textContent           = State.interactions.crosshairVisible ? '🎯 Hide Center' : '🎯 Show Center';
+        },        
+                centerMapOnLocation() {
+                    const input = document.getElementById('center-input').value.trim();
+                    if (!input) {
+            Utils.            updateStatus('<strong>❌ No Input</strong><br>Please enter an address or coordinates', 'error');
+                        return;
+          }          
+                    const coordMatch = input.match(/^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/);
+                    if (coordMatch) {
+                        const lat = parseFloat(coordMatch[1]);
+                        const lng = parseFloat(coordMatch[2]);
+                        if (lat>= -90 && lat <= 90 && lng>= -180 && lng <= 180) {
+              State.map.              flyTo({ center: [lng, lat], zoom: 14, duration: 2000 });
+              Utils.              updateStatus(`<strong>📍 Map Centered</strong><br>Coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}`, 'success');
+                            return;
+            }            
+          }          
+          Utils.          updateStatus('<strong>🔍 Finding Location...</strong><br>Searching for address', 'loading');
+          GeocodingManager.          geocodeAddress(input, (coords) => {
+            State.map.            flyTo({ center: coords, zoom: 14, duration: 2000 });
+            Utils.            updateStatus(`<strong>📍 Map Centered</strong><br>Location found and centered`, 'success');
+          });          
+        },        
+                toggleCenterMode() {
+          State.interactions.settingMapCenter           = !State.interactions.settingMapCenter;
+                    const btn = document.getElementById('center-mode-btn');
+          btn.textContent           = State.interactions.settingMapCenter ? '🛑 Stop Mode' : '📍 Click Map';
+                    if (State.interactions.settingMapCenter) {
+            Utils.            updateStatus('<strong>📍 Center Mode</strong><br>Click on map to center at that location', 'loading');
+          }           else {
+            Utils.            updateStatus('<strong>🎉 Ready!</strong><br>Multi-route mapper is ready to use', 'success');
+          }          
+        },        
+                getCurrentCenter() {
+                    if (!State.map) return;
+                    const center = State.map.getCenter();
+                    const centerText = `${center.lat.toFixed(6)}, ${center.lng.toFixed(6)}`;
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(centerText).then(() => {
+              Utils.              updateStatus(`<strong>📋 Center Copied</strong><br>${centerText}`, 'success');
+            }).            catch(() => {
+              Utils.              updateStatus(`<strong>📍 Map Center</strong><br>${centerText}`, 'success');
+            });            
+          }           else {
+            Utils.            updateStatus(`<strong>📍 Map Center</strong><br>${centerText}`, 'success');
+          }          
+                    document.getElementById('center-input').value = centerText;
+        },        
+                changeMapStyle() {
+                    if (!State.map) return;
+                    const selectedStyle = document.getElementById('map-style-select').value;
+          Utils.          updateStatus('<strong>🎨 Changing Map Style...</strong><br>Loading new style', 'loading');
+          State.map.          setStyle(selectedStyle);
+                    // Re-add custom layers after style loads
+          State.map.          once('style.load', () => {
+                        // Re-add obstacles layer
+            MapManager.            setupMapFeatures();
+                        // Re-add all route layers
+            State.routes.            forEach((route, routeId) => {
+              RouteManager.              addRouteToMap(routeId);
+              RouteManager.              updateRouteOnMap(routeId);
+            });            
+            Utils.            updateStatus('<strong>✅ Map Style Changed</strong><br>Style updated successfully', 'success');
+            EventSystem.            emit('mapStyleChanged', selectedStyle);
+          });          
+        }        
+      };      
+            // File Management Module
+            const FileManager = {
+                exportRoutes() {
+                    if (State.routes.size === 0) {
+            Utils.            updateStatus('<strong>❌ No Routes</strong><br>No routes to export', 'error');
+                        return;
+          }          
+                    try {
+                        const exportData = {
+                            version: "1.0",
+                            exportDate: new Date().toISOString(),
+                            totalRoutes: State.routes.size,
+                            routes: State.getAllRoutes().map(route => ({
+                                id: route.id,
+                                name: route.name,
+                                origin: route.origin,
+                                destination: route.destination,
+                                waypoints: route.waypoints,
+                                profile: route.profile,
+                                color: route.color,
+                                width: route.width,
+                                visible: route.visible,
+                                status: route.status,
+                                routeStats: route.routeData ? {
+                                    duration: route.routeData.duration,
+                                    distance: route.routeData.distance
+                }                 : null
+              }))              
+            };            
+                        const dataStr = JSON.stringify(exportData, null, 2);
+                        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                        const link = document.createElement('a');
+            link.href             = URL.createObjectURL(dataBlob);
+            link.download             = `routes_export_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+                        document.body.appendChild(link);
+            link.            click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(link.href);
+            Utils.            updateStatus(`<strong>📤 Routes Exported</strong><br>Downloaded ${State.routes.size} routes successfully`, 'success');
+          }           catch (error) {
+                        console.error('Export error:', error);
+            Utils.            updateStatus('<strong>❌ Export Failed</strong><br>Could not export routes', 'error');
+          }          
+        },        
+                triggerImportRoutes() {
+                    document.getElementById('import-file-input').click();
+        },        
+                importRoutes(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    if (!file.name.endsWith('.json')) {
+            Utils.            updateStatus('<strong>❌ Invalid File</strong><br>Please select a JSON file', 'error');
+                        return;
+          }          
+                    const reader = new FileReader();
+          reader.onload           = (e) => {
+                        try {
+                            const importData = JSON.parse(e.target.result);
+                            if (!importData.routes || !Array.isArray(importData.routes)) {
+                                throw new Error('Invalid route data structure');
+              }              
+              Utils.              updateStatus('<strong>📥 Importing Routes...</strong><br>Processing route data', 'loading');
+                            if (State.routes.size> 0) {
+                                const confirmClear = confirm(`This will replace your current ${State.routes.size} route(s). Continue?`);
+                                if (!confirmClear) {
+                  Utils.                  updateStatus('<strong>❌ Import Cancelled</strong><br>Existing routes preserved', 'error');
+                                    return;
+                }                
+              }              
+                            // Clear existing routes
+              State.routes.              forEach((route, id) => {
+                [                'route', 'waypoints'].forEach(type => {
+                                    const layerId = `${type}-${id}`;
+                                    if (State.map.getLayer(layerId)) State.map.removeLayer(layerId);
+                                    if (State.map.getSource(layerId)) State.map.removeSource(layerId);
+                });                
+              });              
+              State.routes.              clear();
+                            // Import new routes
+                            let importedCount = 0;
+                            let maxId = 0;
+              importData.routes.              forEach(routeData => {
+                                const newRoute = {
+                                    id: routeData.id,
+                                    name: routeData.name || `Route ${routeData.id}`,
+                                    origin: routeData.origin || null,
+                                    destination: routeData.destination || null,
+                                    waypoints: routeData.waypoints || [],
+                                    profile: routeData.profile || 'driving',
+                                    color: routeData.color || Config.routes.colors[routeData.id % Config.routes.colors.length],
+                                    width: routeData.width || 8,
+                                    visible: routeData.visible !== undefined ? routeData.visible : true,
+                                    status: routeData.status || 'empty',
+                                    routeData: null
+                };                
+                State.routes.                set(newRoute.id, newRoute);
+                RouteManager.                addRouteToMap(newRoute.id);
+                maxId                 = Math.max(maxId, newRoute.id);
+                importedCount                ++;
+              });              
+              State.nextRouteId               = maxId + 1;
+                            if (State.routes.size> 0) {
+                                const firstRouteId = Array.from(State.routes.keys())[0];
+                RouteManager.                switchToRoute(firstRouteId);
+              }              
+              EventSystem.              emit('routesImported', importedCount);
+                            const importInfo = importData.exportDate ?  
+                `                <br>From: ${new Date(importData.exportDate).toLocaleDateString()}` : '';
+              Utils.              updateStatus(`<strong>📥 Import Complete</strong><br>Imported ${importedCount} routes${importInfo}`, 'success');
+            }             catch (error) {
+                            console.error('Import error:', error);
+              Utils.              updateStatus('<strong>❌ Import Failed</strong><br>Invalid or corrupted file', 'error');
+            }            
+          };          
+          reader.onerror           = () => {
+            Utils.            updateStatus('<strong>❌ File Read Error</strong><br>Could not read the file', 'error');
+          };          
+          reader.          readAsText(file);
+          event.target.value           = '';
+        }        
+      };      
+            // UI Management Module
+            const UIManager = {
+                init() {
+                    this.setupEventListeners();
+                    this.setupCollapsibleSections();
+        },        
+                setupEventListeners() {
+                    // Route events
+          EventSystem.          on('routeCreated', () => this.updateRouteTabs());
+          EventSystem.          on('routeDeleted', () => this.updateRouteTabs());
+          EventSystem.          on('routesUpdated', () => this.updateRouteList());
+          EventSystem.          on('routeSwitched', () => this.updateRouteTabs());
+          EventSystem.          on('waypointsUpdated', () => this.updateWaypointsList());
+          EventSystem.          on('waypointAdded', () => this.updateWaypointsList());
+          EventSystem.          on('waypointRemoved', () => this.updateWaypointsList());
+          EventSystem.          on('mapLoaded', () => this.showApplicationUI());
+          EventSystem.          on('routesImported', () => {
+                        this.updateRouteTabs();
+                        this.updateRouteList();
+          });          
+        },        
+                setupCollapsibleSections() {
+                    // Initialize all sections as expanded
+                    const sections = ['route-management', 'current-route', 'map-controls'];
+          sections.          forEach(sectionId => {
+                        const header = document.querySelector(`#${sectionId} .card-header`);
+                        const content = document.querySelector(`#${sectionId}-content`);
+                        if (header && content) {
+              header.              setAttribute('data-section', sectionId);
+            }            
+          });          
+        },        
+                toggleSection(sectionId) {
+                    const header = document.querySelector(`[data-section="${sectionId}"]`);
+                    const content = document.getElementById(`${sectionId}-content`);
+                    const chevron = header?.querySelector('.chevron');
+                    if (!header || !content || !chevron) return;
+                    const isCollapsed = State.collapsedSections.has(sectionId);
+                    if (isCollapsed) {
+                        // Expand
+            State.collapsedSections.            delete(sectionId);
+            header.classList.            remove('collapsed');
+            content.classList.            remove('collapsed');
+            chevron.textContent             = '▽';
+          }           else {
+                        // Collapse
+            State.collapsedSections.            add(sectionId);
+            header.classList.            add('collapsed');
+            content.classList.            add('collapsed');
+            chevron.textContent             = '▷';
+          }          
+        },        
+                showApplicationUI() {
+                    document.getElementById('init-controls').style.display = 'none';
+                    document.getElementById('route-management').style.display = 'block';
+                    document.getElementById('current-route-panel').style.display = 'block';
+                    document.getElementById('map-controls').style.display = 'block';
+        },        
+                updateRouteTabs() {
+                    const tabsContainer = document.getElementById('route-tabs');
+          tabsContainer.innerHTML           = '';
+          State.routes.          forEach((route, id) => {
+                        const tab = document.createElement('div');
+            tab.className             = `route-tab ${id === State.currentRouteId ? 'active' : ''}`;
+            tab.innerHTML             = `
+              <div class="color-indicator" style="background-color: ${route.color}"></div>              
+              <span>${route.name}</span>              
+              <button class="close-btn" onclick="event.stopPropagation(); RouteFinderApp.routes.deleteRoute(${id})" title="Delete route">×</button>              
+            `;            
+            tab.onclick             = () => RouteManager.switchToRoute(id);
+            tabsContainer.            appendChild(tab);
+          });          
+                    const toggleBtn = document.getElementById('route-list-toggle');
+                    if (State.routes.size> 1) {
+            toggleBtn.style.display             = 'block';
+          }           else {
+            toggleBtn.style.display             = 'none';
+                        document.getElementById('route-list').style.display = 'none';
+            State.routeListVisible             = false;
+          }          
+        },        
+                updateRouteList() {
+                    const listContainer = document.getElementById('route-list');
+          listContainer.innerHTML           = '';
+          State.routes.          forEach((route, id) => {
+                        const item = document.createElement('div');
+            item.className             = 'route-list-item';
+                        const statusText = this.getRouteStatusText(route);
+            item.innerHTML             = `
+              <div class="color-indicator" style="background-color: ${route.color}; width: 16px; height: 16px; margin-right: 10px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.2);"></div>              
+              <div class="route-info">              
+                <div class="route-name">${route.name}</div>                
+                <div class="route-status">${statusText}</div>                
+              </div>              
+              <div class="route-controls">              
+                <button class="visibility-btn ${route.visible ? '' : 'hidden'}" onclick="RouteFinderApp.routes.toggleRouteVisibility(${id})" title="Toggle visibility">                
+                  ${route.visible ? '◉' : '○'}                  
+                </button>                
+                <button class="btn btn-small" onclick="RouteFinderApp.routes.switchToRoute(${id})" title="Edit route">✎</button>                
+                <button class="btn btn-small" onclick="RouteFinderApp.routes.deleteRoute(${id})" title="Delete route">✕</button>                
+              </div>              
+            `;            
+            listContainer.            appendChild(item);
+          });          
+        },        
+                updateWaypointsList() {
+                    const route = State.getCurrentRoute();
+                    if (!route) return;
+                    const waypointsList = document.getElementById('waypoint-list');
+                    if (route.waypoints.length === 0) {
+            waypointsList.style.display             = 'none';
+                        return;
+          }          
+          waypointsList.style.display           = 'block';
+          waypointsList.innerHTML           = '';
+          route.waypoints.          forEach((waypoint, index) => {
+                        const item = document.createElement('div');
+            item.className             = 'waypoint-item';
+            item.innerHTML             = `
+              <div class="waypoint-number">${index + 1}</div>              
+              <div class="waypoint-text">${Utils.formatCoordinates(waypoint)}</div>              
+              <div class="waypoint-controls">              
+                <button class="btn btn-secondary btn-small" onclick="RouteFinderApp.waypoints.removeWaypoint(${index})" title="Remove waypoint">✕</button>                
+              </div>              
+            `;            
+            waypointsList.            appendChild(item);
+          });          
+        },        
+                getRouteStatusText(route) {
+                    if (!route.origin && !route.destination) return 'Empty route';
+                    if (!route.origin) return 'Missing origin';
+                    if (!route.destination) return 'Missing destination';
+                    if (route.routeData) {
+                        const duration = Math.round(route.routeData.duration / 60);
+                        const distance = (route.routeData.distance / 1000).toFixed(1);
+                        return `${duration} min, ${distance} km`;
+          }          
+                    return 'Ready to calculate';
+        },        
+                toggleSidebar() {
+                    const sidebar = document.getElementById('sidebar');
+                    const toggleBtn = document.getElementById('toggle-btn');
+          sidebar.classList.          toggle('hidden');
+                    if (sidebar.classList.contains('hidden')) {
+            toggleBtn.classList.            remove('sidebar-visible');
+            toggleBtn.classList.            add('sidebar-hidden');
+          }           else {
+            toggleBtn.classList.            remove('sidebar-hidden');
+            toggleBtn.classList.            add('sidebar-visible');
+          }          
+        },        
+                toggleRouteList() {
+                    const listContainer = document.getElementById('route-list');
+                    const toggleBtn = document.getElementById('route-list-toggle');
+          State.routeListVisible           = !State.routeListVisible;
+          listContainer.style.display           = State.routeListVisible ? 'block' : 'none';
+          toggleBtn.textContent           = State.routeListVisible ? '⋯ Hide Routes' : '⋯ Show All Routes';
+        }        
+      };      
+            // Library Loader Module
+            const LibraryLoader = {
+                async loadLibraries() {
+          Utils.          updateStatus('<strong>📥 Loading Libraries...</strong><br>Downloading Mapbox GL and Turf.js...', 'loading');
+                    try {
+                        await this.loadMapboxGL();
+                        await this.loadTurf();
+                        return true;
+          }           catch (error) {
+            Utils.            updateStatus('<strong>❌ Failed to Load</strong><br>Could not load required libraries', 'error');
+                        return false;
+          }          
+        },        
+                loadMapboxGL() {
+                    return new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+            script.src             = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
+            script.crossOrigin             = 'anonymous';
+            script.onload             = () => {
+                            const css = document.createElement('link');
+              css.rel               = 'stylesheet';
+              css.href               = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
+              css.crossOrigin               = 'anonymous';
+                            document.head.appendChild(css);
+              State.librariesLoaded.mapbox               = true;
+                            console.log('Mapbox GL loaded');
+                            resolve();
+            };            
+            script.onerror             = reject;
+                        document.head.appendChild(script);
+          });          
+        },        
+                loadTurf() {
+                    return new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+            script.src             = 'https://unpkg.com/@turf/turf@6/turf.min.js';
+            script.crossOrigin             = 'anonymous';
+            script.onload             = () => {
+              State.librariesLoaded.turf               = true;
+                            console.log('Turf.js loaded');
+                            resolve();
+            };            
+            script.onerror             = reject;
+                        document.head.appendChild(script);
+          });          
+        }        
+      };      
+            // Map Click Handler
+            const MapClickHandler = {
+                init() {
+          EventSystem.          on('mapLoaded', () => {
+            EventSystem.            on('mapClicked', this.handleMapClick.bind(this));
+          });          
+        },        
+                handleMapClick(e) {
+                    if (!State.appInitialized) return;
+                    const coords = [e.lngLat.lng, e.lngLat.lat];
+                    if (State.interactions.settingMapCenter) {
+                        this.handleCenterMapClick(coords);
+                        return;
+          }          
+                    if (State.interactions.addingWaypoint) {
+            WaypointManager.            addWaypointAtCoordinates(coords);
+                        return;
+          }          
+                    const route = State.getCurrentRoute();
+                    if (!route) return;
+                    if (State.interactions.settingOrigin) {
+            route.origin             = coords;
+                        document.getElementById('origin-input').value = Utils.formatCoordinates(coords);
+            State.interactions.settingOrigin             = false;
+            RouteManager.            updateRouteOnMap(State.currentRouteId);
+            Utils.            updateStatus('<strong>✅ Origin Set</strong><br>Click on map to set destination', 'success');
+          }           else {
+            route.destination             = coords;
+                        document.getElementById('destination-input').value = Utils.formatCoordinates(coords);
+            State.interactions.settingOrigin             = true;
+            RouteManager.            updateRouteOnMap(State.currentRouteId);
+            Utils.            updateStatus('<strong>✅ Destination Set</strong><br>Ready to find route', 'success');
+          }          
+          EventSystem.          emit('waypointsUpdated');
+        },        
+                handleCenterMapClick(coords) {
+          State.map.          flyTo({ center: coords, duration: 1500 });
+                    document.getElementById('center-input').value = Utils.formatCoordinates(coords, 6);
+          State.interactions.settingMapCenter           = false;
+                    const btn = document.getElementById('center-mode-btn');
+          btn.textContent           = '📍 Click Map';
+          Utils.          updateStatus('<strong>📍 Map Centered</strong><br>Map centered on clicked location', 'success');
+        }        
+      };      
+            // Main Application Initialization
+            const App = {
+                async init() {
+                    console.log('=== Multi-Route Mapper Starting ===');
+                    try {
+                        // Load required libraries
+                        const librariesLoaded = await LibraryLoader.loadLibraries();
+                        if (!librariesLoaded) {
+                            throw new Error('Failed to load required libraries');
+            }            
+                        // Initialize UI event system
+            UIManager.            init();
+            MapClickHandler.            init();
+                        // Initialize map
+            MapManager.            init();
+                        // Set up completion handler
+            EventSystem.            on('mapLoaded', () => {
+                            setTimeout(() => {
+                RouteManager.                createNewRoute();
+                Utils.                updateStatus('<strong>🎉 Ready!</strong><br>Multi-route mapper is ready to use', 'success');
+                State.appInitialized                 = true;
+              }, Config.timing.mapLoadDelay);              
+            });            
+          }           catch (error) {
+                        console.error('Initialization error:', error);
+            Utils.            updateStatus('<strong>❌ Initialization Failed</strong><br>' + error.message, 'error');
+          }          
+        }        
+      };      
+            // Public API - Expose modules for HTML onclick handlers
+            return {
+                // Core initialization
+                init: App.init,
+                // Module access for HTML onclick handlers
+                routes: {
+                    createNewRoute: RouteManager.createNewRoute.bind(RouteManager),
+                    deleteRoute: RouteManager.deleteRoute.bind(RouteManager),
+                    switchToRoute: RouteManager.switchToRoute.bind(RouteManager),
+                    clearCurrentRoute: RouteManager.clearCurrentRoute.bind(RouteManager),
+                    updateCurrentRouteStyle: RouteManager.updateCurrentRouteStyle.bind(RouteManager),
+                    toggleRouteVisibility: RouteManager.toggleRouteVisibility.bind(RouteManager)
+        },        
+                geocoding: {
+                    geocodeOrigin: GeocodingManager.geocodeOrigin.bind(GeocodingManager),
+                    geocodeDestination: GeocodingManager.geocodeDestination.bind(GeocodingManager)
+        },        
+                waypoints: {
+                    addWaypoint: WaypointManager.addWaypoint.bind(WaypointManager),
+                    removeWaypoint: WaypointManager.removeWaypoint.bind(WaypointManager),
+                    toggleWaypointMode: WaypointManager.toggleWaypointMode.bind(WaypointManager)
+        },        
+                routing: {
+                    findRoute: RoutingManager.findRoute.bind(RoutingManager)
+        },        
+                mapControls: {
+                    zoomIn: MapControlsManager.zoomIn.bind(MapControlsManager),
+                    zoomOut: MapControlsManager.zoomOut.bind(MapControlsManager),
+                    fitToData: MapControlsManager.fitToData.bind(MapControlsManager),
+                    toggleCrosshair: MapControlsManager.toggleCrosshair.bind(MapControlsManager),
+                    centerMapOnLocation: MapControlsManager.centerMapOnLocation.bind(MapControlsManager),
+                    toggleCenterMode: MapControlsManager.toggleCenterMode.bind(MapControlsManager),
+                    getCurrentCenter: MapControlsManager.getCurrentCenter.bind(MapControlsManager),
+                    changeMapStyle: MapControlsManager.changeMapStyle.bind(MapControlsManager)
+        },        
+                fileManager: {
+                    exportRoutes: FileManager.exportRoutes.bind(FileManager),
+                    triggerImportRoutes: FileManager.triggerImportRoutes.bind(FileManager),
+                    importRoutes: FileManager.importRoutes.bind(FileManager)
+        },        
+                ui: {
+                    toggleSidebar: UIManager.toggleSidebar.bind(UIManager),
+                    toggleRouteList: UIManager.toggleRouteList.bind(UIManager),
+                    toggleSection: UIManager.toggleSection.bind(UIManager)
+        },        
+                // Development/debugging access
+                _internal: {
+          Config,          
+          State,          
+          EventSystem,          
+          Utils          
+        }        
+      };      
+     })();    
+        // Initialize when page loads
+        window.addEventListener('load', function() {
+            console.log('Page loaded, ready for initialization');
+    });    
 
-      <!-- Route Management Section -->
-      <div class="card" id="route-management" style="display: none;">
-        <div class="card-header" onclick="RouteFinderApp.ui.toggleSection('route-management')">
-          <div style="display: flex; align-items: center;">
-            <span>Route Management</span>
-          </div>
-          <span class="chevron">▽</span>
-        </div>
-        <div class="card-content collapsible" id="route-management-content">
-          <div class="route-tabs" id="route-tabs">
-            <!-- Route tabs will be dynamically generated -->
-          </div>
-          
-          <button class="btn btn-primary btn-full" onclick="RouteFinderApp.routes.createNewRoute()">
-            <span>+</span> New Route
-          </button>
-          
-          <div class="button-grid" style="margin-top: var(--space-4);">
-            <button class="btn btn-secondary" onclick="RouteFinderApp.fileManager.exportRoutes()">
-              <span>↗</span> Export
-            </button>
-            <button class="btn btn-secondary" onclick="RouteFinderApp.fileManager.triggerImportRoutes()">
-              <span>↙</span> Import
-            </button>
-          </div>
-          
-          <!-- Hidden file input for importing -->
-          <input type="file" id="import-file-input" accept=".json" style="display: none;" onchange="RouteFinderApp.fileManager.importRoutes(event)">
-          
-          <div class="route-list" id="route-list" style="display: none;">
-            <!-- Route list items will be dynamically generated -->
-          </div>
-          
-          <button class="btn btn-secondary btn-full" onclick="RouteFinderApp.ui.toggleRouteList()" id="route-list-toggle" style="display: none; margin-top: var(--space-3);">
-            ⋯ Show All Routes
-          </button>
-        </div>
-      </div>
+    // Monoline SVG Icons - Style Option 2: Medium Weight Rounded
+    const MonolineIcons = {
+      hamburger: `<svg class="monoline-icon" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>`,
+      
+      chevronRight: `<svg class="monoline-icon" viewBox="0 0 24 24"><polyline points="9,18 15,12 9,6"/></svg>`,
+      
+      route: `<svg class="monoline-icon" viewBox="0 0 24 24"><path d="M6 12c0-3 2-5 4-5s4 2 4 5-2 5-4 5-4-2-4-5z"/><circle cx="6" cy="12" r="1"/><circle cx="18" cy="12" r="1"/></svg>`,
+      
+      plus: `<svg class="monoline-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+      
+      arrowUp: `<svg class="monoline-icon" viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5,12 12,5 19,12"/></svg>`,
+      
+      arrowDown: `<svg class="monoline-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19,12 12,19 5,12"/></svg>`,
+      
+      moreHorizontal: `<svg class="monoline-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>`,
+      
+      circle: `<svg class="monoline-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>`,
+      
+      target: `<svg class="monoline-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`,
+      
+      mapPin: `<svg class="monoline-icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`,
+      
+      arrowRight: `<svg class="monoline-icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>`,
+      
+      x: `<svg class="monoline-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+      
+      diamond: `<svg class="monoline-icon" viewBox="0 0 24 24"><polygon points="12,2 22,12 12,22 2,12"/></svg>`,
+      
+      crosshair: `<svg class="monoline-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>`,
+      
+      square: `<svg class="monoline-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>`,
+      
+      zoomIn: `<svg class="monoline-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`,
+      
+      zoomOut: `<svg class="monoline-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`,
+      
+      maximize: `<svg class="monoline-icon" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>`,
+      
+      loader: `<svg class="monoline-icon" viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>`,
+      
+      refresh: `<svg class="monoline-icon" viewBox="0 0 24 24"><polyline points="23,4 23,10 17,10"/><polyline points="1,20 1,14 7,14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>`
+    };
 
-      <!-- Current Route Controls -->
-      <div class="card" id="current-route-panel" style="display: none;">
-        <div class="card-header" onclick="RouteFinderApp.ui.toggleSection('current-route')">
-          <div style="display: flex; align-items: center;">
-            <span id="current-route-header">Current Route</span>
-          </div>
-          <span class="chevron">▽</span>
-        </div>
-        <div class="card-content collapsible" id="current-route-content">
-          <div class="form-group">
-            <label class="form-label">Starting Point</label>
-            <input type="text" class="form-input" id="origin-input" placeholder="Enter address or place name">
-            <button class="btn btn-secondary btn-full" onclick="RouteFinderApp.geocoding.geocodeOrigin()" style="margin-top: var(--space-2);">
-              📍 Find Location
-            </button>
-          </div>
+    // Function to replace Unicode icons with SVG icons
+    function replaceIconsWithSVG() {
+      // Define the mapping of Unicode symbols to SVG icons
+      const iconMappings = {
+        '☰': MonolineIcons.hamburger,
+        '▷': MonolineIcons.chevronRight,
+        '⚬': MonolineIcons.route,
+        '+': MonolineIcons.plus,
+        '↑': MonolineIcons.arrowUp,
+        '↓': MonolineIcons.arrowDown,
+        '⋯': MonolineIcons.moreHorizontal,
+        '○': MonolineIcons.circle,
+        '◎': MonolineIcons.target,
+        '◉': MonolineIcons.mapPin,
+        '→': MonolineIcons.arrowRight,
+        '✕': MonolineIcons.x,
+        '◈': MonolineIcons.diamond,
+        '⊕': MonolineIcons.crosshair,
+        '⧉': MonolineIcons.square,
+        '⬚': MonolineIcons.maximize,
+        '🔄': MonolineIcons.loader,
+        '◯': MonolineIcons.refresh
+      };
+
+      // Find all text nodes and replace Unicode symbols
+      function replaceInTextNodes(element) {
+        if (element.nodeType === Node.TEXT_NODE) {
+          let text = element.textContent;
+          let hasReplacement = false;
           
-          <div class="form-group">
-            <label class="form-label">Destination</label>
-            <input type="text" class="form-input" id="destination-input" placeholder="Enter address or place name">
-            <button class="btn btn-secondary btn-full" onclick="RouteFinderApp.geocoding.geocodeDestination()" style="margin-top: var(--space-2);">
-              📍 Find Location
-            </button>
-          </div>
+          for (const [unicode, svg] of Object.entries(iconMappings)) {
+            if (text.includes(unicode)) {
+              hasReplacement = true;
+              text = text.replace(new RegExp(unicode.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), `|||${svg}|||`);
+            }
+          }
           
-          <div class="form-group">
-            <label class="form-label">Waypoints</label>
-            <input type="text" class="form-input" id="waypoint-input" placeholder="Enter intermediate stop">
-            <div class="button-grid">
-              <button class="btn btn-secondary" onclick="RouteFinderApp.waypoints.addWaypoint()">
-                + Add
-              </button>
-              <button class="btn btn-secondary" onclick="RouteFinderApp.waypoints.toggleWaypointMode()" id="waypoint-mode-btn">
-                🗺️ Click Map
-              </button>
-            </div>
+          if (hasReplacement) {
+            const parts = text.split('|||');
+            const fragment = document.createDocumentFragment();
             
-            <div id="waypoint-list" class="waypoint-list" style="display: none;">
-              <!-- Waypoints will be added here dynamically -->
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">Travel Mode</label>
-            <select class="form-select" id="profile-select">
-              <option value="driving">Car</option>
-              <option value="walking">Walk</option>
-              <option value="cycling">Bike</option>
-            </select>
-          </div>
-          
-          <div class="button-row">
-            <button class="btn btn-primary" onclick="RouteFinderApp.routing.findRoute()" style="flex: 2;">
-              🔍 Find Route
-            </button>
-            <button class="btn btn-secondary" onclick="RouteFinderApp.routes.clearCurrentRoute()" style="flex: 1;">
-              ✕ Clear
-            </button>
-          </div>
-          
-          <div class="route-controls">
-            <label style="font-size: var(--font-size-xs); color: var(--color-text-secondary);">Color:</label>
-            <input type="color" id="routeColor" value="#ff0000" onchange="RouteFinderApp.routes.updateCurrentRouteStyle()">
-            <label style="font-size: var(--font-size-xs); color: var(--color-text-secondary);">Width:</label>
-            <input type="number" class="form-input" id="routeWidth" value="8" min="1" max="20" onchange="RouteFinderApp.routes.updateCurrentRouteStyle()">
-          </div>
-        </div>
-      </div>
+            parts.forEach(part => {
+              if (part.startsWith('<svg')) {
+                const temp = document.createElement('div');
+                temp.innerHTML = part;
+                fragment.appendChild(temp.firstChild);
+              } else if (part) {
+                fragment.appendChild(document.createTextNode(part));
+              }
+            });
+            
+            element.parentNode.replaceChild(fragment, element);
+          }
+        } else {
+          Array.from(element.childNodes).forEach(child => {
+            replaceInTextNodes(child);
+          });
+        }
+      }
 
-      <!-- Map Controls -->
-      <div class="card" id="map-controls" style="display: none;">
-        <div class="card-header" onclick="RouteFinderApp.ui.toggleSection('map-controls')">
-          <div style="display: flex; align-items: center;">
-            <span>Map Controls</span>
-          </div>
-          <span class="chevron">▽</span>
-        </div>
-        <div class="card-content collapsible" id="map-controls-content">
-          <div class="form-group">
-            <label class="form-label">Map Style</label>
-            <select class="form-select" id="map-style-select" onchange="RouteFinderApp.mapControls.changeMapStyle()">
-              <option value="mapbox://styles/cb29/ckxnnmex53n1b14m07t6sum48">Classic Standard</option>
-              <option value="mapbox://styles/cb29/ckxnmjiti0rvm14pby8w9si99">Classic Vintage</option>
-              <option value="mapbox://styles/cb29/ckxov33jj3le314ueu15gl6yh">Dark Digital</option>
-              <option value="mapbox://styles/cb29/ckxmhuc4k2gxm14s0eq1htzns">Dark Monochrome</option>
-              <option value="mapbox://styles/cb29/ckxs1bfov2cay14mnx6nvrzxt">Dark Night Mode</option>
-              <option value="mapbox://styles/cb29/ckwgtu6ly20cr15qiy9i2ftsz">Light Engraved</option>
-              <option value="mapbox://styles/cb29/ckxntkwjq4flv14ld7uisp5b1">Light High Contrast</option>
-              <option value="mapbox://styles/cb29/ckxouv50s02lw14r2jiyvnvxh">Light Pencil Sketch</option>
-              <option value="mapbox://styles/cb29/ckxtl08qj2gb215p8y2blzxur">Pastel Blue</option>
-              <option value="mapbox://styles/cb29/ckxtkuk8l10zj14pk8irf7owt">Pastel Cool</option>
-              <option value="mapbox://styles/cb29/ckxtl2a2s0yot14nw9pbn2733">Pastel Pink</option>
-              <option value="mapbox://styles/cb29/ckxtl35nk4hsb15mry8rwlg4l">Pastel Yellow</option>
-              <option value="mapbox://styles/cb29/ckxmjckme2if514s0v3xq4vxy">Satellite Streets</option>
-              <option value="mapbox://styles/cb29/ckxrnuq691z6h14mnuy5jpk5c">Topography Colorful</option>
-              <option value="mapbox://styles/cb29/ckxnp39kb5eyw14oaan01mkp0">Topography Globe</option>
-              
+      replaceInTextNodes(document.body);
+    }
+
+    // Replace icons when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      replaceIconsWithSVG();
+    });
+  </lt;/script></body>
+</html>
