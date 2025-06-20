@@ -1,26 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Map Export Tool</title>
-  <script src='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js'></script>
-  <link href='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css' rel='stylesheet' />
+  <meta charset="utf-8" />
+  <title>Mapbox Route Export Tool</title>
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.13.0/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.13.0/mapbox-gl.css" rel="stylesheet" />
   <style>
-    body { margin: 0; padding: 1em; font-family: sans-serif; }
-    #map { width: 100%; height: 500px; }
-    #export-controls { margin-top: 1em; }
+    body { margin: 0; padding: 0; font-family: sans-serif; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    #nav-panel {
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: white;
+      padding: 10px;
+      z-index: 1;
+      max-width: 300px;
+      overflow-y: auto;
+      max-height: 100%;
+    }
+    #export-controls {
+      margin-top: 1em;
+      display: none;
+      flex-direction: column;
+      gap: 0.5em;
+    }
+    .section-toggle {
+      margin-top: 1em;
+      cursor: pointer;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
-
-<h2>Map Export Demo</h2>
-
-<!-- Main visible map -->
 <div id="map"></div>
-
-<!-- Map style selector -->
-<label>Map Style:
+<div id="nav-panel">
+  <label for="styleSelector">Map Style:</label>
   <select id="styleSelector">
     <option value="mapbox://styles/mapbox/streets-v11">Streets</option>
     <option value="mapbox://styles/mapbox/outdoors-v11">Outdoors</option>
@@ -28,133 +44,100 @@
     <option value="mapbox://styles/mapbox/dark-v10">Dark</option>
     <option value="mapbox://styles/mapbox/satellite-v9">Satellite</option>
     <option value="mapbox://styles/mapbox/satellite-streets-v11">Satellite Streets</option>
-    <option value="mapbox://styles/mapbox/navigation-day-v1">Navigation Day</option>
-    <option value="mapbox://styles/mapbox/navigation-night-v1">Navigation Night</option>
+    <option value="mapbox://styles/cb29/ckxnmjiti0rvm14pby8w9si99">Custom Style</option>
   </select>
-</label>
 
-<!-- Hidden export map container -->
-<div id="export-map" style="width:0; height:0; position:absolute; top:-9999px;"></div>
+  <div class="section-toggle" onclick="toggleExportControls()">▶ Export Options</div>
+  <div id="export-controls">
+    <label>Print Size:
+      <select id="printSize">
+        <option value="16x20">16×20" (40.6×50.8cm)</option>
+        <option value="18x24">18×24" (45.7×61cm)</option>
+        <option value="A2">A2 (42×59.4cm)</option>
+        <option value="custom">Custom Size</option>
+      </select>
+    </label>
 
-<!-- Export controls UI -->
-<div id="export-controls">
-  <label>Print Size:
-    <select id="printSize">
-      <option value="custom">Custom</option>
-      <option value="5x7">5×7" (12.7×17.8cm)</option>
-      <option value="6x8">6×8" (15.2×20.3cm)</option>
-      <option value="8x10">8×10" (20.3×25.4cm)</option>
-      <option value="8x12">8×12" (20.3×30.5cm)</option>
-      <option value="8x20">8×20" (20.3×50.8cm)</option>
-      <option value="10x10">10×10" (25.4×25.4cm)</option>
-      <option value="10x24">10×24" (25.4×61cm)</option>
-      <option value="11x14">11×14" (27.9×35.6cm)</option>
-      <option value="11x17">11×17" (27.9×43.2cm)</option>
-      <option value="12x12">12×12" (30.5×30.5cm)</option>
-      <option value="12x16">12×16" (30.5×40.6cm)</option>
-      <option value="12x18">12×18" (30.5×45.7cm)</option>
-      <option value="14x14">14×14" (35.6×35.6cm)</option>
-      <option value="16x16">16×16" (40.6×40.6cm)</option>
-      <option value="16x20">16×20" (40.6×50.8cm)</option>
-      <option value="16x24">16×24" (40.6×61cm)</option>
-      <option value="18x18">18×18" (45.7×45.7cm)</option>
-      <option value="18x24">18×24" (45.7×61cm)</option>
-      <option value="20x20">20×20" (50.8×50.8cm)</option>
-      <option value="20x28">20×28" (50.8×71.1cm)</option>
-      <option value="24x32">24×32" (61×81.3cm)</option>
-      <option value="24x36">24×36" (61×91.4cm)</option>
-      <option value="28x28">28×28" (71.1×71.1cm)</option>
-      <option value="28x40">28×40" (71.1×101.6cm)</option>
-      <option value="30x40">30×40" (76.2×101.6cm)</option>
-      <option value="A3">A3 (29.7×42cm)</option>
-      <option value="A2">A2 (42×59.4cm)</option>
-      <option value="A1">A1 (59.4×84.1cm)</option>
-      <option value="A0">A0 (84.1×118.9cm)</option>
-    </select>
-  </label>
+    <div id="customSizeInputs" style="display:none">
+      <label>Width (in): <input type="number" id="customWidth" value="16" /></label>
+      <label>Height (in): <input type="number" id="customHeight" value="20" /></label>
+    </div>
 
-  <span id="customSizeInputs" style="display:none">
-    <label>Width (in): <input type="number" id="customWidth" step="0.1" min="1" /></label>
-    <label>Height (in): <input type="number" id="customHeight" step="0.1" min="1" /></label>
-  </span>
+    <label>DPI:
+      <select id="dpi">
+        <option value="300">300</option>
+        <option value="150">150</option>
+      </select>
+    </label>
 
-  <label>Orientation:
-    <select id="orientation">
-      <option value="portrait">Portrait</option>
-      <option value="landscape">Landscape</option>
-    </select>
-  </label>
+    <label>Orientation:
+      <select id="orientation">
+        <option value="portrait">Portrait</option>
+        <option value="landscape">Landscape</option>
+      </select>
+    </label>
 
-  <label>DPI:
-    <select id="dpi">
-      <option value="300">300</option>
-      <option value="150">150</option>
-    </select>
-  </label>
+    <label><input type="checkbox" id="includeBleed" checked> Include bleed</label>
+    <label>Bleed amount (in): <input type="number" id="bleedMargin" step="0.01" value="0.25" /></label>
 
-  <label><input type="checkbox" id="includeBleed" checked> Include bleed</label>
-  <label>Bleed amount (inches): <input type="number" id="bleedAmount" value="0.25" step="0.01" min="0" /></label>
+    <label>File name: <input type="text" id="fileName" value="exported_map" /></label>
 
-  <label>Format:
-    <select id="format">
-      <option value="png">PNG</option>
-      <option value="jpeg">JPG</option>
-    </select>
-  </label>
+    <label>Format:
+      <select id="fileFormat">
+        <option value="png">PNG</option>
+        <option value="jpeg">JPG</option>
+      </select>
+    </label>
 
-  <label>File name: <input type="text" id="filename" value="exported_map" /></label>
-
-  <button onclick="exportMapImage()">Export Map</button>
+    <button onclick="exportMapImage()">Export Map</button>
+  </div>
 </div>
+<div id="export-map" style="width:0; height:0; position:absolute; top:-9999px;"></div>
 
 <script>
 mapboxgl.accessToken = 'pk.eyJ1IjoiY2IyOSIsImEiOiJja3E4OHo3anowZGx1Mm9tcXF3ZmhyaWtwIn0.IQ5rY622AU9GOETrqa9NBw';
 
 const map = new mapboxgl.Map({
   container: 'map',
-  style: document.getElementById("styleSelector").value,
-  center: [-122.4194, 37.7749],
-  zoom: 13
+  style: document.getElementById('styleSelector').value,
+  center: [-122.447303, 37.753574],
+  zoom: 10
 });
 
-document.getElementById("styleSelector").addEventListener("change", function () {
-  map.setStyle(this.value);
+document.getElementById('styleSelector').addEventListener('change', e => {
+  map.setStyle(e.target.value);
 });
 
-document.getElementById("printSize").addEventListener("change", function () {
+function toggleExportControls() {
+  const panel = document.getElementById("export-controls");
+  panel.style.display = panel.style.display === "none" ? "flex" : "none";
+}
+
+document.getElementById("printSize").addEventListener("change", function() {
   const customInputs = document.getElementById("customSizeInputs");
-  customInputs.style.display = this.value === "custom" ? "inline-block" : "none";
+  customInputs.style.display = this.value === "custom" ? "block" : "none";
 });
 
 function inchesToPixels(inches, dpi) {
   return Math.round(inches * dpi);
 }
 
-function getExportDimensions(size, dpi, includeBleed, bleedAmount, orientation) {
+function getExportDimensions(size, dpi, includeBleed, orientation) {
   const sizes = {
-    "5x7": [5, 7], "6x8": [6, 8], "8x10": [8, 10], "8x12": [8, 12], "8x20": [8, 20],
-    "10x10": [10, 10], "10x24": [10, 24], "11x14": [11, 14], "11x17": [11, 17],
-    "12x12": [12, 12], "12x16": [12, 16], "12x18": [12, 18], "14x14": [14, 14],
-    "16x16": [16, 16], "16x20": [16, 20], "16x24": [16, 24], "18x18": [18, 18],
-    "18x24": [18, 24], "20x20": [20, 20], "20x28": [20, 28], "24x32": [24, 32],
-    "24x36": [24, 36], "28x28": [28, 28], "28x40": [28, 40], "30x40": [30, 40],
-    "A3": [11.7, 16.5], "A2": [16.5, 23.4], "A1": [23.4, 33.1], "A0": [33.1, 46.8]
+    "16x20": [16, 20],
+    "18x24": [18, 24],
+    "A2": [16.54, 23.39]
   };
-
-  let w, h;
-  const selected = document.getElementById("printSize").value;
-
-  if (selected === "custom") {
-    w = parseFloat(document.getElementById("customWidth").value);
-    h = parseFloat(document.getElementById("customHeight").value);
-  } else {
-    [w, h] = sizes[selected] || [16, 20];
-  }
+  let [w, h] = size === "custom"
+    ? [parseFloat(document.getElementById("customWidth").value), parseFloat(document.getElementById("customHeight").value)]
+    : sizes[size] || [16, 20];
 
   if (orientation === "landscape") [w, h] = [h, w];
-  if (includeBleed && bleedAmount > 0) {
-    w += bleedAmount * 2;
-    h += bleedAmount * 2;
+
+  if (includeBleed) {
+    const bleed = parseFloat(document.getElementById("bleedMargin").value) || 0;
+    w += bleed * 2;
+    h += bleed * 2;
   }
 
   return [inchesToPixels(w, dpi), inchesToPixels(h, dpi)];
@@ -165,15 +148,11 @@ function exportMapImage() {
   const size = document.getElementById("printSize").value;
   const dpi = parseInt(document.getElementById("dpi").value);
   const includeBleed = document.getElementById("includeBleed").checked;
-  const bleedAmount = parseFloat(document.getElementById("bleedAmount").value);
-  const format = document.getElementById("format").value;
-  const filename = document.getElementById("filename").value || "exported_map";
   const orientation = document.getElementById("orientation").value;
+  const fileName = document.getElementById("fileName").value || "exported_map";
+  const format = document.getElementById("fileFormat").value;
 
-  const mimeType = format === "jpeg" ? "image/jpeg" : "image/png";
-  const fileExtension = format === "jpeg" ? "jpg" : "png";
-
-  const [width, height] = getExportDimensions(size, dpi, includeBleed, bleedAmount, orientation);
+  const [width, height] = getExportDimensions(size, dpi, includeBleed, orientation);
 
   const exportContainer = document.getElementById("export-map");
   exportContainer.style.width = width + "px";
@@ -190,9 +169,9 @@ function exportMapImage() {
 
   exportMap.once("idle", () => {
     try {
-      const dataURL = exportMap.getCanvas().toDataURL(mimeType);
+      const dataURL = exportMap.getCanvas().toDataURL("image/" + format);
       const link = document.createElement("a");
-      link.download = `${filename}.${fileExtension}`;
+      link.download = fileName + "." + format;
       link.href = dataURL;
       link.click();
       exportMap.remove();
@@ -204,6 +183,5 @@ function exportMapImage() {
   });
 }
 </script>
-
 </body>
 </html>
