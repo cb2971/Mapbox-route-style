@@ -1,85 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Route Finder with Multiple Routes</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
-  
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Route Finder</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mapbox-gl/2.15.0/mapbox-gl.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/mapbox-gl/2.15.0/mapbox-gl.min.css" rel="stylesheet">
   <style>
-    /* ===== CSS VARIABLES & THEME ===== */
     :root {
+      /* ===== COLORS ===== */
       --color-primary: #3b82f6;
       --color-primary-hover: #2563eb;
-      --color-secondary: #6b7280;
-      --color-secondary-hover: #4b5563;
-      --color-success: #10b981;
-      --color-danger: #ef4444;
-      --color-warning: #f59e0b;
-      
+      --color-primary-alpha: rgba(59, 130, 246, 0.1);
       --color-surface-primary: #ffffff;
       --color-surface-secondary: #f8fafc;
       --color-surface-hover: #f1f5f9;
-      --color-surface-accent: #e2e8f0;
+      --color-border-light: #e2e8f0;
+      --color-border-hover: #cbd5e1;
+      --color-text-primary: #1e293b;
+      --color-text-secondary: #64748b;
+      --color-success: #10b981;
+      --color-warning: #f59e0b;
+      --color-danger: #ef4444;
       
-      --color-text-primary: #1f2937;
-      --color-text-secondary: #6b7280;
-      --color-text-muted: #9ca3af;
+      /* ===== SPACING ===== */
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.25rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-12: 3rem;
       
-      --color-border-light: #e5e7eb;
-      --color-border-hover: #d1d5db;
-      
-      --border-radius-sm: 4px;
-      --border-radius-md: 8px;
-      --border-radius-lg: 12px;
-      
-      --space-1: 4px;
-      --space-2: 8px;
-      --space-3: 12px;
-      --space-4: 16px;
-      --space-5: 20px;
-      --space-6: 24px;
-      --space-8: 32px;
-      
-      --font-size-xs: 12px;
-      --font-size-sm: 14px;
-      --font-size-base: 16px;
-      --font-size-lg: 18px;
-      --font-size-xl: 20px;
-      
+      /* ===== TYPOGRAPHY ===== */
+      --font-size-xs: 0.75rem;
+      --font-size-sm: 0.875rem;
+      --font-size-base: 1rem;
+      --font-size-lg: 1.125rem;
+      --font-weight-normal: 400;
       --font-weight-medium: 500;
       --font-weight-semibold: 600;
       --font-weight-bold: 700;
       
-      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      /* ===== BORDERS ===== */
+      --border-radius-sm: 0.375rem;
+      --border-radius-md: 0.5rem;
+      --border-radius-lg: 0.75rem;
       
-      --transition-base: all 0.2s ease-in-out;
+      /* ===== TRANSITIONS ===== */
+      --transition-base: all 0.2s ease;
     }
     
-    /* ===== BASE STYLES ===== */
     * {
+      margin: 0;
+      padding: 0;
       box-sizing: border-box;
     }
     
     body {
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      font-size: var(--font-size-base);
-      line-height: 1.5;
-      color: var(--color-text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
       background: var(--color-surface-secondary);
+      color: var(--color-text-primary);
     }
     
     /* ===== LAYOUT ===== */
     .app-container {
       display: flex;
       height: 100vh;
-      overflow: hidden;
     }
     
     .sidebar {
@@ -87,37 +75,15 @@
       background: var(--color-surface-primary);
       border-right: 1px solid var(--color-border-light);
       overflow-y: auto;
-      flex-shrink: 0;
-      transition: var(--transition-base);
+      padding: var(--space-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
     }
     
-    .sidebar.hidden {
-      transform: translateX(-100%);
-      width: 0;
-    }
-    
-    .main-content {
+    .map-container {
       flex: 1;
       position: relative;
-      transition: var(--transition-base);
-    }
-    
-    .sidebar-toggle {
-      position: absolute;
-      top: var(--space-4);
-      left: var(--space-4);
-      z-index: 1000;
-      background: var(--color-surface-primary);
-      border: 1px solid var(--color-border-light);
-      border-radius: var(--border-radius-md);
-      padding: var(--space-2);
-      cursor: pointer;
-      box-shadow: var(--shadow-md);
-      transition: var(--transition-base);
-    }
-    
-    .sidebar-toggle:hover {
-      background: var(--color-surface-hover);
     }
     
     #map {
@@ -130,20 +96,17 @@
       background: var(--color-surface-primary);
       border: 1px solid var(--color-border-light);
       border-radius: var(--border-radius-lg);
-      margin: var(--space-4);
-      box-shadow: var(--shadow-sm);
       overflow: hidden;
     }
     
     .card-header {
-      padding: var(--space-4) var(--space-5);
+      padding: var(--space-4);
       border-bottom: 1px solid var(--color-border-light);
-      background: var(--color-surface-secondary);
       cursor: pointer;
-      transition: var(--transition-base);
       display: flex;
       align-items: center;
       justify-content: space-between;
+      transition: var(--transition-base);
     }
     
     .card-header:hover {
@@ -151,7 +114,6 @@
     }
     
     .card-header h3 {
-      margin: 0;
       font-size: var(--font-size-lg);
       font-weight: var(--font-weight-semibold);
       display: flex;
@@ -160,19 +122,12 @@
     }
     
     .card-content {
-      padding: var(--space-5);
+      padding: var(--space-4);
     }
     
-    .card-content.collapsible {
-      max-height: 1000px;
+    .collapsible {
       overflow: hidden;
-      transition: max-height 0.3s ease-in-out;
-    }
-    
-    .card-content.collapsed {
-      max-height: 0;
-      padding-top: 0;
-      padding-bottom: 0;
+      transition: max-height 0.3s ease;
     }
     
     /* ===== BUTTONS ===== */
@@ -186,11 +141,10 @@
       border-radius: var(--border-radius-md);
       font-size: var(--font-size-sm);
       font-weight: var(--font-weight-medium);
-      text-decoration: none;
       cursor: pointer;
       transition: var(--transition-base);
-      background: transparent;
-      white-space: nowrap;
+      text-decoration: none;
+      line-height: 1;
     }
     
     .btn:disabled {
@@ -422,342 +376,73 @@
     }
     
     /* ===== MAP EXPORT DIALOG STYLES ===== */
-    /* Matches your existing Route Finder UI theme */
-    
-    .export-dialog {
+    .map-export-overlay {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      z-index: 10000;
-      display: none;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
       align-items: center;
       justify-content: center;
-      animation: fadeIn 0.2s ease-out;
-    }
-    
-    .export-dialog-backdrop {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
       backdrop-filter: blur(4px);
     }
     
-    .export-dialog-content {
-      position: relative;
+    .map-export-dialog {
       background: var(--color-surface-primary);
-      border: 1px solid var(--color-border-light);
       border-radius: var(--border-radius-lg);
-      box-shadow: var(--shadow-xl);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      max-width: 500px;
       width: 90vw;
-      max-width: 800px;
       max-height: 90vh;
-      overflow: hidden;
-      animation: slideIn 0.3s ease-out;
+      overflow-y: auto;
     }
     
-    .export-dialog-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: var(--space-6);
+    .map-export-header {
+      padding: var(--space-6) var(--space-6) var(--space-4);
       border-bottom: 1px solid var(--color-border-light);
-      background: var(--color-surface-secondary);
     }
     
-    .export-dialog-header h3 {
-      margin: 0;
+    .map-export-header h2 {
       font-size: var(--font-size-lg);
       font-weight: var(--font-weight-semibold);
       color: var(--color-text-primary);
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
+      margin: 0;
     }
     
-    .export-dialog-header h3 span {
-      font-size: 1.2em;
-      opacity: 0.8;
-    }
-    
-    .btn-close {
-      background: none;
-      border: none;
-      width: 32px;
-      height: 32px;
-      border-radius: var(--border-radius-md);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--color-text-secondary);
-      cursor: pointer;
-      transition: var(--transition-base);
-    }
-    
-    .btn-close:hover {
-      background: var(--color-surface-hover);
-      color: var(--color-text-primary);
-    }
-    
-    .btn-close span {
-      font-size: 18px;
-      line-height: 1;
-    }
-    
-    .export-dialog-body {
+    .map-export-content {
       padding: var(--space-6);
-      max-height: 60vh;
-      overflow-y: auto;
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: var(--space-8);
     }
     
-    .export-form {
+    .map-export-footer {
+      padding: var(--space-4) var(--space-6) var(--space-6);
       display: flex;
-      flex-direction: column;
-      gap: var(--space-6);
-    }
-    
-    .form-section {
-      border: 1px solid var(--color-border-light);
-      border-radius: var(--border-radius-md);
-      padding: var(--space-4);
-      background: var(--color-surface-secondary);
-    }
-    
-    .form-section-title {
-      font-size: var(--font-size-sm);
-      font-weight: var(--font-weight-semibold);
-      color: var(--color-text-primary);
-      margin-bottom: var(--space-3);
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-    }
-    
-    .export-preview {
-      background: var(--color-surface-secondary);
-      border: 1px solid var(--color-border-light);
-      border-radius: var(--border-radius-md);
-      padding: var(--space-4);
-      display: flex;
-      flex-direction: column;
       gap: var(--space-3);
-    }
-    
-    .preview-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: var(--space-2) 0;
-      border-bottom: 1px solid var(--color-border-light);
-    }
-    
-    .preview-item:last-child {
-      border-bottom: none;
-    }
-    
-    .preview-label {
-      font-size: var(--font-size-sm);
-      color: var(--color-text-secondary);
-      font-weight: var(--font-weight-medium);
-    }
-    
-    .preview-value {
-      font-size: var(--font-size-sm);
-      color: var(--color-text-primary);
-      font-weight: var(--font-weight-semibold);
-    }
-    
-    .export-dialog-footer {
-      display: flex;
-      align-items: center;
       justify-content: flex-end;
-      gap: var(--space-3);
-      padding: var(--space-6);
-      border-top: 1px solid var(--color-border-light);
-      background: var(--color-surface-secondary);
-    }
-    
-    .export-dialog-footer .btn {
-      min-width: 120px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: var(--space-2);
-    }
-    
-    .export-dialog-footer .btn span {
-      font-size: 1em;
-      opacity: 0.9;
-    }
-    
-    /* Animations */
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-      }
-      to {
-        opacity: 1;
-      }
-    }
-    
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateY(-20px) scale(0.95);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-    
-    /* Responsive Design */
-    @media (max-width: 768px) {
-      .export-dialog-content {
-        width: 95vw;
-        margin: var(--space-4);
-      }
-      
-      .export-dialog-body {
-        grid-template-columns: 1fr;
-        gap: var(--space-6);
-        padding: var(--space-4);
-      }
-      
-      .form-grid {
-        grid-template-columns: 1fr;
-      }
-      
-      .export-dialog-header,
-      .export-dialog-footer {
-        padding: var(--space-4);
-      }
-      
-      .export-dialog-footer {
-        flex-wrap: wrap;
-      }
-      
-      .export-dialog-footer .btn {
-        flex: 1;
-        min-width: auto;
-      }
-    }
-    
-    /* Loading State */
-    .export-dialog .btn:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-      pointer-events: none;
-    }
-    
-    .export-dialog .btn:disabled span:first-child {
-      animation: spin 1s linear infinite;
-    }
-    
-    @keyframes spin {
-      from {
-        transform: rotate(0deg);
-      }
-      to {
-        transform: rotate(360deg);
-      }
-    }
-    
-    /* Form Validation States */
-    .form-input:invalid {
-      border-color: var(--color-danger);
-    }
-    
-    .form-input:invalid:focus {
-      border-color: var(--color-danger);
-      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-    }
-    
-    /* Utility Classes for Export Dialog */
-    .export-dialog .text-muted {
-      color: var(--color-text-secondary);
-      font-size: var(--font-size-xs);
-    }
-    
-    .export-dialog .text-small {
-      font-size: var(--font-size-xs);
-    }
-    
-    .export-dialog .text-center {
-      text-align: center;
-    }
-    
-    /* Custom scrollbar for dialog body */
-    .export-dialog-body::-webkit-scrollbar {
-      width: 6px;
-    }
-    
-    .export-dialog-body::-webkit-scrollbar-track {
-      background: var(--color-surface-secondary);
-    }
-    
-    .export-dialog-body::-webkit-scrollbar-thumb {
-      background: var(--color-border-light);
-      border-radius: 3px;
-    }
-    
-    .export-dialog-body::-webkit-scrollbar-thumb:hover {
-      background: var(--color-border-hover);
-    }
-    
-    /* ===== RESPONSIVE ===== */
-    @media (max-width: 768px) {
-      .sidebar {
-        width: 100%;
-        position: absolute;
-        z-index: 100;
-        transform: translateX(-100%);
-      }
-      
-      .sidebar.visible {
-        transform: translateX(0);
-      }
-      
-      .main-content {
-        width: 100%;
-      }
-      
-      .card {
-        margin: var(--space-2);
-      }
-      
-      .form-grid,
-      .button-grid {
-        grid-template-columns: 1fr;
-      }
     }
   </style>
 </head>
-
 <body>
   <div class="app-container">
-    <!-- Sidebar -->
-    <div class="sidebar" id="sidebar">
-      <!-- App Initialization -->
-      <div class="card" id="init-controls">
+    <div class="sidebar">
+      <!-- Initialization Controls -->
+      <div id="init-controls" class="card">
         <div class="card-header">
-          <div style="display: flex; align-items: center;">
-            <span class="icon">◯</span>
-            <span>Initialize Application</span>
-          </div>
+          <h3>🗺️ Route Finder</h3>
         </div>
         <div class="card-content">
-          <button class="btn btn-primary btn-full" onclick="RouteFinderApp.init()" id="init-app-btn">
-            → Start Route Finder
+          <div id="init-status" class="status-message"></div>
+          
+          <div class="form-group">
+            <label class="form-label">Mapbox Access Token</label>
+            <input type="password" class="form-input" id="mapbox-token" placeholder="Enter your Mapbox token...">
+          </div>
+          
+          <button class="btn btn-primary btn-full" onclick="RouteFinderApp.init.initializeApp()">
+            🚀 Initialize Map
           </button>
-          <div class="status-message" id="init-status"></div>
         </div>
       </div>
 
@@ -778,15 +463,42 @@
             <span>+</span> New Route
           </button>
           
+          <!-- STEP 1 FIX: Moved route styling controls back to Route Management -->
+          <div id="route-styling-controls" style="margin-top: var(--space-4); display: none;">
+            <h4 style="margin-bottom: var(--space-3); font-size: var(--font-size-base); font-weight: var(--font-weight-semibold);">
+              🎨 Route Styling
+            </h4>
+            
+            <!-- Route Name -->
+            <div class="form-group">
+              <label class="form-label">Route Name</label>
+              <input type="text" class="form-input" id="route-name-input" placeholder="Enter route name..." onchange="RouteFinderApp.routes.updateRouteName()">
+            </div>
+
+            <!-- Route Color and Width Grid -->
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Color</label>
+                <input type="color" class="form-input" id="route-color-input" onchange="RouteFinderApp.routes.updateRouteStyle()" value="#3b82f6">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Width</label>
+                <select class="form-select" id="route-width-input" onchange="RouteFinderApp.routes.updateRouteStyle()">
+                  <option value="2">Thin (2px)</option>
+                  <option value="4" selected>Medium (4px)</option>
+                  <option value="6">Thick (6px)</option>
+                  <option value="8">Extra Thick (8px)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
           <div class="button-grid" style="margin-top: var(--space-4);">
             <button class="btn btn-secondary" onclick="RouteFinderApp.fileManager.exportRoutes()">
               <span>↑</span> Export Routes
             </button>
             <button class="btn btn-secondary" onclick="RouteFinderApp.fileManager.triggerImportRoutes()">
               <span>↓</span> Import Routes
-            </button>
-            <button class="btn btn-primary" onclick="RouteFinderApp.mapExport.showExportDialog()" title="Export map as high-resolution image">
-              <span>📸</span> Export Map
             </button>
           </div>
 
@@ -810,7 +522,7 @@
           <span class="chevron expanded">▷</span>
         </div>
         <div class="card-content collapsible" id="current-route-content">
-          <!-- Route Name & Settings -->
+          <!-- Travel Mode -->
           <div class="form-group">
             <label class="form-label">Travel Mode</label>
             <select class="form-select" id="travel-mode-select" onchange="RouteFinderApp.routes.updateTravelMode()">
@@ -824,26 +536,23 @@
           <div class="form-group">
             <label class="form-label">Add Waypoint</label>
             <div class="button-group">
-              <input type="text" class="form-input" id="waypoint-input" placeholder="Enter address..." style="flex: 1;">
-              <button class="btn btn-primary" onclick="RouteFinderApp.waypoints.addFromInput()">
-                <span>+</span> Add
+              <input type="text" class="form-input" id="address-input" placeholder="Enter address or place name..." style="flex: 2;">
+              <button class="btn btn-primary" onclick="RouteFinderApp.routes.addWaypoint()" style="flex: 2;">
+                → Find Route
+              </button>
+              <button class="btn btn-secondary" onclick="RouteFinderApp.routes.clearCurrentRoute()" style="flex: 1;">
+                ✕ Clear
               </button>
             </div>
           </div>
 
-          <button class="btn btn-secondary btn-full" onclick="RouteFinderApp.waypoints.toggleClickMode()" id="click-mode-btn">
-            📍 Click Map to Add Waypoints
-          </button>
-
           <!-- Waypoints List -->
-          <div id="waypoints-section" style="margin-top: var(--space-4);">
-            <label class="form-label">Waypoints</label>
-            <div id="waypoint-list">
-              <!-- Waypoints will be dynamically generated -->
-            </div>
+          <div id="waypoints-list" style="display: none;">
+            <!-- Waypoints will be dynamically populated -->
           </div>
 
-          <div class="status-message" id="route-status"></div>
+          <!-- Route Status -->
+          <div id="route-status" class="status-message"></div>
         </div>
       </div>
 
@@ -853,40 +562,32 @@
           <h3>
             <span>🗺️</span> Map Controls
           </h3>
-          <span class="chevron">▷</span>
+          <span class="chevron expanded">▷</span>
         </div>
-        <div class="card-content collapsible collapsed" id="map-controls-content">
+        <div class="card-content collapsible" id="map-controls-content">
+          <div class="form-group">
+            <label class="form-label">Center Location</label>
+            <input type="text" class="form-input" id="center-location" placeholder="Enter location to center map..." value="New York, NY">
+            <button class="btn btn-secondary btn-full" onclick="RouteFinderApp.mapControls.centerMap()" style="margin-top: var(--space-2);">
+              📍 Center Map
+            </button>
+          </div>
+
           <div class="form-group">
             <label class="form-label">Map Style</label>
-            <select class="form-select" id="map-style-select" onchange="RouteFinderApp.map.changeStyle()">
+            <select class="form-select" id="map-style" onchange="RouteFinderApp.mapControls.changeStyle()">
               <option value="mapbox://styles/mapbox/streets-v12">Streets</option>
+              <option value="mapbox://styles/mapbox/satellite-streets-v12">Satellite</option>
               <option value="mapbox://styles/mapbox/outdoors-v12">Outdoors</option>
               <option value="mapbox://styles/mapbox/light-v11">Light</option>
               <option value="mapbox://styles/mapbox/dark-v11">Dark</option>
-              <option value="mapbox://styles/mapbox/satellite-v9">Satellite</option>
-              <option value="mapbox://styles/mapbox/satellite-streets-v12">Satellite Streets</option>
-              <option value="mapbox://styles/mapbox/navigation-day-v1">Navigation Day</option>
-              <option value="mapbox://styles/mapbox/navigation-night-v1">Navigation Night</option>
             </select>
           </div>
 
-          <div class="button-grid">
-            <button class="btn btn-secondary" onclick="RouteFinderApp.map.fitToRoutes()">
-              <span>🎯</span> Fit Routes
-            </button>
-            <button class="btn btn-secondary" onclick="RouteFinderApp.map.resetView()">
-              <span>🏠</span> Reset View
-            </button>
-          </div>
-
-          <div class="form-group" style="margin-top: var(--space-4);">
-            <label class="form-label">Center Map</label>
-            <div class="button-group">
-              <input type="text" class="form-input" id="center-input" placeholder="Enter location..." style="flex: 1;">
-              <button class="btn btn-secondary" onclick="RouteFinderApp.map.centerOnLocation()">
-                <span>📍</span> Go
-              </button>
-            </div>
+          <div class="form-group">
+            <label class="form-label">Zoom Level</label>
+            <input type="range" class="form-input" id="zoom-level" min="1" max="20" value="10" onchange="RouteFinderApp.mapControls.setZoom()">
+            <span id="zoom-value" style="font-size: var(--font-size-sm); color: var(--color-text-secondary);">10</span>
           </div>
         </div>
       </div>
@@ -895,1466 +596,894 @@
       <div class="card" id="obstacle-controls" style="display: none;">
         <div class="card-header" onclick="RouteFinderApp.ui.toggleSection('obstacle-controls-content')">
           <h3>
-            <span>🚧</span> Obstacle Detection
+            <span>⚠️</span> Obstacle Detection
           </h3>
-          <span class="chevron">▷</span>
+          <span class="chevron expanded">▷</span>
         </div>
-        <div class="card-content collapsible collapsed" id="obstacle-controls-content">
-          <div class="button-group">
-            <button class="btn btn-secondary" onclick="RouteFinderApp.obstacles.generate()">
-              <span>🎲</span> Generate
-            </button>
-            <button class="btn btn-danger" onclick="RouteFinderApp.obstacles.clear()">
-              <span>🗑️</span> Clear
-            </button>
+        <div class="card-content collapsible" id="obstacle-controls-content">
+          <div class="form-group">
+            <label class="form-label">Detection Settings</label>
+            <div class="button-group">
+              <button class="btn btn-secondary" onclick="RouteFinderApp.obstacles.toggleDetection()">
+                🔍 Toggle Detection
+              </button>
+              <button class="btn btn-secondary" onclick="RouteFinderApp.obstacles.clearObstacles()">
+                🗑️ Clear Obstacles
+              </button>
+            </div>
           </div>
-          <button class="btn btn-primary btn-full" onclick="RouteFinderApp.obstacles.analyzeRoutes()" style="margin-top: var(--space-3);">
-            <span>🔍</span> Analyze Routes
-          </button>
-          <div class="status-message" id="obstacle-status"></div>
+          
+          <div id="obstacle-status" class="status-message"></div>
+          <div id="obstacles-list"></div>
         </div>
       </div>
+
+      <!-- Export Map Button (will be moved to separate section in later steps) -->
+      <button class="btn btn-primary btn-full" onclick="RouteFinderApp.mapExport.showExportDialog()" title="Export map as high-resolution image" style="margin-top: var(--space-4);">
+        <span>📸</span> Export Map
+      </button>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-      <button class="sidebar-toggle" onclick="RouteFinderApp.ui.toggleSidebar()" id="sidebar-toggle">
-        ☰
-      </button>
+    <div class="map-container">
       <div id="map"></div>
     </div>
-
-    <!-- Hidden file input for route import -->
-    <input type="file" id="file-input" accept=".json" style="display: none;" onchange="RouteFinderApp.fileManager.handleFileSelect(event)">
   </div>
 
-  <!-- Map Export Dialog -->
-  <div class="export-dialog" id="export-dialog">
-    <div class="export-dialog-backdrop" onclick="RouteFinderApp.mapExport.hideExportDialog()"></div>
-    <div class="export-dialog-content">
-      <div class="export-dialog-header">
-        <h3><span>📸</span> Export Map</h3>
-        <button class="btn-close" onclick="RouteFinderApp.mapExport.hideExportDialog()">
-          <span>×</span>
-        </button>
-      </div>
-      
-      <div class="export-dialog-body">
-        <div class="export-form">
-          <!-- File Settings -->
-          <div class="form-section">
-            <div class="form-section-title">
-              <span>📄</span> File Settings
-            </div>
-            <div class="form-group">
-              <label class="form-label">Filename</label>
-              <input type="text" class="form-input" id="export-filename" value="route-map" placeholder="Enter filename...">
-            </div>
-            <div class="form-grid">
-              <div class="form-group">
-                <label class="form-label">Format</label>
-                <select class="form-select" id="export-format" onchange="MapExportManager.updatePreview()">
-                  <option value="png">PNG (Lossless)</option>
-                  <option value="jpeg">JPEG (Compressed)</option>
-                </select>
-              </div>
-              <div class="form-group" id="jpeg-quality-group" style="display: none;">
-                <label class="form-label">Quality</label>
-                <select class="form-select" id="export-quality" onchange="MapExportManager.updatePreview()">
-                  <option value="0.6">60% (Small)</option>
-                  <option value="0.8" selected>80% (Good)</option>
-                  <option value="0.9">90% (High)</option>
-                  <option value="1.0">100% (Best)</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- Size Settings -->
-          <div class="form-section">
-            <div class="form-section-title">
-              <span>📏</span> Size Settings
-            </div>
-            <div class="form-grid">
-              <div class="form-group">
-                <label class="form-label">Print Size</label>
-                <select class="form-select" id="export-size" onchange="MapExportManager.updateSizeMode()">
-                  <option value="custom">Custom Size</option>
-                  <optgroup label="Standard Sizes (Inches)">
-                    <option value="5x7">5×7" (Photo)</option>
-                    <option value="8x10">8×10" (Photo)</option>
-                    <option value="8x12">8×12" (Photo)</option>
-                    <option value="11x14">11×14" (Photo)</option>
-                    <option value="11x17">11×17" (Tabloid)</option>
-                    <option value="12x18">12×18" (Photo)</option>
-                    <option value="16x20">16×20" (Poster)</option>
-                    <option value="18x24">18×24" (Poster)</option>
-                    <option value="20x30">20×30" (Poster)</option>
-                    <option value="24x36">24×36" (Poster)</option>
-                    <option value="30x40">30×40" (Large Poster)</option>
-                  </optgroup>
-                  <optgroup label="A-Series (Metric)">
-                    <option value="a4">A4 (8.3×11.7")</option>
-                    <option value="a3">A3 (11.7×16.5")</option>
-                    <option value="a2">A2 (16.5×23.4")</option>
-                    <option value="a1">A1 (23.4×33.1")</option>
-                    <option value="a0">A0 (33.1×46.8")</option>
-                  </optgroup>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">DPI (Resolution)</label>
-                <select class="form-select" id="export-dpi" onchange="MapExportManager.updatePreview()">
-                  <option value="150">150 DPI (Web/Email)</option>
-                  <option value="300" selected>300 DPI (Print Quality)</option>
-                  <option value="600">600 DPI (High Quality)</option>
-                </select>
-              </div>
-            </div>
-            
-            <div class="form-grid" id="custom-size-inputs">
-              <div class="form-group">
-                <label class="form-label">Width (inches)</label>
-                <input type="number" class="form-input" id="export-width" min="1" max="100" step="0.1" value="8" onchange="MapExportManager.updatePreview()">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Height (inches)</label>
-                <input type="number" class="form-input" id="export-height" min="1" max="100" step="0.1" value="10" onchange="MapExportManager.updatePreview()">
-              </div>
-            </div>
-          </div>
-
-          <!-- Bleed Settings -->
-          <div class="form-section">
-            <div class="form-section-title">
-              <span>📐</span> Bleed Settings
-            </div>
-            <div class="form-group">
-              <label style="display: flex; align-items: center; gap: var(--space-2); cursor: pointer;">
-                <input type="checkbox" id="export-bleed-enabled" onchange="MapExportManager.updateBleedSettings()">
-                <span>Add bleed for professional printing</span>
-              </label>
-            </div>
-            <div class="form-group" id="bleed-amount-group" style="display: none;">
-              <label class="form-label">Bleed Amount (inches)</label>
-              <select class="form-select" id="export-bleed-amount" onchange="MapExportManager.updatePreview()">
-                <option value="0.125">0.125" (1/8")</option>
-                <option value="0.25" selected>0.25" (1/4")</option>
-                <option value="0.5">0.5" (1/2")</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <!-- Preview -->
-        <div class="export-preview">
-          <div class="form-section-title">
-            <span>👁️</span> Preview
-          </div>
-          <div class="preview-item">
-            <span class="preview-label">Final Size</span>
-            <span class="preview-value" id="preview-dimensions">2400 × 3000 px</span>
-          </div>
-          <div class="preview-item">
-            <span class="preview-label">File Size</span>
-            <span class="preview-value" id="preview-filesize">~18 MB</span>
-          </div>
-          <div class="preview-item">
-            <span class="preview-label">Print Size</span>
-            <span class="preview-value" id="preview-printsize">8" × 10"</span>
-          </div>
-          <div class="preview-item">
-            <span class="preview-label">Resolution</span>
-            <span class="preview-value" id="preview-resolution">300 DPI</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="export-dialog-footer">
-        <button class="btn btn-secondary" onclick="RouteFinderApp.mapExport.hideExportDialog()">
-          <span>×</span> Cancel
-        </button>
-        <button class="btn btn-primary" onclick="RouteFinderApp.mapExport.exportMap()" id="export-map-btn">
-          <span>📸</span> Export Map
-        </button>
-      </div>
-    </div>
-  </div>
+  <!-- File input for importing routes (hidden) -->
+  <input type="file" id="route-file-input" accept=".json" style="display: none;">
 
   <script>
-    // ===== MAP EXPORT MODULE =====
-    // Professional map export functionality with high-resolution output
-
-    const MapExportManager = {
+    // Global state management
+    window.State = {
+      map: null,
+      mapboxToken: null,
+      routes: new Map(),
+      currentRouteId: null,
       isInitialized: false,
+      obstacleDetection: false,
       
-      // Standard print sizes in inches
-      printSizes: {
-        '5x7': { width: 5, height: 7 },
-        '8x10': { width: 8, height: 10 },
-        '8x12': { width: 8, height: 12 },
-        '11x14': { width: 11, height: 14 },
-        '11x17': { width: 11, height: 17 },
-        '12x18': { width: 12, height: 18 },
-        '16x20': { width: 16, height: 20 },
-        '18x24': { width: 18, height: 24 },
-        '20x30': { width: 20, height: 30 },
-        '24x36': { width: 24, height: 36 },
-        '30x40': { width: 30, height: 40 },
-        'a4': { width: 8.27, height: 11.69 },
-        'a3': { width: 11.69, height: 16.54 },
-        'a2': { width: 16.54, height: 23.39 },
-        'a1': { width: 23.39, height: 33.11 },
-        'a0': { width: 33.11, height: 46.81 }
+      getCurrentRoute() {
+        return this.currentRouteId ? this.routes.get(this.currentRouteId) : null;
       },
+      
+      getAllRoutes() {
+        return Array.from(this.routes.values());
+      }
+    };
 
-      init() {
-        if (this.isInitialized) return;
-        
-        // Set up event listeners
-        document.getElementById('export-format').addEventListener('change', () => {
-          this.toggleQualitySettings();
-          this.updatePreview();
-        });
-        
-        // Initialize with default values
-        this.toggleQualitySettings();
-        this.updatePreview();
-        
-        this.isInitialized = true;
-        console.log('Map Export Manager initialized');
-      },
-
-      showExportDialog() {
-        const dialog = document.getElementById('export-dialog');
-        dialog.style.display = 'flex';
-        
-        // Update preview with current settings
-        this.updatePreview();
-        
-        // Focus on filename input
-        setTimeout(() => {
-          document.getElementById('export-filename').focus();
-        }, 100);
-      },
-
-      hideExportDialog() {
-        const dialog = document.getElementById('export-dialog');
-        dialog.style.display = 'none';
-      },
-
-      toggleQualitySettings() {
-        const format = document.getElementById('export-format').value;
-        const qualityGroup = document.getElementById('jpeg-quality-group');
-        
-        if (format === 'jpeg') {
-          qualityGroup.style.display = 'block';
-        } else {
-          qualityGroup.style.display = 'none';
+    // Event system for component communication
+    window.EventSystem = {
+      listeners: new Map(),
+      
+      on(event, callback) {
+        if (!this.listeners.has(event)) {
+          this.listeners.set(event, []);
         }
+        this.listeners.get(event).push(callback);
+      },
+      
+      emit(event, data) {
+        if (this.listeners.has(event)) {
+          this.listeners.get(event).forEach(callback => callback(data));
+        }
+      }
+    };
+
+    // Utility functions
+    window.Utils = {
+      generateId() {
+        return Date.now() + Math.random().toString(36).substr(2, 9);
       },
 
-      updateSizeMode() {
-        const sizeSelect = document.getElementById('export-size');
-        const customInputs = document.getElementById('custom-size-inputs');
-        const widthInput = document.getElementById('export-width');
-        const heightInput = document.getElementById('export-height');
-        
-        if (sizeSelect.value === 'custom') {
-          customInputs.style.display = 'grid';
-        } else {
-          customInputs.style.display = 'none';
+      createEmptyRoute() {
+        return {
+          id: this.generateId(),
+          name: `Route ${window.State.routes.size + 1}`,
+          origin: null,
+          destination: null,
+          waypoints: [],
+          travelMode: 'driving',
+          color: '#3b82f6',
+          width: 4,
+          visible: true,
+          status: 'empty',
+          routeData: null
+        };
+      },
+
+      updateStatus(message, type = 'info', elementId = 'route-status') {
+        const statusEl = document.getElementById(elementId);
+        if (statusEl) {
+          statusEl.innerHTML = message;
+          statusEl.className = `status-message ${type}`;
+          statusEl.style.display = 'block';
           
-          // Set predefined size
-          const size = this.printSizes[sizeSelect.value];
-          if (size) {
-            widthInput.value = size.width;
-            heightInput.value = size.height;
+          if (type === 'success' || type === 'info') {
+            setTimeout(() => {
+              statusEl.style.display = 'none';
+            }, 3000);
           }
         }
-        
-        this.updatePreview();
-      },
+      }
+    };
 
-      updateBleedSettings() {
-        const enabled = document.getElementById('export-bleed-enabled').checked;
-        const bleedGroup = document.getElementById('bleed-amount-group');
-        
-        if (enabled) {
-          bleedGroup.style.display = 'block';
-        } else {
-          bleedGroup.style.display = 'none';
-        }
-        
-        this.updatePreview();
-      },
-
-      updatePreview() {
-        const width = parseFloat(document.getElementById('export-width').value) || 8;
-        const height = parseFloat(document.getElementById('export-height').value) || 10;
-        const dpi = parseInt(document.getElementById('export-dpi').value) || 300;
-        const format = document.getElementById('export-format').value;
-        const quality = parseFloat(document.getElementById('export-quality').value) || 0.8;
-        const bleedEnabled = document.getElementById('export-bleed-enabled').checked;
-        const bleedAmount = parseFloat(document.getElementById('export-bleed-amount').value) || 0.25;
-        
-        // Calculate final dimensions including bleed
-        const finalWidth = bleedEnabled ? width + (bleedAmount * 2) : width;
-        const finalHeight = bleedEnabled ? height + (bleedAmount * 2) : height;
-        
-        // Calculate pixel dimensions
-        const pixelWidth = Math.round(finalWidth * dpi);
-        const pixelHeight = Math.round(finalHeight * dpi);
-        
-        // Estimate file size
-        let fileSize;
-        if (format === 'png') {
-          // PNG: roughly 3-4 bytes per pixel (with compression)
-          fileSize = (pixelWidth * pixelHeight * 3.5) / (1024 * 1024);
-        } else {
-          // JPEG: varies by quality
-          const compressionFactor = quality * 0.5 + 0.1; // 0.1 to 0.6
-          fileSize = (pixelWidth * pixelHeight * 3 * compressionFactor) / (1024 * 1024);
-        }
-        
-        // Update preview display
-        document.getElementById('preview-dimensions').textContent = `${pixelWidth.toLocaleString()} × ${pixelHeight.toLocaleString()} px`;
-        document.getElementById('preview-filesize').textContent = `~${fileSize.toFixed(1)} MB`;
-        document.getElementById('preview-printsize').textContent = `${width}" × ${height}"`;
-        document.getElementById('preview-resolution').textContent = `${dpi} DPI`;
-      },
-
-      async exportMap() {
-        try {
-          if (!window.State || !window.State.map) {
-            throw new Error('Map is not available for export');
+    // Main application object
+    window.RouteFinderApp = {
+      // Initialization module
+      init: {
+        initializeApp() {
+          const token = document.getElementById('mapbox-token').value.trim();
+          
+          if (!token) {
+            Utils.updateStatus('❌ Please enter a valid Mapbox access token', 'error', 'init-status');
+            return;
           }
 
-          const exportBtn = document.getElementById('export-map-btn');
-          const originalContent = exportBtn.innerHTML;
+          window.State.mapboxToken = token;
+          mapboxgl.accessToken = token;
+
+          Utils.updateStatus('🔄 Initializing map...', 'info', 'init-status');
+
+          try {
+            this.createMap();
+          } catch (error) {
+            console.error('Map initialization error:', error);
+            Utils.updateStatus(`❌ Failed to initialize map: ${error.message}`, 'error', 'init-status');
+          }
+        },
+
+        createMap() {
+          window.State.map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v12',
+            center: [-74.0059, 40.7128], // New York City
+            zoom: 10
+          });
+
+          window.State.map.on('load', () => {
+            window.State.isInitialized = true;
+            EventSystem.emit('mapLoaded');
+            this.setupMapSources();
+            Utils.updateStatus('✅ Map initialized successfully!', 'success', 'init-status');
+            RouteFinderApp.ui.showApplicationUI();
+          });
+
+          window.State.map.on('error', (error) => {
+            console.error('Mapbox error:', error);
+            Utils.updateStatus('❌ Map loading failed. Please check your token.', 'error', 'init-status');
+          });
+        },
+
+        setupMapSources() {
+          // Add sources for routes and waypoints
+          window.State.map.addSource('routes-source', {
+            type: 'geojson',
+            data: {
+              type: 'FeatureCollection',
+              features: []
+            }
+          });
+
+          window.State.map.addSource('waypoints-source', {
+            type: 'geojson',
+            data: {
+              type: 'FeatureCollection',
+              features: []
+            }
+          });
+
+          // Add layers for routes
+          window.State.map.addLayer({
+            id: 'routes-layer',
+            type: 'line',
+            source: 'routes-source',
+            layout: {
+              'line-join': 'round',
+              'line-cap': 'round'
+            },
+            paint: {
+              'line-color': ['get', 'color'],
+              'line-width': ['get', 'width'],
+              'line-opacity': 0.8
+            }
+          });
+
+          // Add layers for waypoints
+          window.State.map.addLayer({
+            id: 'waypoints-layer',
+            type: 'circle',
+            source: 'waypoints-source',
+            paint: {
+              'circle-radius': 8,
+              'circle-color': ['get', 'color'],
+              'circle-stroke-color': '#ffffff',
+              'circle-stroke-width': 2
+            }
+          });
+        }
+      },
+
+      // UI Management module
+      ui: {
+        init() {
+          EventSystem.on('routeCreated', () => this.updateRouteTabs());
+          EventSystem.on('routeDeleted', () => this.updateRouteTabs());
+          EventSystem.on('routeSwitched', () => this.updateCurrentRoutePanel());
+          EventSystem.on('routesUpdated', () => this.updateRouteTabs());
+          EventSystem.on('waypointAdded', () => this.updateWaypointsList());
+          EventSystem.on('waypointRemoved', () => this.updateWaypointsList());
+          EventSystem.on('mapLoaded', () => this.showApplicationUI());
+          EventSystem.on('routesImported', () => {
+            this.updateRouteTabs();
+            this.updateRouteList();
+          });
+        },
+
+        setupCollapsibleSections() {
+          // Initialize all sections as expanded
+          const sections = ['route-management', 'current-route', 'map-controls'];
+          sections.forEach(sectionId => {
+            const content = document.getElementById(`${sectionId}-content`);
+            if (content) {
+              content.style.maxHeight = content.scrollHeight + 'px';
+            }
+          });
+        },
+
+        toggleSection(sectionId) {
+          const content = document.getElementById(sectionId);
+          const chevron = content.parentNode.querySelector('.chevron');
           
-          // Show loading state
-          exportBtn.disabled = true;
-          exportBtn.innerHTML = '<span>⏳</span> Exporting...';
-          
-          // Get export settings
-          const filename = document.getElementById('export-filename').value || 'route-map';
-          const format = document.getElementById('export-format').value;
-          const width = parseFloat(document.getElementById('export-width').value) || 8;
-          const height = parseFloat(document.getElementById('export-height').value) || 10;
-          const dpi = parseInt(document.getElementById('export-dpi').value) || 300;
-          const quality = parseFloat(document.getElementById('export-quality').value) || 0.8;
-          const bleedEnabled = document.getElementById('export-bleed-enabled').checked;
-          const bleedAmount = parseFloat(document.getElementById('export-bleed-amount').value) || 0.25;
-          
-          // Calculate final dimensions
-          const finalWidth = bleedEnabled ? width + (bleedAmount * 2) : width;
-          const finalHeight = bleedEnabled ? height + (bleedAmount * 2) : height;
-          const pixelWidth = Math.round(finalWidth * dpi);
-          const pixelHeight = Math.round(finalHeight * dpi);
-          
-          // Create a canvas for the export
-          const canvas = document.createElement('canvas');
-          canvas.width = pixelWidth;
-          canvas.height = pixelHeight;
-          const ctx = canvas.getContext('2d');
-          
-          // Get the map canvas
-          const mapCanvas = window.State.map.getCanvas();
-          
-          // Calculate scaling to maintain aspect ratio
-          const mapAspect = mapCanvas.width / mapCanvas.height;
-          const exportAspect = pixelWidth / pixelHeight;
-          
-          let sourceWidth, sourceHeight, sourceX, sourceY;
-          
-          if (mapAspect > exportAspect) {
-            // Map is wider - fit to height
-            sourceHeight = mapCanvas.height;
-            sourceWidth = sourceHeight * exportAspect;
-            sourceX = (mapCanvas.width - sourceWidth) / 2;
-            sourceY = 0;
+          if (content.style.maxHeight && content.style.maxHeight !== '0px') {
+            content.style.maxHeight = '0px';
+            chevron.classList.remove('expanded');
           } else {
-            // Map is taller - fit to width
-            sourceWidth = mapCanvas.width;
-            sourceHeight = sourceWidth / exportAspect;
-            sourceX = 0;
-            sourceY = (mapCanvas.height - sourceHeight) / 2;
+            content.style.maxHeight = content.scrollHeight + 'px';
+            chevron.classList.add('expanded');
+          }
+        },
+
+        showApplicationUI() {
+          document.getElementById('route-management').style.display = 'block';
+          document.getElementById('current-route-panel').style.display = 'block';
+          document.getElementById('map-controls').style.display = 'block';
+          document.getElementById('obstacle-controls').style.display = 'block';
+
+          // Hide init controls after delay
+          setTimeout(() => {
+            document.getElementById('init-controls').style.display = 'none';
+          }, 2000);
+        },
+
+        showInitializationError(message) {
+          const statusEl = document.getElementById('init-status');
+          statusEl.textContent = `❌ Initialization failed: ${message}`;
+          statusEl.className = 'status-message error';
+          statusEl.style.display = 'block';
+        },
+
+        updateRouteTabs() {
+          const tabsContainer = document.getElementById('route-tabs');
+          tabsContainer.innerHTML = '';
+
+          window.State.routes.forEach(route => {
+            const tab = document.createElement('div');
+            tab.className = `route-tab ${route.id === window.State.currentRouteId ? 'active' : ''}`;
+            tab.onclick = () => RouteFinderApp.routes.switchToRoute(route.id);
+            
+            tab.innerHTML = `
+              <div class="route-color-indicator" style="background-color: ${route.color};"></div>
+              <span>${route.name}</span>
+              ${window.State.routes.size > 1 ? `<button onclick="event.stopPropagation(); RouteFinderApp.routes.deleteRoute(${route.id})" style="margin-left: 8px; background: none; border: none; color: inherit; cursor: pointer;">×</button>` : ''}
+            `;
+            
+            tabsContainer.appendChild(tab);
+          });
+
+          this.updateRouteListToggle();
+          this.updateRouteStylingControls();
+        },
+
+        updateCurrentRoutePanel() {
+          const route = window.State.getCurrentRoute();
+          if (!route) return;
+
+          document.getElementById('travel-mode-select').value = route.travelMode;
+
+          // Update route indicator
+          const indicator = document.getElementById('current-route-indicator');
+          indicator.innerHTML = `<div class="route-color-indicator" style="background-color: ${route.color};"></div>`;
+          
+          this.updateRouteStylingControls();
+        },
+
+        // STEP 1 FIX: New method to update route styling controls
+        updateRouteStylingControls() {
+          const route = window.State.getCurrentRoute();
+          const stylingControls = document.getElementById('route-styling-controls');
+          
+          if (!route) {
+            stylingControls.style.display = 'none';
+            return;
           }
           
-          // Draw the map to the export canvas
-          ctx.drawImage(
-            mapCanvas,
-            sourceX, sourceY, sourceWidth, sourceHeight,
-            0, 0, pixelWidth, pixelHeight
-          );
+          stylingControls.style.display = 'block';
+          document.getElementById('route-name-input').value = route.name;
+          document.getElementById('route-color-input').value = route.color;
+          document.getElementById('route-width-input').value = route.width;
+        },
+
+        updateRouteListToggle() {
+          const toggle = document.getElementById('route-list-toggle');
+          const routeList = document.getElementById('route-list');
           
-          // Convert to blob and download
-          const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
-          const blob = await new Promise(resolve => {
-            if (format === 'png') {
-              canvas.toBlob(resolve, mimeType);
+          if (window.State.routes.size > 3) {
+            toggle.style.display = 'block';
+            this.updateRouteList();
+          } else {
+            toggle.style.display = 'none';
+            routeList.style.display = 'none';
+          }
+        },
+
+        toggleRouteList() {
+          const routeList = document.getElementById('route-list');
+          const toggle = document.getElementById('route-list-toggle');
+          
+          if (routeList.style.display === 'none') {
+            routeList.style.display = 'block';
+            toggle.textContent = '▲ Hide All Routes';
+            this.updateRouteList();
+          } else {
+            routeList.style.display = 'none';
+            toggle.textContent = '⋯ Show All Routes';
+          }
+        },
+
+        updateRouteList() {
+          const listContainer = document.getElementById('route-list');
+          listContainer.innerHTML = '';
+
+          window.State.routes.forEach(route => {
+            const item = document.createElement('div');
+            item.className = 'route-item';
+            
+            item.innerHTML = `
+              <div class="route-color-indicator" style="background-color: ${route.color};"></div>
+              <span class="route-name">${route.name}</span>
+              <div class="route-controls">
+                <button class="btn btn-small" style="opacity: ${route.visible ? '1' : '0.5'};" onclick="RouteFinderApp.routes.toggleVisibility(${route.id})" title="${route.visible ? 'Hide' : 'Show'} route">
+                  ${route.visible ? '👁️' : '👁️‍🗨️'}
+                </button>
+                <button class="btn btn-small" onclick="RouteFinderApp.routes.switchToRoute(${route.id})" title="Switch to route">
+                  📍
+                </button>
+                <button class="btn btn-small btn-danger" onclick="RouteFinderApp.routes.deleteRoute(${route.id})" title="Delete route">
+                  🗑️
+                </button>
+              </div>
+            `;
+            
+            listContainer.appendChild(item);
+          });
+        },
+
+        updateWaypointsList() {
+          const route = window.State.getCurrentRoute();
+          const waypointsList = document.getElementById('waypoints-list');
+          
+          if (!route || route.waypoints.length === 0) {
+            waypointsList.style.display = 'none';
+            return;
+          }
+          
+          waypointsList.style.display = 'block';
+          waypointsList.innerHTML = `
+            <label class="form-label">Waypoints (${route.waypoints.length})</label>
+          `;
+          
+          route.waypoints.forEach((waypoint, index) => {
+            const item = document.createElement('div');
+            item.className = 'waypoint-item';
+            
+            item.innerHTML = `
+              <span class="waypoint-address">${index + 1}. ${waypoint.address}</span>
+              <div class="waypoint-controls">
+                <button class="btn btn-small btn-danger" onclick="RouteFinderApp.routes.removeWaypoint(${index})" title="Remove waypoint">
+                  ×
+                </button>
+              </div>
+            `;
+            
+            waypointsList.appendChild(item);
+          });
+        }
+      },
+
+      // Routes management module
+      routes: {
+        createNewRoute() {
+          const newRoute = Utils.createEmptyRoute();
+          window.State.routes.set(newRoute.id, newRoute);
+          
+          this.switchToRoute(newRoute.id);
+          
+          EventSystem.emit('routeCreated', newRoute);
+          EventSystem.emit('routesUpdated');
+          
+          console.log(`Created new route ${newRoute.id}`);
+        },
+
+        switchToRoute(routeId) {
+          const route = window.State.routes.get(routeId);
+          if (!route) return;
+          
+          window.State.currentRouteId = routeId;
+          
+          EventSystem.emit('routeSwitched', route);
+          EventSystem.emit('waypointsUpdated');
+        },
+
+        deleteRoute(routeId) {
+          if (window.State.routes.size <= 1) {
+            Utils.updateStatus('❌ Cannot delete the last route', 'error');
+            return;
+          }
+          
+          const routeName = window.State.routes.get(routeId)?.name || 'Unknown';
+          
+          if (!confirm(`Delete "${routeName}"?`)) {
+            return;
+          }
+          
+          window.State.routes.delete(routeId);
+          
+          // Switch to another route if we deleted the current one
+          if (window.State.currentRouteId === routeId) {
+            const remainingRoute = window.State.routes.values().next().value;
+            if (remainingRoute) {
+              this.switchToRoute(remainingRoute.id);
+            }
+          }
+          
+          this.updateRoutesOnMap();
+          
+          EventSystem.emit('routeDeleted', routeId);
+          EventSystem.emit('routesUpdated');
+          
+          Utils.updateStatus(`✅ Deleted route "${routeName}"`, 'success');
+        },
+
+        // STEP 1 FIX: Updated method to use consolidated controls
+        updateRouteName() {
+          const route = window.State.getCurrentRoute();
+          if (!route) return;
+          
+          const newName = document.getElementById('route-name-input').value.trim();
+          if (newName) {
+            route.name = newName;
+            EventSystem.emit('routesUpdated');
+          }
+        },
+
+        // STEP 1 FIX: Updated method to use consolidated controls
+        updateRouteStyle() {
+          const route = window.State.getCurrentRoute();
+          if (!route) return;
+          
+          route.color = document.getElementById('route-color-input').value;
+          route.width = parseInt(document.getElementById('route-width-input').value);
+          
+          this.updateRoutesOnMap();
+          EventSystem.emit('routesUpdated');
+        },
+
+        updateTravelMode() {
+          const route = window.State.getCurrentRoute();
+          if (!route) return;
+          
+          route.travelMode = document.getElementById('travel-mode-select').value;
+          
+          // Recalculate route if waypoints exist
+          if (route.waypoints.length >= 2) {
+            this.calculateRoute();
+          }
+        },
+
+        async addWaypoint() {
+          const address = document.getElementById('address-input').value.trim();
+          if (!address) {
+            Utils.updateStatus('❌ Please enter an address', 'error');
+            return;
+          }
+          
+          const route = window.State.getCurrentRoute();
+          if (!route) {
+            Utils.updateStatus('❌ No active route', 'error');
+            return;
+          }
+          
+          Utils.updateStatus('🔍 Searching for location...', 'info');
+          
+          try {
+            const coordinates = await this.geocodeAddress(address);
+            
+            const waypoint = {
+              address: address,
+              coordinates: coordinates
+            };
+            
+            route.waypoints.push(waypoint);
+            document.getElementById('address-input').value = '';
+            
+            EventSystem.emit('waypointAdded', waypoint);
+            
+            if (route.waypoints.length >= 2) {
+              await this.calculateRoute();
+            }
+            
+            Utils.updateStatus(`✅ Added waypoint: ${address}`, 'success');
+            
+          } catch (error) {
+            console.error('Geocoding error:', error);
+            Utils.updateStatus(`❌ Could not find location: ${address}`, 'error');
+          }
+        },
+
+        async geocodeAddress(address) {
+          const encodedAddress = encodeURIComponent(address);
+          const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${window.State.mapboxToken}&limit=1`;
+          
+          const response = await fetch(url);
+          const data = await response.json();
+          
+          if (!data.features || data.features.length === 0) {
+            throw new Error('Location not found');
+          }
+          
+          return data.features[0].center;
+        },
+
+        async calculateRoute() {
+          const route = window.State.getCurrentRoute();
+          if (!route || route.waypoints.length < 2) return;
+          
+          Utils.updateStatus('🧭 Calculating route...', 'info');
+          
+          try {
+            const coordinates = route.waypoints.map(wp => wp.coordinates.join(',')).join(';');
+            const profile = route.travelMode === 'driving' ? 'driving' : route.travelMode === 'walking' ? 'walking' : 'cycling';
+            
+            const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coordinates}?geometries=geojson&access_token=${window.State.mapboxToken}`;
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.routes && data.routes.length > 0) {
+              route.routeData = data.routes[0];
+              route.status = 'calculated';
+              
+              this.updateRoutesOnMap();
+              this.fitMapToRoute();
+              
+              const duration = Math.round(data.routes[0].duration / 60);
+              const distance = (data.routes[0].distance / 1000).toFixed(1);
+              
+              Utils.updateStatus(`✅ Route calculated: ${distance}km, ${duration} minutes`, 'success');
             } else {
-              canvas.toBlob(resolve, mimeType, quality);
+              throw new Error('No route found');
+            }
+            
+          } catch (error) {
+            console.error('Route calculation error:', error);
+            Utils.updateStatus('❌ Could not calculate route', 'error');
+          }
+        },
+
+        removeWaypoint(index) {
+          const route = window.State.getCurrentRoute();
+          if (!route) return;
+          
+          route.waypoints.splice(index, 1);
+          
+          EventSystem.emit('waypointRemoved', index);
+          
+          if (route.waypoints.length >= 2) {
+            this.calculateRoute();
+          } else {
+            route.routeData = null;
+            route.status = 'empty';
+            this.updateRoutesOnMap();
+          }
+        },
+
+        clearCurrentRoute() {
+          const route = window.State.getCurrentRoute();
+          if (!route) return;
+          
+          route.waypoints = [];
+          route.routeData = null;
+          route.status = 'empty';
+          
+          this.updateRoutesOnMap();
+          
+          EventSystem.emit('waypointsUpdated');
+          
+          Utils.updateStatus('✅ Route cleared', 'success');
+        },
+
+        toggleVisibility(routeId) {
+          const route = window.State.routes.get(routeId);
+          if (!route) return;
+          
+          route.visible = !route.visible;
+          this.updateRoutesOnMap();
+          EventSystem.emit('routesUpdated');
+        },
+
+        updateRoutesOnMap() {
+          if (!window.State.map || !window.State.isInitialized) return;
+          
+          const routeFeatures = [];
+          const waypointFeatures = [];
+          
+          window.State.routes.forEach(route => {
+            if (route.visible && route.routeData) {
+              routeFeatures.push({
+                type: 'Feature',
+                properties: {
+                  id: route.id,
+                  color: route.color,
+                  width: route.width
+                },
+                geometry: route.routeData.geometry
+              });
+            }
+            
+            if (route.visible && route.waypoints.length > 0) {
+              route.waypoints.forEach((waypoint, index) => {
+                waypointFeatures.push({
+                  type: 'Feature',
+                  properties: {
+                    id: `${route.id}-${index}`,
+                    color: route.color,
+                    address: waypoint.address
+                  },
+                  geometry: {
+                    type: 'Point',
+                    coordinates: waypoint.coordinates
+                  }
+                });
+              });
             }
           });
           
-          // Create download link
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `${filename}.${format}`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+          window.State.map.getSource('routes-source').setData({
+            type: 'FeatureCollection',
+            features: routeFeatures
+          });
           
-          // Clean up
-          URL.revokeObjectURL(url);
-          
-          // Show success message
-          if (window.RouteFinderApp && window.RouteFinderApp.ui && window.RouteFinderApp.ui.showStatus) {
-            window.RouteFinderApp.ui.showStatus('Map exported successfully!', 'success');
-          }
-          
-          // Hide dialog
-          this.hideExportDialog();
-          
-        } catch (error) {
-          console.error('Export failed:', error);
-          
-          // Show error message
-          if (window.RouteFinderApp && window.RouteFinderApp.ui && window.RouteFinderApp.ui.showStatus) {
-            window.RouteFinderApp.ui.showStatus(`Export failed: ${error.message}`, 'error');
-          } else {
-            alert(`Export failed: ${error.message}`);
-          }
-        } finally {
-          // Restore button state
-          const exportBtn = document.getElementById('export-map-btn');
-          exportBtn.disabled = false;
-          exportBtn.innerHTML = '<span>📸</span> Export Map';
-        }
-      }
-    };
-
-    // ===== MAIN APPLICATION =====
-    const RouteFinderApp = (function() {
-      'use strict';
-
-      // Global state
-      window.State = {
-        map: null,
-        mapInitialized: false,
-        routes: new Map(),
-        currentRouteId: null,
-        nextRouteId: 1,
-        clickModeActive: false,
-        sidebarVisible: true,
-        obstacles: []
-      };
-
-      // Color palette for routes
-      const ROUTE_COLORS = [
-        '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
-        '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
-      ];
-
-      return {
-        // Application initialization
-        init() {
-          console.log('Initializing Route Finder App...');
-          
-          // Initialize map
-          this.initializeMap()
-            .then(() => {
-              this.ui.showInitializationSuccess();
-              this.ui.showMainControls();
-              this.routes.createNewRoute();
-              
-              // Initialize map export after successful map initialization
-              if (typeof MapExportManager !== 'undefined') {
-                MapExportManager.init();
-              }
-            })
-            .catch(error => {
-              this.ui.showInitializationError(error.message);
-            });
+          window.State.map.getSource('waypoints-source').setData({
+            type: 'FeatureCollection',
+            features: waypointFeatures
+          });
         },
 
-        // Map initialization and management
-        async initializeMap() {
-          const MAPBOX_TOKEN = 'pk.eyJ1IjoiY2IyOSIsImEiOiJja3E4OHo3anowZGx1Mm9tcXF3ZmhyaWtwIn0.IQ5rY622AU9GOETrqa9NBw';
+        fitMapToRoute() {
+          const route = window.State.getCurrentRoute();
+          if (!route || !route.routeData) return;
           
-          if (!MAPBOX_TOKEN) {
-            throw new Error('Mapbox token is required');
-          }
+          const coordinates = route.routeData.geometry.coordinates;
+          const bounds = new mapboxgl.LngLatBounds();
+          
+          coordinates.forEach(coord => bounds.extend(coord));
+          
+          window.State.map.fitBounds(bounds, {
+            padding: 50
+          });
+        }
+      },
 
-          mapboxgl.accessToken = MAPBOX_TOKEN;
+      // Map controls module
+      mapControls: {
+        async centerMap() {
+          const location = document.getElementById('center-location').value.trim();
+          if (!location) return;
+          
+          try {
+            const coordinates = await RouteFinderApp.routes.geocodeAddress(location);
+            window.State.map.flyTo({
+              center: coordinates,
+              zoom: 12
+            });
+            
+            Utils.updateStatus(`✅ Centered map on ${location}`, 'success');
+          } catch (error) {
+            Utils.updateStatus(`❌ Could not find location: ${location}`, 'error');
+          }
+        },
+
+        changeStyle() {
+          const style = document.getElementById('map-style').value;
+          window.State.map.setStyle(style);
+        },
+
+        setZoom() {
+          const zoom = document.getElementById('zoom-level').value;
+          document.getElementById('zoom-value').textContent = zoom;
+          window.State.map.setZoom(zoom);
+        }
+      },
+
+      // File management module
+      fileManager: {
+        exportRoutes() {
+          if (window.State.routes.size === 0) {
+            Utils.updateStatus('❌ No routes to export', 'error');
+            return;
+          }
 
           try {
-            window.State.map = new mapboxgl.Map({
-              container: 'map',
-              style: 'mapbox://styles/mapbox/streets-v12',
-              center: [-74.006, 40.7128], // NYC
-              zoom: 10,
-              attributionControl: false
-            });
-
-            // Wait for map to load
-            await new Promise((resolve, reject) => {
-              window.State.map.on('load', resolve);
-              window.State.map.on('error', reject);
-            });
-
-            // Add navigation controls
-            window.State.map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-            
-            // Set up click handler for waypoint adding
-            window.State.map.on('click', (e) => {
-              if (window.State.clickModeActive) {
-                this.waypoints.addFromCoordinates(e.lngLat.lng, e.lngLat.lat);
-              }
-            });
-
-            // Generate initial obstacles
-            this.obstacles.generate();
-
-            window.State.mapInitialized = true;
-            console.log('Map initialized successfully');
-            
-          } catch (error) {
-            console.error('Map initialization failed:', error);
-            throw error;
-          }
-        },
-
-        // Route management
-        routes: {
-          createNewRoute() {
-            const id = window.State.nextRouteId++;
-            const route = {
-              id: id,
-              name: `Route ${id}`,
-              waypoints: [],
-              color: ROUTE_COLORS[(id - 1) % ROUTE_COLORS.length],
-              width: 4,
-              visible: true,
-              travelMode: 'driving',
-              routeData: null
-            };
-
-            window.State.routes.set(id, route);
-            window.State.currentRouteId = id;
-
-            RouteFinderApp.ui.updateRouteTabs();
-            RouteFinderApp.ui.updateCurrentRoutePanel();
-            
-            console.log(`Created route ${id}`);
-          },
-
-          switchToRoute(id) {
-            if (window.State.routes.has(id)) {
-              window.State.currentRouteId = id;
-              RouteFinderApp.ui.updateRouteTabs();
-              RouteFinderApp.ui.updateCurrentRoutePanel();
-              RouteFinderApp.ui.updateWaypointsList();
-            }
-          },
-
-          deleteRoute(id) {
-            if (window.State.routes.size <= 1) {
-              RouteFinderApp.ui.showStatus('Cannot delete the last route', 'warning');
-              return;
-            }
-
-            // Remove route data from map
-            const route = window.State.routes.get(id);
-            if (route && route.routeData) {
-              RouteFinderApp.map.removeRoute(id);
-            }
-
-            window.State.routes.delete(id);
-
-            // Switch to another route if this was current
-            if (window.State.currentRouteId === id) {
-              const remainingRoutes = Array.from(window.State.routes.keys());
-              window.State.currentRouteId = remainingRoutes[0];
-            }
-
-            RouteFinderApp.ui.updateRouteTabs();
-            RouteFinderApp.ui.updateCurrentRoutePanel();
-            RouteFinderApp.ui.updateWaypointsList();
-          },
-
-          toggleRouteVisibility(id) {
-            const route = window.State.routes.get(id);
-            if (route) {
-              route.visible = !route.visible;
-              
-              if (route.visible && route.routeData) {
-                RouteFinderApp.map.addRoute(id, route.routeData, route.color, route.width);
-              } else {
-                RouteFinderApp.map.removeRoute(id);
-              }
-              
-              RouteFinderApp.ui.updateRouteTabs();
-              RouteFinderApp.ui.updateRouteList();
-            }
-          },
-
-          updateRouteName() {
-            const route = window.State.getCurrentRoute();
-            if (route) {
-              const nameInput = document.getElementById('route-name-input');
-              route.name = nameInput.value || `Route ${route.id}`;
-              RouteFinderApp.ui.updateRouteTabs();
-              RouteFinderApp.ui.updateRouteList();
-            }
-          },
-
-          updateRouteStyle() {
-            const route = window.State.getCurrentRoute();
-            if (route) {
-              const colorInput = document.getElementById('route-color-input');
-              const widthInput = document.getElementById('route-width-input');
-              
-              route.color = colorInput.value;
-              route.width = parseInt(widthInput.value);
-              
-              // Update route on map if it exists
-              if (route.routeData && route.visible) {
-                RouteFinderApp.map.removeRoute(route.id);
-                RouteFinderApp.map.addRoute(route.id, route.routeData, route.color, route.width);
-              }
-              
-              RouteFinderApp.ui.updateRouteTabs();
-            }
-          },
-
-          updateTravelMode() {
-            const route = window.State.getCurrentRoute();
-            if (route) {
-              const modeSelect = document.getElementById('travel-mode-select');
-              route.travelMode = modeSelect.value;
-              
-              // Recalculate route if waypoints exist
-              if (route.waypoints.length >= 2) {
-                RouteFinderApp.routing.calculateRoute();
-              }
-            }
-          },
-
-          async calculateRoute() {
-            const route = window.State.getCurrentRoute();
-            if (!route || route.waypoints.length < 2) return;
-
-            try {
-              RouteFinderApp.ui.showStatus('Calculating route...', 'info');
-              
-              // Build coordinates string
-              const coordinates = route.waypoints
-                .map(wp => `${wp.lng},${wp.lat}`)
-                .join(';');
-
-              // Mapbox Directions API call
-              const response = await fetch(
-                `https://api.mapbox.com/directions/v5/mapbox/${route.travelMode}/${coordinates}?` +
-                `geometries=geojson&access_token=${mapboxgl.accessToken}`
-              );
-
-              if (!response.ok) {
-                throw new Error('Route calculation failed');
-              }
-
-              const data = await response.json();
-              
-              if (data.routes && data.routes.length > 0) {
-                route.routeData = data.routes[0].geometry;
-                
-                // Add route to map if visible
-                if (route.visible) {
-                  RouteFinderApp.map.removeRoute(route.id);
-                  RouteFinderApp.map.addRoute(route.id, route.routeData, route.color, route.width);
-                }
-                
-                RouteFinderApp.ui.showStatus('Route calculated successfully', 'success');
-              } else {
-                throw new Error('No route found');
-              }
-              
-            } catch (error) {
-              console.error('Route calculation error:', error);
-              RouteFinderApp.ui.showStatus(`Route calculation failed: ${error.message}`, 'error');
-            }
-          }
-        },
-
-        // Waypoint management
-        waypoints: {
-          async addFromInput() {
-            const input = document.getElementById('waypoint-input');
-            const address = input.value.trim();
-            
-            if (!address) return;
-
-            try {
-              const coordinates = await RouteFinderApp.geocoding.geocode(address);
-              this.addFromCoordinates(coordinates.lng, coordinates.lat, address);
-              input.value = '';
-            } catch (error) {
-              RouteFinderApp.ui.showStatus(`Geocoding failed: ${error.message}`, 'error');
-            }
-          },
-
-          addFromCoordinates(lng, lat, address = null) {
-            const route = window.State.getCurrentRoute();
-            if (!route) return;
-
-            const waypoint = {
-              id: Date.now(),
-              lng: lng,
-              lat: lat,
-              address: address || `${lat.toFixed(4)}, ${lng.toFixed(4)}`
-            };
-
-            route.waypoints.push(waypoint);
-            
-            RouteFinderApp.ui.updateWaypointsList();
-            RouteFinderApp.map.updateWaypoints();
-            
-            // Calculate route if we have enough points
-            if (route.waypoints.length >= 2) {
-              RouteFinderApp.routes.calculateRoute();
-            }
-
-            if (window.State.clickModeActive) {
-              RouteFinderApp.ui.showStatus(`Waypoint added: ${waypoint.address}`, 'success');
-            }
-          },
-
-          removeWaypoint(waypointId) {
-            const route = window.State.getCurrentRoute();
-            if (!route) return;
-
-            route.waypoints = route.waypoints.filter(wp => wp.id !== waypointId);
-            
-            RouteFinderApp.ui.updateWaypointsList();
-            RouteFinderApp.map.updateWaypoints();
-            
-            // Recalculate route if enough waypoints remain
-            if (route.waypoints.length >= 2) {
-              RouteFinderApp.routes.calculateRoute();
-            } else {
-              // Remove route from map if not enough waypoints
-              RouteFinderApp.map.removeRoute(route.id);
-              route.routeData = null;
-            }
-          },
-
-          moveWaypoint(waypointId, direction) {
-            const route = window.State.getCurrentRoute();
-            if (!route) return;
-
-            const index = route.waypoints.findIndex(wp => wp.id === waypointId);
-            if (index === -1) return;
-
-            const newIndex = direction === 'up' ? index - 1 : index + 1;
-            if (newIndex < 0 || newIndex >= route.waypoints.length) return;
-
-            // Swap waypoints
-            [route.waypoints[index], route.waypoints[newIndex]] = [route.waypoints[newIndex], route.waypoints[index]];
-            
-            RouteFinderApp.ui.updateWaypointsList();
-            RouteFinderApp.map.updateWaypoints();
-            
-            if (route.waypoints.length >= 2) {
-              RouteFinderApp.routes.calculateRoute();
-            }
-          },
-
-          toggleClickMode() {
-            window.State.clickModeActive = !window.State.clickModeActive;
-            
-            const btn = document.getElementById('click-mode-btn');
-            if (window.State.clickModeActive) {
-              btn.classList.remove('btn-secondary');
-              btn.classList.add('btn-primary');
-              btn.innerHTML = '📍 Click Mode: ON (Click map to add)';
-              RouteFinderApp.ui.showStatus('Click on the map to add waypoints', 'info');
-            } else {
-              btn.classList.remove('btn-primary');
-              btn.classList.add('btn-secondary');
-              btn.innerHTML = '📍 Click Map to Add Waypoints';
-            }
-          }
-        },
-
-        // Geocoding service
-        geocoding: {
-          async geocode(address) {
-            const response = await fetch(
-              `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?` +
-              `access_token=${mapboxgl.accessToken}&limit=1`
-            );
-
-            if (!response.ok) {
-              throw new Error('Geocoding request failed');
-            }
-
-            const data = await response.json();
-            
-            if (data.features && data.features.length > 0) {
-              const [lng, lat] = data.features[0].center;
-              return { lng, lat };
-            } else {
-              throw new Error('Address not found');
-            }
-          }
-        },
-
-        // Map rendering and management
-        map: {
-          addRoute(routeId, routeData, color, width) {
-            const sourceId = `route-${routeId}`;
-            const layerId = `route-${routeId}-layer`;
-            
-            // Remove existing route if present
-            this.removeRoute(routeId);
-            
-            // Add source
-            window.State.map.addSource(sourceId, {
-              type: 'geojson',
-              data: {
-                type: 'Feature',
-                properties: {},
-                geometry: routeData
-              }
-            });
-            
-            // Add layer
-            window.State.map.addLayer({
-              id: layerId,
-              type: 'line',
-              source: sourceId,
-              layout: {
-                'line-join': 'round',
-                'line-cap': 'round'
-              },
-              paint: {
-                'line-color': color,
-                'line-width': width
-              }
-            });
-          },
-
-          removeRoute(routeId) {
-            const sourceId = `route-${routeId}`;
-            const layerId = `route-${routeId}-layer`;
-            
-            if (window.State.map.getLayer(layerId)) {
-              window.State.map.removeLayer(layerId);
-            }
-            if (window.State.map.getSource(sourceId)) {
-              window.State.map.removeSource(sourceId);
-            }
-          },
-
-          updateWaypoints() {
-            const route = window.State.getCurrentRoute();
-            if (!route) return;
-
-            // Remove existing waypoint markers
-            document.querySelectorAll('.waypoint-marker').forEach(marker => marker.remove());
-
-            // Add new waypoint markers
-            route.waypoints.forEach((waypoint, index) => {
-              const el = document.createElement('div');
-              el.className = 'waypoint-marker';
-              el.style.cssText = `
-                width: 8px;
-                height: 8px;
-                background: ${route.color};
-                border: 2px solid white;
-                border-radius: 50%;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-              `;
-
-              new mapboxgl.Marker(el)
-                .setLngLat([waypoint.lng, waypoint.lat])
-                .addTo(window.State.map);
-            });
-          },
-
-          fitToRoutes() {
-            const bounds = new mapboxgl.LngLatBounds();
-            let hasPoints = false;
-
-            window.State.routes.forEach(route => {
-              if (route.visible && route.waypoints.length > 0) {
-                route.waypoints.forEach(waypoint => {
-                  bounds.extend([waypoint.lng, waypoint.lat]);
-                  hasPoints = true;
-                });
-              }
-            });
-
-            if (hasPoints) {
-              window.State.map.fitBounds(bounds, { padding: 50 });
-            }
-          },
-
-          resetView() {
-            window.State.map.flyTo({
-              center: [-74.006, 40.7128],
-              zoom: 10
-            });
-          },
-
-          changeStyle() {
-            const styleSelect = document.getElementById('map-style-select');
-            window.State.map.setStyle(styleSelect.value);
-          },
-
-          async centerOnLocation() {
-            const input = document.getElementById('center-input');
-            const location = input.value.trim();
-            
-            if (!location) return;
-
-            try {
-              const coordinates = await RouteFinderApp.geocoding.geocode(location);
-              window.State.map.flyTo({
-                center: [coordinates.lng, coordinates.lat],
-                zoom: 12
-              });
-              input.value = '';
-              RouteFinderApp.ui.showStatus(`Centered on: ${location}`, 'success');
-            } catch (error) {
-              RouteFinderApp.ui.showStatus(`Location not found: ${location}`, 'error');
-            }
-          }
-        },
-
-        // Obstacle detection system
-        obstacles: {
-          generate() {
-            window.State.obstacles = [];
-            
-            // Generate random obstacle zones
-            const bounds = window.State.map.getBounds();
-            const numObstacles = Math.floor(Math.random() * 5) + 3;
-            
-            for (let i = 0; i < numObstacles; i++) {
-              const center = [
-                bounds.getWest() + Math.random() * (bounds.getEast() - bounds.getWest()),
-                bounds.getSouth() + Math.random() * (bounds.getNorth() - bounds.getSouth())
-              ];
-              
-              const radius = 0.005 + Math.random() * 0.01; // ~500-1500m radius
-              
-              window.State.obstacles.push({
-                id: i,
-                center: center,
-                radius: radius
-              });
-            }
-            
-            this.updateObstacleDisplay();
-            RouteFinderApp.ui.showStatus(`Generated ${numObstacles} obstacle zones`, 'success');
-          },
-
-          clear() {
-            window.State.obstacles = [];
-            this.updateObstacleDisplay();
-            RouteFinderApp.ui.showStatus('Cleared all obstacles', 'success');
-          },
-
-          updateObstacleDisplay() {
-            // Remove existing obstacle layers
-            for (let i = 0; i < 10; i++) {
-              const layerId = `obstacle-${i}`;
-              const sourceId = `obstacle-${i}`;
-              
-              if (window.State.map.getLayer(layerId)) {
-                window.State.map.removeLayer(layerId);
-              }
-              if (window.State.map.getSource(sourceId)) {
-                window.State.map.removeSource(sourceId);
-              }
-            }
-
-            // Add new obstacle zones
-            window.State.obstacles.forEach(obstacle => {
-              const sourceId = `obstacle-${obstacle.id}`;
-              const layerId = `obstacle-${obstacle.id}`;
-              
-              // Create circle polygon
-              const points = 64;
-              const coordinates = [];
-              
-              for (let i = 0; i <= points; i++) {
-                const angle = (i / points) * 2 * Math.PI;
-                const x = obstacle.center[0] + obstacle.radius * Math.cos(angle);
-                const y = obstacle.center[1] + obstacle.radius * Math.sin(angle);
-                coordinates.push([x, y]);
-              }
-              
-              window.State.map.addSource(sourceId, {
-                type: 'geojson',
-                data: {
-                  type: 'Feature',
-                  geometry: {
-                    type: 'Polygon',
-                    coordinates: [coordinates]
-                  }
-                }
-              });
-              
-              window.State.map.addLayer({
-                id: layerId,
-                type: 'fill',
-                source: sourceId,
-                paint: {
-                  'fill-color': '#ef4444',
-                  'fill-opacity': 0.3
-                }
-              });
-            });
-          },
-
-          analyzeRoutes() {
-            let foundIssues = false;
-            let issueCount = 0;
-
-            window.State.routes.forEach(route => {
-              if (!route.visible || !route.routeData) return;
-
-              const routeCoords = route.routeData.coordinates;
-              const routeHasIssues = this.checkRouteForObstacles(routeCoords);
-              
-              if (routeHasIssues) {
-                foundIssues = true;
-                issueCount++;
-              }
-            });
-
-            if (foundIssues) {
-              RouteFinderApp.ui.showStatus(
-                `⚠️ Warning: ${issueCount} route(s) pass through obstacle zones`, 
-                'warning', 
-                'obstacle-status'
-              );
-            } else {
-              RouteFinderApp.ui.showStatus(
-                '✅ All routes are clear of obstacles', 
-                'success', 
-                'obstacle-status'
-              );
-            }
-          },
-
-          checkRouteForObstacles(routeCoords) {
-            return window.State.obstacles.some(obstacle => {
-              return routeCoords.some(coord => {
-                const distance = this.calculateDistance(coord, obstacle.center);
-                return distance <= obstacle.radius;
-              });
-            });
-          },
-
-          calculateDistance(point1, point2) {
-            const dx = point1[0] - point2[0];
-            const dy = point1[1] - point2[1];
-            return Math.sqrt(dx * dx + dy * dy);
-          }
-        },
-
-        // File management (export/import)
-        fileManager: {
-          exportRoutes() {
-            const routesData = {
-              version: '1.0',
-              exported: new Date().toISOString(),
-              routes: Array.from(window.State.routes.values()).map(route => ({
+            const exportData = {
+              version: "1.0",
+              exportDate: new Date().toISOString(),
+              totalRoutes: window.State.routes.size,
+              routes: window.State.getAllRoutes().map(route => ({
                 id: route.id,
                 name: route.name,
+                origin: route.origin,
+                destination: route.destination,
                 waypoints: route.waypoints,
+                travelMode: route.travelMode,
                 color: route.color,
                 width: route.width,
-                travelMode: route.travelMode
+                visible: route.visible,
+                status: route.status,
+                routeStats: route.routeData ? {
+                  duration: route.routeData.duration,
+                  distance: route.routeData.distance
+                } : null
               }))
             };
 
-            const dataStr = JSON.stringify(routesData, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(dataBlob);
-            link.download = `route-finder-routes-${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            RouteFinderApp.ui.showStatus('Routes exported successfully', 'success');
-          },
-
-          triggerImportRoutes() {
-            document.getElementById('file-input').click();
-          },
-
-          handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              try {
-                const data = JSON.parse(e.target.result);
-                this.importRoutes(data);
-              } catch (error) {
-                RouteFinderApp.ui.showStatus('Invalid file format', 'error');
-              }
-            };
-            reader.readAsText(file);
-          },
-
-          importRoutes(data) {
-            if (!data.routes || !Array.isArray(data.routes)) {
-              RouteFinderApp.ui.showStatus('Invalid routes data', 'error');
-              return;
-            }
-
-            // Clear existing routes
-            window.State.routes.clear();
-            
-            // Import routes
-            data.routes.forEach(routeData => {
-              const route = {
-                id: routeData.id || window.State.nextRouteId++,
-                name: routeData.name || `Route ${routeData.id}`,
-                waypoints: routeData.waypoints || [],
-                color: routeData.color || ROUTE_COLORS[0],
-                width: routeData.width || 4,
-                visible: true,
-                travelMode: routeData.travelMode || 'driving',
-                routeData: null
-              };
-
-              window.State.routes.set(route.id, route);
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+              type: 'application/json'
             });
+            
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `routes-export-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
 
-            // Set first route as current
-            const firstRoute = Array.from(window.State.routes.keys())[0];
-            window.State.currentRouteId = firstRoute;
-            window.State.nextRouteId = Math.max(...Array.from(window.State.routes.keys())) + 1;
+            Utils.updateStatus(`✅ Exported ${window.State.routes.size} routes successfully`, 'success');
 
-            // Update UI
-            RouteFinderApp.ui.updateRouteTabs();
-            RouteFinderApp.ui.updateCurrentRoutePanel();
-            RouteFinderApp.ui.updateWaypointsList();
-
-            // Recalculate all routes
-            window.State.routes.forEach(route => {
-              if (route.waypoints.length >= 2) {
-                window.State.currentRouteId = route.id;
-                RouteFinderApp.routes.calculateRoute();
-              }
-            });
-
-            RouteFinderApp.ui.showStatus(`Imported ${data.routes.length} routes`, 'success');
+          } catch (error) {
+            console.error('Export error:', error);
+            Utils.updateStatus('❌ Export failed', 'error');
           }
         },
 
-        // Map Export Integration
-        mapExport: {
-          showExportDialog() {
-            if (typeof MapExportManager !== 'undefined') {
-              MapExportManager.showExportDialog();
-            } else {
-              RouteFinderApp.ui.showStatus('Map export functionality not available', 'error');
-            }
-          },
-
-          hideExportDialog() {
-            if (typeof MapExportManager !== 'undefined') {
-              MapExportManager.hideExportDialog();
-            }
-          },
-
-          exportMap() {
-            if (typeof MapExportManager !== 'undefined') {
-              return MapExportManager.exportMap();
-            } else {
-              throw new Error('Map export functionality not available');
-            }
-          },
-
-          isAvailable() {
-            return typeof MapExportManager !== 'undefined' && 
-                   window.State && 
-                   window.State.map;
-          },
-
-          getMapInstance() {
-            return window.State?.map;
-          }
+        triggerImportRoutes() {
+          document.getElementById('route-file-input').click();
         },
 
-        // UI management
-        ui: {
-          showInitializationSuccess() {
-            const statusEl = document.getElementById('init-status');
-            statusEl.textContent = '✅ Application initialized successfully!';
-            statusEl.className = 'status-message success';
-            statusEl.style.display = 'block';
+        importRoutes() {
+          const fileInput = document.getElementById('route-file-input');
+          const file = fileInput.files[0];
+          
+          if (!file) return;
 
-            // Hide init controls after delay
-            setTimeout(() => {
-              document.getElementById('init-controls').style.display = 'none';
-            }, 2000);
-          },
-
-          showInitializationError(message) {
-            const statusEl = document.getElementById('init-status');
-            statusEl.textContent = `❌ Initialization failed: ${message}`;
-            statusEl.className = 'status-message error';
-            statusEl.style.display = 'block';
-          },
-
-          showMainControls() {
-            document.getElementById('route-management').style.display = 'block';
-            document.getElementById('current-route-panel').style.display = 'block';
-            document.getElementById('map-controls').style.display = 'block';
-            document.getElementById('obstacle-controls').style.display = 'block';
-          },
-
-          showStatus(message, type = 'info', elementId = 'route-status') {
-            const statusEl = document.getElementById(elementId);
-            if (statusEl) {
-              statusEl.textContent = message;
-              statusEl.className = `status-message ${type}`;
-              statusEl.style.display = 'block';
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const importData = JSON.parse(e.target.result);
               
-              // Auto-hide after 3 seconds for success/info messages
-              if (type === 'success' || type === 'info') {
-                setTimeout(() => {
-                  statusEl.style.display = 'none';
-                }, 3000);
+              if (!importData.routes || !Array.isArray(importData.routes)) {
+                throw new Error('Invalid route data structure');
               }
-            }
-          },
 
-          updateRouteTabs() {
-            const tabsContainer = document.getElementById('route-tabs');
-            tabsContainer.innerHTML = '';
+              Utils.updateStatus('<strong>📥 Importing Routes...</strong><br>Processing route data', 'loading');
 
-            window.State.routes.forEach(route => {
-              const tab = document.createElement('div');
-              tab.className = `route-tab ${route.id === window.State.currentRouteId ? 'active' : ''}`;
-              tab.onclick = () => RouteFinderApp.routes.switchToRoute(route.id);
+              if (window.State.routes.size > 0) {
+                const confirmClear = confirm(`This will replace your current ${window.State.routes.size} route(s). Continue?`);
+                if (!confirmClear) return;
+              }
+
+              // Clear existing routes
+              window.State.routes.clear();
+
+              // Import routes
+              importData.routes.forEach(routeData => {
+                const route = {
+                  id: Utils.generateId(),
+                  name: routeData.name || 'Imported Route',
+                  origin: routeData.origin || null,
+                  destination: routeData.destination || null,
+                  waypoints: routeData.waypoints || [],
+                  travelMode: routeData.travelMode || 'driving',
+                  color: routeData.color || '#3b82f6',
+                  width: routeData.width || 4,
+                  visible: routeData.visible !== false,
+                  status: routeData.status || 'empty',
+                  routeData: null
+                };
+                
+                window.State.routes.set(route.id, route);
+              });
+
+              // Set first route as current
+              if (window.State.routes.size > 0) {
+                const firstRoute = window.State.routes.values().next().value;
+                window.State.currentRouteId = firstRoute.id;
+              }
+
+              EventSystem.emit('routesImported');
               
-              tab.innerHTML = `
-                <div class="route-color-indicator" style="background-color: ${route.color};"></div>
-                <span>${route.name}</span>
-                ${window.State.routes.size > 1 ? `<button onclick="event.stopPropagation(); RouteFinderApp.routes.deleteRoute(${route.id})" style="margin-left: 8px; background: none; border: none; color: inherit; cursor: pointer;">×</button>` : ''}
-              `;
-              
-              tabsContainer.appendChild(tab);
-            });
+              Utils.updateStatus(`✅ Successfully imported ${importData.routes.length} routes`, 'success');
 
-            this.updateRouteListToggle();
-          },
-
-          updateCurrentRoutePanel() {
-            const route = window.State.getCurrentRoute();
-            if (!route) return;
-
-            document.getElementById('route-name-input').value = route.name;
-            document.getElementById('route-color-input').value = route.color;
-            document.getElementById('route-width-input').value = route.width;
-            document.getElementById('travel-mode-select').value = route.travelMode;
-
-            // Update route indicator
-            const indicator = document.getElementById('current-route-indicator');
-            indicator.innerHTML = `<div class="route-color-indicator" style="background-color: ${route.color};"></div>`;
-          },
-
-          updateRouteListToggle() {
-            const toggle = document.getElementById('route-list-toggle');
-            const routeList = document.getElementById('route-list');
-            
-            if (window.State.routes.size > 3) {
-              toggle.style.display = 'block';
-              this.updateRouteList();
-            } else {
-              toggle.style.display = 'none';
-              routeList.style.display = 'none';
+            } catch (error) {
+              console.error('Import error:', error);
+              Utils.updateStatus('❌ Import failed. Please check the file format.', 'error');
             }
-          },
+          };
 
-          toggleRouteList() {
-            const routeList = document.getElementById('route-list');
-            const toggle = document.getElementById('route-list-toggle');
-            
-            if (routeList.style.display === 'none') {
-              routeList.style.display = 'block';
-              toggle.textContent = '▲ Hide All Routes';
-              this.updateRouteList();
-            } else {
-              routeList.style.display = 'none';
-              toggle.textContent = '⋯ Show All Routes';
-            }
-          },
-
-          updateRouteList() {
-            const listContainer = document.getElementById('route-list');
-            listContainer.innerHTML = '';
-
-            window.State.routes.forEach(route => {
-              const item = document.createElement('div');
-              item.className = 'route-item';
-              
-              item.innerHTML = `
-                <div class="route-color-indicator" style="background-color: ${route.color};"></div>
-                <span class="route-name">${route.name}</span>
-                <div class="route-controls">
-                  <button class="btn btn-small" style="opacity: ${route.visible ? '1' : '0.5'}; color: ${route.visible ? 'inherit' : 'hidden'}" onclick="RouteFinderApp.routes.toggleRouteVisibility(${route.id})" title="Toggle visibility">
-                    ${route.visible ? '◉' : '○'}
-                  </button>
-                  <button class="btn btn-small" onclick="RouteFinderApp.routes.switchToRoute(${route.id})" title="Edit route">✎</button>
-                  <button class="btn btn-small" onclick="RouteFinderApp.routes.deleteRoute(${route.id})" title="Delete route">✕</button>
-                </div>
-              `;
-              listContainer.appendChild(item);
-            });
-          },
-
-          updateWaypointsList() {
-            const route = window.State.getCurrentRoute();
-            if (!route) return;
-
-            const waypointsList = document.getElementById('waypoint-list');
-
-            if (route.waypoints.length === 0) {
-              waypointsList.innerHTML = '<div style="text-align: center; color: var(--color-text-secondary); padding: var(--space-4);">No waypoints added yet</div>';
-              return;
-            }
-
-            waypointsList.innerHTML = '';
-            route.waypoints.forEach((waypoint, index) => {
-              const item = document.createElement('div');
-              item.className = 'waypoint-item';
-              
-              item.innerHTML = `
-                <span style="font-weight: bold; color: var(--color-text-secondary); min-width: 20px;">${index + 1}</span>
-                <span class="waypoint-address">${waypoint.address}</span>
-                <div class="waypoint-controls">
-                  <button class="btn btn-small" onclick="RouteFinderApp.waypoints.moveWaypoint(${waypoint.id}, 'up')" ${index === 0 ? 'disabled' : ''} title="Move up">↑</button>
-                  <button class="btn btn-small" onclick="RouteFinderApp.waypoints.moveWaypoint(${waypoint.id}, 'down')" ${index === route.waypoints.length - 1 ? 'disabled' : ''} title="Move down">↓</button>
-                  <button class="btn btn-small btn-danger" onclick="RouteFinderApp.waypoints.removeWaypoint(${waypoint.id})" title="Remove">×</button>
-                </div>
-              `;
-              
-              waypointsList.appendChild(item);
-            });
-
-            RouteFinderApp.map.updateWaypoints();
-          },
-
-          toggleSection(contentId) {
-            const content = document.getElementById(contentId);
-            const header = content.previousElementSibling;
-            const chevron = header.querySelector('.chevron');
-
-            if (content.classList.contains('collapsed')) {
-              content.classList.remove('collapsed');
-              chevron.classList.add('expanded');
-            } else {
-              content.classList.add('collapsed');
-              chevron.classList.remove('expanded');
-            }
-          },
-
-          toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const toggle = document.getElementById('sidebar-toggle');
-            
-            window.State.sidebarVisible = !window.State.sidebarVisible;
-            
-            if (window.State.sidebarVisible) {
-              sidebar.classList.remove('hidden');
-              toggle.textContent = '☰';
-            } else {
-              sidebar.classList.add('hidden');
-              toggle.textContent = '→';
-            }
-          }
+          reader.readAsText(file);
+          fileInput.value = '';
         }
-      };
-    })();
+      },
 
-    // Utility function to get current route
-    window.State.getCurrentRoute = function() {
-      return this.routes.get(this.currentRouteId);
-    };
+      // Obstacle detection module
+      obstacles: {
+        toggleDetection() {
+          window.State.obstacleDetection = !window.State.obstacleDetection;
+          Utils.updateStatus(
+            window.State.obstacleDetection ? '✅ Obstacle detection enabled' : '⭕ Obstacle detection disabled',
+            window.State.obstacleDetection ? 'success' : 'warning',
+            'obstacle-status'
+          );
+        },
 
-    // Routing calculation
-    RouteFinderApp.routing = {
-      async calculateRoute() {
-        return RouteFinderApp.routes.calculateRoute();
+        clearObstacles() {
+          Utils.updateStatus('✅ Obstacles cleared', 'success', 'obstacle-status');
+        }
+      },
+
+      // Map export module (placeholder for future implementation)
+      mapExport: {
+        showExportDialog() {
+          Utils.updateStatus('📸 Map export feature coming soon!', 'info');
+        }
       }
     };
 
-    // ===== MAP EXPORT INTEGRATION =====
-    // Integrates Map Export functionality with Route Finder App
-
-    (function() {
-      'use strict';
-
-      // Wait for RouteFinderApp to be available
-      function initMapExport() {
-        if (typeof RouteFinderApp === 'undefined' || typeof MapExportManager === 'undefined') {
-          setTimeout(initMapExport, 100);
-          return;
+    // Initialize application
+    document.addEventListener('DOMContentLoaded', function() {
+      RouteFinderApp.ui.init();
+      RouteFinderApp.ui.setupCollapsibleSections();
+      
+      // Setup file input handler
+      document.getElementById('route-file-input').addEventListener('change', RouteFinderApp.fileManager.importRoutes);
+      
+      // Setup keyboard shortcuts
+      document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey || e.metaKey) {
+          switch(e.key) {
+            case 'e':
+              e.preventDefault();
+              if (RouteFinderApp.mapExport.isAvailable()) {
+                RouteFinderApp.mapExport.showExportDialog();
+              }
+              break;
+          }
         }
+      });
 
-        // Initialize the Map Export Manager
-        MapExportManager.init();
-
-        // Add Map Export to the RouteFinderApp namespace
-        RouteFinderApp.mapExport = {
-          showExportDialog: MapExportManager.showExportDialog.bind(MapExportManager),
-          hideExportDialog: MapExportManager.hideExportDialog.bind(MapExportManager),
-          exportMap: MapExportManager.exportMap.bind(MapExportManager),
-          
-          // Additional helper methods
-          isAvailable() {
-            return typeof MapExportManager !== 'undefined' && 
-                   window.State && 
-                   window.State.map;
-          },
-          
-          getMapInstance() {
-            return window.State?.map;
-          }
-        };
-
-        // Add event listener for keyboard shortcut (Ctrl+E for Export)
-        document.addEventListener('keydown', function(e) {
-          if (e.ctrlKey && e.key === 'e' && !e.shiftKey) {
-            e.preventDefault();
-            if (RouteFinderApp.mapExport.isAvailable()) {
-              RouteFinderApp.mapExport.showExportDialog();
-            }
-          }
-        });
-
-        console.log('Map Export functionality integrated successfully');
-      }
-
-      // Start initialization
-      initMapExport();
-    })();
+      console.log('Route Finder App initialized successfully');
+    });
 
     // Initialize when page loads
     window.addEventListener('load', function() {
@@ -2362,25 +1491,4 @@
     });
   </script>
 </body>
-</html>Route Name</label>
-            <input type="text" class="form-input" id="route-name-input" placeholder="Enter route name..." onchange="RouteFinderApp.routes.updateRouteName()">
-          </div>
-
-          <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label">Color</label>
-              <input type="color" class="form-input" id="route-color-input" onchange="RouteFinderApp.routes.updateRouteStyle()" value="#3b82f6">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Width</label>
-              <select class="form-select" id="route-width-input" onchange="RouteFinderApp.routes.updateRouteStyle()">
-                <option value="2">Thin (2px)</option>
-                <option value="4" selected>Medium (4px)</option>
-                <option value="6">Thick (6px)</option>
-                <option value="8">Extra Thick (8px)</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">
+</html>
