@@ -56,7 +56,16 @@
   <label><input type="checkbox" id="includeBleed" checked> Include bleed</label>
   <label>Bleed amount (inches): <input type="number" id="bleedAmount" value="0.25" step="0.01" min="0" /></label>
 
-  <button onclick="exportMapImage()">Export Map as PNG</button>
+  <label>Format:
+    <select id="format">
+      <option value="png">PNG</option>
+      <option value="jpeg">JPG</option>
+    </select>
+  </label>
+
+  <label>File name: <input type="text" id="filename" value="exported_map" /></label>
+
+  <button onclick="exportMapImage()">Export Map</button>
 </div>
 
 <script>
@@ -99,6 +108,11 @@ function exportMapImage() {
   const dpi = parseInt(document.getElementById("dpi").value);
   const includeBleed = document.getElementById("includeBleed").checked;
   const bleedAmount = parseFloat(document.getElementById("bleedAmount").value);
+  const format = document.getElementById("format").value;
+  const filename = document.getElementById("filename").value || "exported_map";
+  const mimeType = format === "jpeg" ? "image/jpeg" : "image/png";
+  const fileExtension = format === "jpeg" ? "jpg" : "png";
+
   const [width, height] = getExportDimensions(size, dpi, includeBleed, bleedAmount);
 
   const exportContainer = document.getElementById("export-map");
@@ -116,9 +130,9 @@ function exportMapImage() {
 
   exportMap.once("idle", () => {
     try {
-      const dataURL = exportMap.getCanvas().toDataURL("image/png");
+      const dataURL = exportMap.getCanvas().toDataURL(mimeType);
       const link = document.createElement("a");
-      link.download = "exported_map.png";
+      link.download = `${filename}.${fileExtension}`;
       link.href = dataURL;
       link.click();
       exportMap.remove();
