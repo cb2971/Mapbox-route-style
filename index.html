@@ -714,156 +714,68 @@
     };
 
     // Main application object
-    window.RouteFinderApp = {
-      // Initialization module
-      init: {
-        initializeApp() {
-          const token = 'pk.eyJ1IjoiY2IyOSIsImEiOiJja3E4OHo3anowZGx1Mm9tcXF3ZmhyaWtwIn0.IQ5rY622AU9GOETrqa9NBw';
+window.RouteFinderApp = {
+  // Initialization module
+  init: {
+    initializeApp() {
+      const token = 'pk.eyJ1IjoiY2IyOSIsImEiOiJja3E4OHo3anowZGx1Mm9tcXF3ZmhyaWtwIn0.IQ5rY622AU9GOETrqa9NBw';
+      // Skip the empty token check since we're using a hardcoded token
+      window.State.mapboxToken = token;
+      mapboxgl.accessToken = token;
+      Utils.updateStatus('🔄 Initializing map...', 'info', 'init-status');
+      try {
+        this.createMap();
+      } catch (error) {
+        console.error('Map initialization error:', error);
+        Utils.updateStatus(`❌ Failed to initialize map: ${error.message}`, 'error', 'init-status');
+      }
+    },  // <- ADD COMMA HERE
 
-// Skip the empty token check since we're using a hardcoded token
+    createMap() {
+      console.log('=== DEBUG: createMap() called ===');
+      
+      // Clear any existing map first
+      if (window.State.map) {
+        console.log('=== DEBUG: Removing existing map ===');
+        window.State.map.remove();
+        window.State.map = null;
+      }
+      
+      // Clear the map container
+      const mapContainer = document.getElementById('map');
+      mapContainer.innerHTML = '';
+      
+      console.log('=== DEBUG: Creating new map ===');
+      window.State.map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [-74.0059, 40.7128], // New York City
+        zoom: 10
+      });
 
-          window.State.mapboxToken = token;
-          mapboxgl.accessToken = token;
+      window.State.map.on('load', () => {
+        console.log('=== DEBUG: Map loaded successfully ===');
+        window.State.isInitialized = true;
+        EventSystem.emit('mapLoaded');
+        this.setupMapSources();
+        Utils.updateStatus('✅ Map initialized successfully!', 'success', 'init-status');
+        RouteFinderApp.ui.showApplicationUI();
+      });
 
-          Utils.updateStatus('🔄 Initializing map...', 'info', 'init-status');
+      window.State.map.on('error', (error) => {
+        console.error('=== DEBUG: Mapbox error:', error);
+        Utils.updateStatus('❌ Map loading failed. Please check your token.', 'error', 'init-status');
+      });
+    },  // <- ADD COMMA HERE
 
-          try {
-            this.createMap();
-          } catch (error) {
-            console.error('Map initialization error:', error);
-            Utils.updateStatus(`❌ Failed to initialize map: ${error.message}`, 'error', 'init-status');
-          }
-        },
+    setupMapSources() {
+      // ... rest of setupMapSources function
+    }
+  },  // <- COMMA HERE to close init section
 
-        createMap() {
-  console.log('=== DEBUG: createMap() called ===');
-  
-  // Clear any existing map first
-  if (window.State.map) {
-    console.log('=== DEBUG: Removing existing map ===');
-    window.State.map.remove();
-    window.State.map = null;
-  }
-  
-  // Clear the map container
-  const mapContainer = document.getElementById('map');
-  mapContainer.innerHTML = '';
-  
-  console.log('=== DEBUG: Creating new map ===');
-  window.State.map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/mapbox/streets-v12',
-    center: [-74.0059, 40.7128], // New York City
-    zoom: 10
-  });
-
-  window.State.map.on('load', () => {
-    console.log('=== DEBUG: Map loaded successfully ===');
-    window.State.isInitialized = true;
-    EventSystem.emit('mapLoaded');
-    this.setupMapSources();
-    Utils.updateStatus('✅ Map initialized successfully!', 'success', 'init-status');
-    RouteFinderApp.ui.showApplicationUI();
-  });
-
-  window.State.map.on('error', (error) => {
-    console.error('=== DEBUG: Mapbox error:', error);
-    Utils.updateStatus('❌ Map loading failed. Please check your token.', 'error', 'init-status');
-  });
-}  // <- Make sure there's NO comma here, just a closing brace
-  
-  // Clear the map container
-  const mapContainer = document.getElementById('map');
-  mapContainer.innerHTML = '';
-  
-  console.log('=== DEBUG: Creating new map ===');
-  window.State.map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/mapbox/streets-v12',
-    center: [-74.0059, 40.7128], // New York City
-    zoom: 10
-  });
-
-  window.State.map.on('load', () => {
-    console.log('=== DEBUG: Map loaded successfully ===');
-    window.State.isInitialized = true;
-    EventSystem.emit('mapLoaded');
-    this.setupMapSources();
-    Utils.updateStatus('✅ Map initialized successfully!', 'success', 'init-status');
-    RouteFinderApp.ui.showApplicationUI();
-  });
-
-  window.State.map.on('error', (error) => {
-    console.error('=== DEBUG: Mapbox error:', error);
-    Utils.updateStatus('❌ Map loading failed. Please check your token.', 'error', 'init-status');
-  });
-},
-
-          window.State.map.on('load', () => {
-            window.State.isInitialized = true;
-            EventSystem.emit('mapLoaded');
-            this.setupMapSources();
-            Utils.updateStatus('✅ Map initialized successfully!', 'success', 'init-status');
-            RouteFinderApp.ui.showApplicationUI();
-          });
-
-          window.State.map.on('error', (error) => {
-            console.error('Mapbox error:', error);
-            Utils.updateStatus('❌ Map loading failed. Please check your token.', 'error', 'init-status');
-          });
-        },
-
-        setupMapSources() {
-          // Add sources for routes and waypoints
-          window.State.map.addSource('routes-source', {
-            type: 'geojson',
-            data: {
-              type: 'FeatureCollection',
-              features: []
-            }
-          });
-
-          window.State.map.addSource('waypoints-source', {
-            type: 'geojson',
-            data: {
-              type: 'FeatureCollection',
-              features: []
-            }
-          });
-
-          // Add layers for routes
-          window.State.map.addLayer({
-            id: 'routes-layer',
-            type: 'line',
-            source: 'routes-source',
-            layout: {
-              'line-join': 'round',
-              'line-cap': 'round'
-            },
-            paint: {
-              'line-color': ['get', 'color'],
-              'line-width': ['get', 'width'],
-              'line-opacity': 0.8
-            }
-          });
-
-          // Add layers for waypoints
-          window.State.map.addLayer({
-            id: 'waypoints-layer',
-            type: 'circle',
-            source: 'waypoints-source',
-            paint: {
-              'circle-radius': 8,
-              'circle-color': ['get', 'color'],
-              'circle-stroke-color': '#ffffff',
-              'circle-stroke-width': 2
-            }
-          });
-        }
-      },
-
-      // UI Management module
-      ui: {
+  // UI Management module
+  ui: {
+    // ... rest of your code
         init() {
           EventSystem.on('routeCreated', () => this.updateRouteTabs());
           EventSystem.on('routeDeleted', () => this.updateRouteTabs());
