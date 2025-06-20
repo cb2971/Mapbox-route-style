@@ -712,7 +712,7 @@
       // Initialization module
       init: {
         initializeApp() {
-          const token = document.getElementById('mapbox-token').value.trim();
+          const token = 'pk.eyJ1IjoiY2IyOSIsImEiOiJja3E4OHo3anowZGx1Mm9tcXF3ZmhyaWtwIn0.IQ5rY622AU9GOETrqa9NBw'; token = document.getElementById('mapbox-token').value.trim();
           
           if (!token) {
             Utils.updateStatus('❌ Please enter a valid Mapbox access token', 'error', 'init-status');
