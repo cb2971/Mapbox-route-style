@@ -1483,9 +1483,11 @@
     });
 
     // Initialize when page loads
-    window.addEventListener('load', function() {
-      console.log('Page loaded, ready for initialization');
-    });
+window.addEventListener('load', function() {
+  console.log('Page loaded, ready for initialization');
+  // Auto-initialize with hardcoded token
+  RouteFinderApp.init.initializeApp();
+});
   </script>
 </body>
 </html>
