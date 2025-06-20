@@ -438,21 +438,7 @@
     <div class="form-group">
       <label class="form-label">Mapbox Access Token</label>
       <input type="password" class="form-input" id="mapbox-token" placeholder="Enter your Mapbox token...">
-    </div>
-    
-    <button class="btn btn-primary btn-full" onclick="console.log('Button clicked!'); RouteFinderApp.init.initializeApp();">
-  🚀 Initialize Map
-</button>
-  </div>
-</div>
-          
-          <button class="btn btn-primary btn-full" onclick="RouteFinderApp.init.initializeApp()">
-            🚀 Initialize Map
-          </button>
-        </div>
-      </div>
-
-      <!-- Route Management -->
+          <!-- Route Management -->
       <div class="card" id="route-management" style="display: none;">
         <div class="card-header" onclick="RouteFinderApp.ui.toggleSection('route-management-content')">
           <h3>
@@ -623,6 +609,20 @@
           <div id="obstacles-list"></div>
         </div>
       </div>
+    </div>
+    
+    <button class="btn btn-primary btn-full" onclick="console.log('Button clicked!'); RouteFinderApp.init.initializeApp();">
+  🚀 Initialize Map
+</button>
+  </div>
+</div>
+          
+          <button class="btn btn-primary btn-full" onclick="RouteFinderApp.init.initializeApp()">
+            🚀 Initialize Map
+          </button>
+        </div>
+      </div>
+  
 
       <!-- Export Map Button (will be moved to separate section in later steps) -->
       <button class="btn btn-primary btn-full" onclick="RouteFinderApp.mapExport.showExportDialog()" title="Export map as high-resolution image" style="margin-top: var(--space-4);">
