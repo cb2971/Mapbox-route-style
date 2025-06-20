@@ -736,12 +736,41 @@
         },
 
         createMap() {
-          window.State.map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/mapbox/streets-v12',
-            center: [-74.0059, 40.7128], // New York City
-            zoom: 10
-          });
+  console.log('=== DEBUG: createMap() called ===');
+  
+  // Clear any existing map first
+  if (window.State.map) {
+    console.log('=== DEBUG: Removing existing map ===');
+    window.State.map.remove();
+    window.State.map = null;
+  }
+  
+  // Clear the map container
+  const mapContainer = document.getElementById('map');
+  mapContainer.innerHTML = '';
+  
+  console.log('=== DEBUG: Creating new map ===');
+  window.State.map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/streets-v12',
+    center: [-74.0059, 40.7128], // New York City
+    zoom: 10
+  });
+
+  window.State.map.on('load', () => {
+    console.log('=== DEBUG: Map loaded successfully ===');
+    window.State.isInitialized = true;
+    EventSystem.emit('mapLoaded');
+    this.setupMapSources();
+    Utils.updateStatus('✅ Map initialized successfully!', 'success', 'init-status');
+    RouteFinderApp.ui.showApplicationUI();
+  });
+
+  window.State.map.on('error', (error) => {
+    console.error('=== DEBUG: Mapbox error:', error);
+    Utils.updateStatus('❌ Map loading failed. Please check your token.', 'error', 'init-status');
+  });
+},
 
           window.State.map.on('load', () => {
             window.State.isInitialized = true;
