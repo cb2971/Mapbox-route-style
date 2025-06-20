@@ -33,16 +33,55 @@
   </select>
 </label>
 
-<!-- 1. Hidden export map container -->
+<!-- Hidden export map container -->
 <div id="export-map" style="width:0; height:0; position:absolute; top:-9999px;"></div>
 
-<!-- 2. Export controls UI -->
+<!-- Export controls UI -->
 <div id="export-controls">
   <label>Print Size:
     <select id="printSize">
-      <option value="16x20">16x20"</option>
-      <option value="18x24">18x24"</option>
-      <option value="A2">A2 (42x59.4cm)</option>
+      <option value="custom">Custom</option>
+      <option value="5x7">5×7" (12.7×17.8cm)</option>
+      <option value="6x8">6×8" (15.2×20.3cm)</option>
+      <option value="8x10">8×10" (20.3×25.4cm)</option>
+      <option value="8x12">8×12" (20.3×30.5cm)</option>
+      <option value="8x20">8×20" (20.3×50.8cm)</option>
+      <option value="10x10">10×10" (25.4×25.4cm)</option>
+      <option value="10x24">10×24" (25.4×61cm)</option>
+      <option value="11x14">11×14" (27.9×35.6cm)</option>
+      <option value="11x17">11×17" (27.9×43.2cm)</option>
+      <option value="12x12">12×12" (30.5×30.5cm)</option>
+      <option value="12x16">12×16" (30.5×40.6cm)</option>
+      <option value="12x18">12×18" (30.5×45.7cm)</option>
+      <option value="14x14">14×14" (35.6×35.6cm)</option>
+      <option value="16x16">16×16" (40.6×40.6cm)</option>
+      <option value="16x20">16×20" (40.6×50.8cm)</option>
+      <option value="16x24">16×24" (40.6×61cm)</option>
+      <option value="18x18">18×18" (45.7×45.7cm)</option>
+      <option value="18x24">18×24" (45.7×61cm)</option>
+      <option value="20x20">20×20" (50.8×50.8cm)</option>
+      <option value="20x28">20×28" (50.8×71.1cm)</option>
+      <option value="24x32">24×32" (61×81.3cm)</option>
+      <option value="24x36">24×36" (61×91.4cm)</option>
+      <option value="28x28">28×28" (71.1×71.1cm)</option>
+      <option value="28x40">28×40" (71.1×101.6cm)</option>
+      <option value="30x40">30×40" (76.2×101.6cm)</option>
+      <option value="A3">A3 (29.7×42cm)</option>
+      <option value="A2">A2 (42×59.4cm)</option>
+      <option value="A1">A1 (59.4×84.1cm)</option>
+      <option value="A0">A0 (84.1×118.9cm)</option>
+    </select>
+  </label>
+
+  <span id="customSizeInputs" style="display:none">
+    <label>Width (in): <input type="number" id="customWidth" step="0.1" min="1" /></label>
+    <label>Height (in): <input type="number" id="customHeight" step="0.1" min="1" /></label>
+  </span>
+
+  <label>Orientation:
+    <select id="orientation">
+      <option value="portrait">Portrait</option>
+      <option value="landscape">Landscape</option>
     </select>
   </label>
 
@@ -71,7 +110,6 @@
 <script>
 mapboxgl.accessToken = 'pk.eyJ1IjoiY2IyOSIsImEiOiJja3E4OHo3anowZGx1Mm9tcXF3ZmhyaWtwIn0.IQ5rY622AU9GOETrqa9NBw';
 
-// Main map
 const map = new mapboxgl.Map({
   container: 'map',
   style: document.getElementById("styleSelector").value,
@@ -83,22 +121,42 @@ document.getElementById("styleSelector").addEventListener("change", function () 
   map.setStyle(this.value);
 });
 
-// Utility: Convert inches to pixels
+document.getElementById("printSize").addEventListener("change", function () {
+  const customInputs = document.getElementById("customSizeInputs");
+  customInputs.style.display = this.value === "custom" ? "inline-block" : "none";
+});
+
 function inchesToPixels(inches, dpi) {
   return Math.round(inches * dpi);
 }
 
-function getExportDimensions(size, dpi, includeBleed, bleedAmount) {
+function getExportDimensions(size, dpi, includeBleed, bleedAmount, orientation) {
   const sizes = {
-    "16x20": [16, 20],
-    "18x24": [18, 24],
-    "A2": [16.54, 23.39] // A2 in inches
+    "5x7": [5, 7], "6x8": [6, 8], "8x10": [8, 10], "8x12": [8, 12], "8x20": [8, 20],
+    "10x10": [10, 10], "10x24": [10, 24], "11x14": [11, 14], "11x17": [11, 17],
+    "12x12": [12, 12], "12x16": [12, 16], "12x18": [12, 18], "14x14": [14, 14],
+    "16x16": [16, 16], "16x20": [16, 20], "16x24": [16, 24], "18x18": [18, 18],
+    "18x24": [18, 24], "20x20": [20, 20], "20x28": [20, 28], "24x32": [24, 32],
+    "24x36": [24, 36], "28x28": [28, 28], "28x40": [28, 40], "30x40": [30, 40],
+    "A3": [11.7, 16.5], "A2": [16.5, 23.4], "A1": [23.4, 33.1], "A0": [33.1, 46.8]
   };
-  let [w, h] = sizes[size] || [16, 20];
+
+  let w, h;
+  const selected = document.getElementById("printSize").value;
+
+  if (selected === "custom") {
+    w = parseFloat(document.getElementById("customWidth").value);
+    h = parseFloat(document.getElementById("customHeight").value);
+  } else {
+    [w, h] = sizes[selected] || [16, 20];
+  }
+
+  if (orientation === "landscape") [w, h] = [h, w];
   if (includeBleed && bleedAmount > 0) {
     w += bleedAmount * 2;
     h += bleedAmount * 2;
   }
+
   return [inchesToPixels(w, dpi), inchesToPixels(h, dpi)];
 }
 
@@ -110,10 +168,12 @@ function exportMapImage() {
   const bleedAmount = parseFloat(document.getElementById("bleedAmount").value);
   const format = document.getElementById("format").value;
   const filename = document.getElementById("filename").value || "exported_map";
+  const orientation = document.getElementById("orientation").value;
+
   const mimeType = format === "jpeg" ? "image/jpeg" : "image/png";
   const fileExtension = format === "jpeg" ? "jpg" : "png";
 
-  const [width, height] = getExportDimensions(size, dpi, includeBleed, bleedAmount);
+  const [width, height] = getExportDimensions(size, dpi, includeBleed, bleedAmount, orientation);
 
   const exportContainer = document.getElementById("export-map");
   exportContainer.style.width = width + "px";
