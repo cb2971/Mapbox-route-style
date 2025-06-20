@@ -53,7 +53,8 @@
     </select>
   </label>
 
-  <label><input type="checkbox" id="includeBleed" checked> Include bleed (0.25")</label>
+  <label><input type="checkbox" id="includeBleed" checked> Include bleed</label>
+  <label>Bleed amount (inches): <input type="number" id="bleedAmount" value="0.25" step="0.01" min="0" /></label>
 
   <button onclick="exportMapImage()">Export Map as PNG</button>
 </div>
@@ -78,16 +79,16 @@ function inchesToPixels(inches, dpi) {
   return Math.round(inches * dpi);
 }
 
-function getExportDimensions(size, dpi, includeBleed) {
+function getExportDimensions(size, dpi, includeBleed, bleedAmount) {
   const sizes = {
     "16x20": [16, 20],
     "18x24": [18, 24],
     "A2": [16.54, 23.39] // A2 in inches
   };
   let [w, h] = sizes[size] || [16, 20];
-  if (includeBleed) {
-    w += 0.5;
-    h += 0.5;
+  if (includeBleed && bleedAmount > 0) {
+    w += bleedAmount * 2;
+    h += bleedAmount * 2;
   }
   return [inchesToPixels(w, dpi), inchesToPixels(h, dpi)];
 }
@@ -97,7 +98,8 @@ function exportMapImage() {
   const size = document.getElementById("printSize").value;
   const dpi = parseInt(document.getElementById("dpi").value);
   const includeBleed = document.getElementById("includeBleed").checked;
-  const [width, height] = getExportDimensions(size, dpi, includeBleed);
+  const bleedAmount = parseFloat(document.getElementById("bleedAmount").value);
+  const [width, height] = getExportDimensions(size, dpi, includeBleed, bleedAmount);
 
   const exportContainer = document.getElementById("export-map");
   exportContainer.style.width = width + "px";
