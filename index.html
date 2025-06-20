@@ -428,17 +428,23 @@
   <div class="app-container">
     <div class="sidebar">
       <!-- Initialization Controls -->
-      <div id="init-controls" class="card">
-        <div class="card-header">
-          <h3>🗺️ Route Finder</h3>
-        </div>
-        <div class="card-content">
-          <div id="init-status" class="status-message"></div>
-          
-          <div class="form-group">
-            <label class="form-label">Mapbox Access Token</label>
-            <input type="password" class="form-input" id="mapbox-token" placeholder="Enter your Mapbox token...">
-          </div>
+<div id="init-controls" class="card" style="display: none;">
+  <div class="card-header">
+    <h3>🗺️ Route Finder</h3>
+  </div>
+  <div class="card-content">
+    <div id="init-status" class="status-message"></div>
+    
+    <div class="form-group">
+      <label class="form-label">Mapbox Access Token</label>
+      <input type="password" class="form-input" id="mapbox-token" placeholder="Enter your Mapbox token...">
+    </div>
+    
+    <button class="btn btn-primary btn-full" onclick="RouteFinderApp.init.initializeApp()">
+      🚀 Initialize Map
+    </button>
+  </div>
+</div>
           
           <button class="btn btn-primary btn-full" onclick="RouteFinderApp.init.initializeApp()">
             🚀 Initialize Map
