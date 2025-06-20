@@ -1,52 +1,44 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Map Export Tool</title>
-  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <meta charset="UTF-8">
+  <title>Travel Route Map Export</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.13.0/mapbox-gl.js"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.13.0/mapbox-gl.css" rel="stylesheet" />
   <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.1/mapbox-gl-directions.js"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.1/mapbox-gl-directions.css" rel="stylesheet" />
   <style>
-    body { margin: 0; padding: 0; font-family: sans-serif; }
+    body { margin: 0; font-family: sans-serif; }
     #map { position: absolute; top: 0; bottom: 0; width: 100%; }
     #nav {
       position: absolute;
       top: 0;
       left: 0;
-      width: 300px;
-      background: #fff;
+      width: 320px;
+      background: #f9f9f9;
       padding: 16px;
       z-index: 10;
-      overflow-y: auto;
       box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-      max-height: 100vh;
+      height: 100vh;
+      overflow-y: auto;
     }
-    .section {
-      margin-bottom: 20px;
+    .section { margin-bottom: 24px; }
+    h3 { margin-top: 0; font-size: 16px; }
+    label { display: block; margin-top: 12px; }
+    select, input[type="text"], input[type="number"] {
+      width: 100%; padding: 6px; margin-top: 4px;
     }
-    .section h3 {
-      margin-top: 0;
-      font-size: 1.1em;
-      border-bottom: 1px solid #ccc;
-      padding-bottom: 4px;
-    }
-    label { display: block; margin-bottom: 0.5em; }
-    input, select { width: 100%; margin-top: 0.25em; padding: 0.25em; }
-    button { margin-top: 1em; padding: 0.5em; width: 100%; }
-    #export-controls { display: none; border-top: 1px solid #ccc; padding-top: 1em; }
-    #export-map { width: 0; height: 0; position: absolute; top: -9999px; }
+    button { margin-top: 12px; padding: 8px; width: 100%; cursor: pointer; }
+    #export-map { position: absolute; top: -9999px; width: 0; height: 0; }
     #previewModal {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.7);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 9999; display: none;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: none; align-items: center; justify-content: center;
+      z-index: 9999;
     }
     #previewModal img {
-      max-width: 90%; max-height: 90%;
-      border: 4px solid white;
+      max-width: 90%; max-height: 90%; border: 4px solid white;
     }
   </style>
 </head>
@@ -55,38 +47,36 @@
 <div id="nav">
   <div class="section">
     <h3>Map Style</h3>
-    <label for="styleSelector">Select Map Style:
-      <select id="styleSelector">
-        <option value="mapbox://styles/mapbox/streets-v11">Streets</option>
-        <option value="mapbox://styles/mapbox/outdoors-v11">Outdoors</option>
-        <option value="mapbox://styles/mapbox/light-v10">Light</option>
-        <option value="mapbox://styles/mapbox/dark-v10">Dark</option>
-        <option value="mapbox://styles/mapbox/satellite-v9">Satellite</option>
-        <option value="mapbox://styles/mapbox/satellite-streets-v11">Satellite Streets</option>
-        <option value="mapbox://styles/cb29/ckxnmjiti0rvm14pby8w9si99">Custom Style</option>
-      </select>
-    </label>
+    <select id="styleSelector">
+      <option value="mapbox://styles/mapbox/streets-v11">Streets</option>
+      <option value="mapbox://styles/mapbox/outdoors-v11">Outdoors</option>
+      <option value="mapbox://styles/mapbox/light-v10">Light</option>
+      <option value="mapbox://styles/mapbox/dark-v10">Dark</option>
+      <option value="mapbox://styles/mapbox/satellite-v9">Satellite</option>
+      <option value="mapbox://styles/mapbox/satellite-streets-v11">Satellite Streets</option>
+      <option value="mapbox://styles/cb29/ckxnmjiti0rvm14pby8w9si99">Custom Style</option>
+    </select>
   </div>
+
   <div class="section">
-    <h3>Route Tools</h3>
-    <label><input type="checkbox" id="toggleRoute" checked> Show Travel Route</label>
-    <label><input type="checkbox" id="toggleRouteLayer" checked> Show All Routes</label>
+    <h3>Route Management</h3>
     <button onclick="clearRoutes()">Clear All Routes</button>
   </div>
+
   <div class="section">
-    <h3 style="cursor:pointer;" onclick="toggleExportControls()">Export Map ▼</h3>
-    <div id="export-controls">
+    <h3 onclick="toggleExportPanel()" style="cursor:pointer;">Export Map ▼</h3>
+    <div id="exportControls" style="display:none;">
       <label>Print Size:
         <select id="printSize">
-          <option value="16x20">16×20" (40.6×50.8cm)</option>
-          <option value="18x24">18×24" (45.7×61cm)</option>
+          <option value="16x20">16×20"</option>
+          <option value="18x24">18×24"</option>
           <option value="A2">A2 (42×59.4cm)</option>
-          <option value="custom">Custom Size</option>
+          <option value="custom">Custom</option>
         </select>
       </label>
       <div id="customSizeInputs" style="display:none">
-        <label>Width (in): <input type="number" id="customWidth" value="16" /></label>
-        <label>Height (in): <input type="number" id="customHeight" value="20" /></label>
+        <label>Width (in): <input type="number" id="customWidth" value="16"></label>
+        <label>Height (in): <input type="number" id="customHeight" value="20"></label>
       </div>
       <label>DPI:
         <select id="dpi">
@@ -101,8 +91,8 @@
         </select>
       </label>
       <label><input type="checkbox" id="includeBleed" checked> Include bleed</label>
-      <label>Bleed amount (in): <input type="number" id="bleedMargin" step="0.01" value="0.25" /></label>
-      <label>File name: <input type="text" id="fileName" value="exported_map" /></label>
+      <label>Bleed (in): <input type="number" id="bleedMargin" step="0.01" value="0.25"></label>
+      <label>File name: <input type="text" id="fileName" value="exported_map"></label>
       <label>Format:
         <select id="fileFormat">
           <option value="png">PNG</option>
@@ -128,28 +118,21 @@ const directions = new MapboxDirections({
   accessToken: mapboxgl.accessToken,
   unit: 'imperial',
   profile: 'mapbox/driving',
-  controls: {
-    inputs: true,
-    instructions: false
-  }
+  controls: { instructions: false }
 });
 map.addControl(directions, 'top-left');
 
-document.getElementById("toggleRoute").addEventListener("change", e => {
-  directions.container.style.display = e.target.checked ? "block" : "none";
-});
-
-document.getElementById("styleSelector").addEventListener("change", e => {
+document.getElementById('styleSelector').addEventListener('change', (e) => {
   map.setStyle(e.target.value);
 });
 
-document.getElementById("printSize").addEventListener("change", function() {
+document.getElementById('printSize').addEventListener('change', function() {
   document.getElementById("customSizeInputs").style.display = this.value === "custom" ? "block" : "none";
 });
 
-function toggleExportControls() {
-  const panel = document.getElementById("export-controls");
-  panel.style.display = panel.style.display === "none" ? "block" : "none";
+function toggleExportPanel() {
+  const panel = document.getElementById('exportControls');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
 }
 
 function inchesToPixels(inches, dpi) {
@@ -169,12 +152,6 @@ function getExportDimensions(size, dpi, includeBleed, orientation) {
     w += bleed * 2; h += bleed * 2;
   }
   return [inchesToPixels(w, dpi), inchesToPixels(h, dpi)];
-}
-
-function clearRoutes() {
-  directions.setOrigin(null);
-  directions.setDestination(null);
-  directions.removeRoutes();
 }
 
 function exportMapImage() {
@@ -216,6 +193,12 @@ function exportMapImage() {
       exportMap.remove();
     }
   });
+}
+
+function clearRoutes() {
+  directions.setOrigin(null);
+  directions.setDestination(null);
+  directions.removeRoutes();
 }
 </script>
 </body>
