@@ -150,7 +150,7 @@
     }
 
     /* When sidebar is hidden, move toggle to left corner */
-    .toggle-button.sidebar-hidden {
+    .sidebar.hidden ~ .toggle-button {
       left: var(--space-4);
     }
 
@@ -570,7 +570,6 @@
     // ===== TOGGLE SIDEBAR =====
     function toggleSidebar() {
       const sidebar = document.getElementById('sidebar');
-      const toggleButton = document.getElementById('toggle-button');
       const toggleIcon = document.getElementById('toggle-icon');
       
       State.ui.sidebarVisible = !State.ui.sidebarVisible;
@@ -578,12 +577,10 @@
       if (State.ui.sidebarVisible) {
         // Show sidebar
         sidebar.classList.remove('hidden');
-        toggleButton.classList.remove('sidebar-hidden');
         toggleIcon.setAttribute('data-feather', 'x');
       } else {
         // Hide sidebar
         sidebar.classList.add('hidden');
-        toggleButton.classList.add('sidebar-hidden');
         toggleIcon.setAttribute('data-feather', 'menu');
       }
       
