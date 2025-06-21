@@ -4,6 +4,12 @@
       left: var(--space-4);
       display: none;
       z-index: 500;
+    }    .sidebar-toggle-screen {
+      position: fixed;
+      top: var(--space-4);
+      left: var(--space-4);
+      display: none;
+      z-index: 500;
     }<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -253,7 +259,7 @@
       display: flex;
       flex-direction: column;
       gap: var(--space-6);
-      height: calc(100vh - var(--topbar-height));
+      max-height: calc(100vh - 120px);
     }
 
     /* ===== STATUS MESSAGE ===== */
@@ -879,11 +885,6 @@
       <div class="map-container">
         <div id="map"></div>
         
-        <!-- Screen Toggle Button (shown when sidebar hidden) -->
-        <button class="sidebar-toggle sidebar-toggle-screen" onclick="AppManager.ui.toggleSidebar()" id="sidebar-toggle-screen" style="display: none;">
-          <i data-feather="menu" id="sidebar-toggle-screen-icon"></i>
-        </button>
-        
         <!-- Map Crosshair -->
         <div id="map-crosshair" class="map-crosshair" style="display: none;">
           <div class="crosshair-center"></div>
@@ -1449,22 +1450,21 @@
         toggleSidebar() {
           const sidebar = document.getElementById('sidebar');
           const toggleIcon = document.getElementById('sidebar-toggle-icon');
-          const screenToggle = document.getElementById('sidebar-toggle-screen');
-          const screenIcon = document.getElementById('sidebar-toggle-screen-icon');
+          const toggleButton = document.getElementById('sidebar-toggle');
           
           State.ui.sidebarVisible = !State.ui.sidebarVisible;
           
           if (State.ui.sidebarVisible) {
             sidebar.classList.remove('hidden');
-            screenToggle.style.display = 'none';
+            toggleButton.classList.remove('fixed-toggle');
             if (toggleIcon) {
               toggleIcon.setAttribute('data-feather', 'x');
             }
           } else {
             sidebar.classList.add('hidden');
-            screenToggle.style.display = 'flex';
-            if (screenIcon) {
-              screenIcon.setAttribute('data-feather', 'menu');
+            toggleButton.classList.add('fixed-toggle');
+            if (toggleIcon) {
+              toggleIcon.setAttribute('data-feather', 'menu');
             }
           }
           
