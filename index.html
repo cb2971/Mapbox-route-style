@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Route Finder</title>
+  <title>Route Finder - Step 1</title>
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
   <style>
@@ -229,6 +229,7 @@
       font-size: var(--font-size-sm);
       transition: var(--transition-base);
       background: var(--color-surface-primary);
+      color: var(--color-text-primary);
     }
     
     .form-input:focus,
@@ -309,6 +310,12 @@
       border: 1px solid rgba(245, 158, 11, 0.2);
     }
     
+    .status-message.loading {
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--color-primary);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+    
     /* ===== WAYPOINTS ===== */
     .waypoint-item {
       display: flex;
@@ -375,76 +382,33 @@
       transform: rotate(90deg);
     }
     
-    /* ===== MAP EXPORT DIALOG STYLES ===== */
-    .map-export-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
+    /* ===== ROUTE STYLING SECTION ===== */
+    .route-styling-section {
+      margin-top: var(--space-4);
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--color-border-light);
+    }
+    
+    .route-styling-section h4 {
+      margin-bottom: var(--space-3);
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-semibold);
       display: flex;
       align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      backdrop-filter: blur(4px);
-    }
-    
-    .map-export-dialog {
-      background: var(--color-surface-primary);
-      border-radius: var(--border-radius-lg);
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-      max-width: 500px;
-      width: 90vw;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-    
-    .map-export-header {
-      padding: var(--space-6) var(--space-6) var(--space-4);
-      border-bottom: 1px solid var(--color-border-light);
-    }
-    
-    .map-export-header h2 {
-      font-size: var(--font-size-lg);
-      font-weight: var(--font-weight-semibold);
-      color: var(--color-text-primary);
-      margin: 0;
-    }
-    
-    .map-export-content {
-      padding: var(--space-6);
-    }
-    
-    .map-export-footer {
-      padding: var(--space-4) var(--space-6) var(--space-6);
-      display: flex;
-      gap: var(--space-3);
-      justify-content: flex-end;
+      gap: var(--space-2);
     }
   </style>
 </head>
 <body>
   <div class="app-container">
     <div class="sidebar">
-      <!-- Initialization Controls -->
-<div id="init-controls" class="card" style="display: none;">
-  <div class="card-header">
-    <h3>🗺️ Route Finder</h3>
-  </div>
-  <div class="card-content">
-    <div id="init-status" class="status-message"></div>
-    
-    <div class="form-group">
-      <label class="form-label">Mapbox Access Token</label>
-      <input type="password" class="form-input" id="mapbox-token" placeholder="Enter your Mapbox token...">
-          <!-- Route Management -->
-      <div class="card" id="route-management" style="display: none;">
+      <!-- Route Management -->
+      <div class="card" id="route-management">
         <div class="card-header" onclick="RouteFinderApp.ui.toggleSection('route-management-content')">
           <h3>
             <span>🛣️</span> Route Management
           </h3>
-          <span class="chevron">▷</span>
+          <span class="chevron expanded">▷</span>
         </div>
         <div class="card-content collapsible" id="route-management-content">
           <div class="route-tabs" id="route-tabs">
@@ -455,11 +419,9 @@
             <span>+</span> New Route
           </button>
           
-          <!-- STEP 1 FIX: Moved route styling controls back to Route Management -->
-          <div id="route-styling-controls" style="margin-top: var(--space-4); display: none;">
-            <h4 style="margin-bottom: var(--space-3); font-size: var(--font-size-base); font-weight: var(--font-weight-semibold);">
-              🎨 Route Styling
-            </h4>
+          <!-- STEP 1 FIX: Route styling controls consolidated here -->
+          <div class="route-styling-section" id="route-styling-controls" style="display: none;">
+            <h4>🎨 Route Styling</h4>
             
             <!-- Route Name -->
             <div class="form-group">
@@ -505,7 +467,7 @@
       </div>
 
       <!-- Current Route Controls -->
-      <div class="card" id="current-route-panel" style="display: none;">
+      <div class="card" id="current-route-panel">
         <div class="card-header" onclick="RouteFinderApp.ui.toggleSection('current-route-content')">
           <h3>
             <span>📍</span> Current Route
@@ -529,13 +491,13 @@
             <label class="form-label">Add Waypoint</label>
             <div class="button-group">
               <input type="text" class="form-input" id="address-input" placeholder="Enter address or place name..." style="flex: 2;">
-              <button class="btn btn-primary" onclick="RouteFinderApp.routes.addWaypoint()" style="flex: 2;">
-                → Find Route
-              </button>
-              <button class="btn btn-secondary" onclick="RouteFinderApp.routes.clearCurrentRoute()" style="flex: 1;">
-                ✕ Clear
+              <button class="btn btn-primary" onclick="RouteFinderApp.routes.addWaypoint()" style="flex: 1;">
+                → Add
               </button>
             </div>
+            <button class="btn btn-secondary btn-full" onclick="RouteFinderApp.routes.clearCurrentRoute()" style="margin-top: var(--space-2);">
+              ✕ Clear Route
+            </button>
           </div>
 
           <!-- Waypoints List -->
@@ -549,7 +511,7 @@
       </div>
 
       <!-- Map Controls -->
-      <div class="card" id="map-controls" style="display: none;">
+      <div class="card" id="map-controls">
         <div class="card-header" onclick="RouteFinderApp.ui.toggleSection('map-controls-content')">
           <h3>
             <span>🗺️</span> Map Controls
@@ -585,7 +547,7 @@
       </div>
 
       <!-- Obstacle Detection -->
-      <div class="card" id="obstacle-controls" style="display: none;">
+      <div class="card" id="obstacle-controls">
         <div class="card-header" onclick="RouteFinderApp.ui.toggleSection('obstacle-controls-content')">
           <h3>
             <span>⚠️</span> Obstacle Detection
@@ -609,20 +571,6 @@
           <div id="obstacles-list"></div>
         </div>
       </div>
-    </div>
-    
-    <button class="btn btn-primary btn-full" onclick="console.log('Button clicked!'); RouteFinderApp.init.initializeApp();">
-  🚀 Initialize Map
-</button>
-  </div>
-</div>
-          
-          <button class="btn btn-primary btn-full" onclick="RouteFinderApp.init.initializeApp()">
-            🚀 Initialize Map
-          </button>
-        </div>
-      </div>
-  
 
       <!-- Export Map Button (will be moved to separate section in later steps) -->
       <button class="btn btn-primary btn-full" onclick="RouteFinderApp.mapExport.showExportDialog()" title="Export map as high-resolution image" style="margin-top: var(--space-4);">
@@ -639,10 +587,13 @@
   <input type="file" id="route-file-input" accept=".json" style="display: none;">
 
   <script>
+    // Hardcoded Mapbox token - replace with your actual token
+    const MAPBOX_TOKEN = 'pk.eyJ1IjoiY2IyOSIsImEiOiJja3E4OHo3anowZGx1Mm9tcXF3ZmhyaWtwIn0.IQ5rY622AU9GOETrqa9NBw';
+
     // Global state management
     window.State = {
       map: null,
-      mapboxToken: null,
+      mapboxToken: MAPBOX_TOKEN,
       routes: new Map(),
       currentRouteId: null,
       isInitialized: false,
@@ -714,68 +665,105 @@
     };
 
     // Main application object
-window.RouteFinderApp = {
-  // Initialization module
-  init: {
-    initializeApp() {
-      const token = 'pk.eyJ1IjoiY2IyOSIsImEiOiJja3E4OHo3anowZGx1Mm9tcXF3ZmhyaWtwIn0.IQ5rY622AU9GOETrqa9NBw';
-      // Skip the empty token check since we're using a hardcoded token
-      window.State.mapboxToken = token;
-      mapboxgl.accessToken = token;
-      Utils.updateStatus('🔄 Initializing map...', 'info', 'init-status');
-      try {
-        this.createMap();
-      } catch (error) {
-        console.error('Map initialization error:', error);
-        Utils.updateStatus(`❌ Failed to initialize map: ${error.message}`, 'error', 'init-status');
-      }
-    },  // <- ADD COMMA HERE
+    window.RouteFinderApp = {
+      // Initialization module
+      init: {
+        initializeApp() {
+          console.log('Initializing app with hardcoded token...');
+          
+          mapboxgl.accessToken = window.State.mapboxToken;
 
-    createMap() {
-      console.log('=== DEBUG: createMap() called ===');
-      
-      // Clear any existing map first
-      if (window.State.map) {
-        console.log('=== DEBUG: Removing existing map ===');
-        window.State.map.remove();
-        window.State.map = null;
-      }
-      
-      // Clear the map container
-      const mapContainer = document.getElementById('map');
-      mapContainer.innerHTML = '';
-      
-      console.log('=== DEBUG: Creating new map ===');
-      window.State.map = new mapboxgl.Map({
-        container: 'map',
-        style: 'mapbox://styles/mapbox/streets-v12',
-        center: [-74.0059, 40.7128], // New York City
-        zoom: 10
-      });
+          Utils.updateStatus('🔄 Initializing map...', 'loading');
 
-      window.State.map.on('load', () => {
-        console.log('=== DEBUG: Map loaded successfully ===');
-        window.State.isInitialized = true;
-        EventSystem.emit('mapLoaded');
-        this.setupMapSources();
-        Utils.updateStatus('✅ Map initialized successfully!', 'success', 'init-status');
-        RouteFinderApp.ui.showApplicationUI();
-      });
+          try {
+            this.createMap();
+          } catch (error) {
+            console.error('Map initialization error:', error);
+            Utils.updateStatus(`❌ Failed to initialize map: ${error.message}`, 'error');
+          }
+        },
 
-      window.State.map.on('error', (error) => {
-        console.error('=== DEBUG: Mapbox error:', error);
-        Utils.updateStatus('❌ Map loading failed. Please check your token.', 'error', 'init-status');
-      });
-    },  // <- ADD COMMA HERE
+        createMap() {
+          console.log('Creating map...');
+          
+          // Clear any existing map first
+          if (window.State.map) {
+            window.State.map.remove();
+            window.State.map = null;
+          }
+          
+          window.State.map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v12',
+            center: [-74.0059, 40.7128], // New York City
+            zoom: 10
+          });
 
-    setupMapSources() {
-      // ... rest of setupMapSources function
-    }
-  },  // <- COMMA HERE to close init section
+          window.State.map.on('load', () => {
+            console.log('Map loaded successfully');
+            window.State.isInitialized = true;
+            EventSystem.emit('mapLoaded');
+            this.setupMapSources();
+            Utils.updateStatus('✅ Map initialized successfully!', 'success');
+          });
 
-  // UI Management module
-  ui: {
-    // ... rest of your code
+          window.State.map.on('error', (error) => {
+            console.error('Mapbox error:', error);
+            Utils.updateStatus('❌ Map loading failed. Please check your token.', 'error');
+          });
+        },
+
+        setupMapSources() {
+          // Add sources for routes and waypoints
+          window.State.map.addSource('routes-source', {
+            type: 'geojson',
+            data: {
+              type: 'FeatureCollection',
+              features: []
+            }
+          });
+
+          window.State.map.addSource('waypoints-source', {
+            type: 'geojson',
+            data: {
+              type: 'FeatureCollection',
+              features: []
+            }
+          });
+
+          // Add layers for routes
+          window.State.map.addLayer({
+            id: 'routes-layer',
+            type: 'line',
+            source: 'routes-source',
+            layout: {
+              'line-join': 'round',
+              'line-cap': 'round'
+            },
+            paint: {
+              'line-color': ['get', 'color'],
+              'line-width': ['get', 'width'],
+              'line-opacity': 0.8
+            }
+          });
+
+          // Add layers for waypoints
+          window.State.map.addLayer({
+            id: 'waypoints-layer',
+            type: 'circle',
+            source: 'waypoints-source',
+            paint: {
+              'circle-radius': 8,
+              'circle-color': ['get', 'color'],
+              'circle-stroke-color': '#ffffff',
+              'circle-stroke-width': 2
+            }
+          });
+        }
+      },
+
+      // UI Management module
+      ui: {
         init() {
           EventSystem.on('routeCreated', () => this.updateRouteTabs());
           EventSystem.on('routeDeleted', () => this.updateRouteTabs());
@@ -783,21 +771,9 @@ window.RouteFinderApp = {
           EventSystem.on('routesUpdated', () => this.updateRouteTabs());
           EventSystem.on('waypointAdded', () => this.updateWaypointsList());
           EventSystem.on('waypointRemoved', () => this.updateWaypointsList());
-          EventSystem.on('mapLoaded', () => this.showApplicationUI());
           EventSystem.on('routesImported', () => {
             this.updateRouteTabs();
             this.updateRouteList();
-          });
-        },
-
-        setupCollapsibleSections() {
-          // Initialize all sections as expanded
-          const sections = ['route-management', 'current-route', 'map-controls'];
-          sections.forEach(sectionId => {
-            const content = document.getElementById(`${sectionId}-content`);
-            if (content) {
-              content.style.maxHeight = content.scrollHeight + 'px';
-            }
           });
         },
 
@@ -814,25 +790,6 @@ window.RouteFinderApp = {
           }
         },
 
-        showApplicationUI() {
-          document.getElementById('route-management').style.display = 'block';
-          document.getElementById('current-route-panel').style.display = 'block';
-          document.getElementById('map-controls').style.display = 'block';
-          document.getElementById('obstacle-controls').style.display = 'block';
-
-          // Hide init controls after delay
-          setTimeout(() => {
-            document.getElementById('init-controls').style.display = 'none';
-          }, 2000);
-        },
-
-        showInitializationError(message) {
-          const statusEl = document.getElementById('init-status');
-          statusEl.textContent = `❌ Initialization failed: ${message}`;
-          statusEl.className = 'status-message error';
-          statusEl.style.display = 'block';
-        },
-
         updateRouteTabs() {
           const tabsContainer = document.getElementById('route-tabs');
           tabsContainer.innerHTML = '';
@@ -845,7 +802,7 @@ window.RouteFinderApp = {
             tab.innerHTML = `
               <div class="route-color-indicator" style="background-color: ${route.color};"></div>
               <span>${route.name}</span>
-              ${window.State.routes.size > 1 ? `<button onclick="event.stopPropagation(); RouteFinderApp.routes.deleteRoute(${route.id})" style="margin-left: 8px; background: none; border: none; color: inherit; cursor: pointer;">×</button>` : ''}
+              ${window.State.routes.size > 1 ? `<button onclick="event.stopPropagation(); RouteFinderApp.routes.deleteRoute('${route.id}')" style="margin-left: 8px; background: none; border: none; color: inherit; cursor: pointer;">×</button>` : ''}
             `;
             
             tabsContainer.appendChild(tab);
@@ -923,13 +880,13 @@ window.RouteFinderApp = {
               <div class="route-color-indicator" style="background-color: ${route.color};"></div>
               <span class="route-name">${route.name}</span>
               <div class="route-controls">
-                <button class="btn btn-small" style="opacity: ${route.visible ? '1' : '0.5'};" onclick="RouteFinderApp.routes.toggleVisibility(${route.id})" title="${route.visible ? 'Hide' : 'Show'} route">
+                <button class="btn btn-small" style="opacity: ${route.visible ? '1' : '0.5'};" onclick="RouteFinderApp.routes.toggleVisibility('${route.id}')" title="${route.visible ? 'Hide' : 'Show'} route">
                   ${route.visible ? '👁️' : '👁️‍🗨️'}
                 </button>
-                <button class="btn btn-small" onclick="RouteFinderApp.routes.switchToRoute(${route.id})" title="Switch to route">
+                <button class="btn btn-small" onclick="RouteFinderApp.routes.switchToRoute('${route.id}')" title="Switch to route">
                   📍
                 </button>
-                <button class="btn btn-small btn-danger" onclick="RouteFinderApp.routes.deleteRoute(${route.id})" title="Delete route">
+                <button class="btn btn-small btn-danger" onclick="RouteFinderApp.routes.deleteRoute('${route.id}')" title="Delete route">
                   🗑️
                 </button>
               </div>
@@ -982,6 +939,7 @@ window.RouteFinderApp = {
           EventSystem.emit('routeCreated', newRoute);
           EventSystem.emit('routesUpdated');
           
+          Utils.updateStatus(`✅ Created route "${newRoute.name}"`, 'success');
           console.log(`Created new route ${newRoute.id}`);
         },
 
@@ -1034,6 +992,7 @@ window.RouteFinderApp = {
           if (newName) {
             route.name = newName;
             EventSystem.emit('routesUpdated');
+            Utils.updateStatus(`✅ Route renamed to "${newName}"`, 'success');
           }
         },
 
@@ -1047,6 +1006,7 @@ window.RouteFinderApp = {
           
           this.updateRoutesOnMap();
           EventSystem.emit('routesUpdated');
+          Utils.updateStatus('✅ Route style updated', 'success');
         },
 
         updateTravelMode() {
@@ -1059,6 +1019,8 @@ window.RouteFinderApp = {
           if (route.waypoints.length >= 2) {
             this.calculateRoute();
           }
+          
+          Utils.updateStatus(`✅ Travel mode changed to ${route.travelMode}`, 'success');
         },
 
         async addWaypoint() {
@@ -1074,7 +1036,7 @@ window.RouteFinderApp = {
             return;
           }
           
-          Utils.updateStatus('🔍 Searching for location...', 'info');
+          Utils.updateStatus('🔍 Searching for location...', 'loading');
           
           try {
             const coordinates = await this.geocodeAddress(address);
@@ -1106,6 +1068,10 @@ window.RouteFinderApp = {
           const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${window.State.mapboxToken}&limit=1`;
           
           const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
           const data = await response.json();
           
           if (!data.features || data.features.length === 0) {
@@ -1119,7 +1085,7 @@ window.RouteFinderApp = {
           const route = window.State.getCurrentRoute();
           if (!route || route.waypoints.length < 2) return;
           
-          Utils.updateStatus('🧭 Calculating route...', 'info');
+          Utils.updateStatus('🧭 Calculating route...', 'loading');
           
           try {
             const coordinates = route.waypoints.map(wp => wp.coordinates.join(',')).join(';');
@@ -1128,6 +1094,10 @@ window.RouteFinderApp = {
             const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coordinates}?geometries=geojson&access_token=${window.State.mapboxToken}`;
             
             const response = await fetch(url);
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const data = await response.json();
             
             if (data.routes && data.routes.length > 0) {
@@ -1155,6 +1125,7 @@ window.RouteFinderApp = {
           const route = window.State.getCurrentRoute();
           if (!route) return;
           
+          const removedWaypoint = route.waypoints[index];
           route.waypoints.splice(index, 1);
           
           EventSystem.emit('waypointRemoved', index);
@@ -1166,6 +1137,8 @@ window.RouteFinderApp = {
             route.status = 'empty';
             this.updateRoutesOnMap();
           }
+          
+          Utils.updateStatus(`✅ Removed waypoint: ${removedWaypoint.address}`, 'success');
         },
 
         clearCurrentRoute() {
@@ -1190,6 +1163,8 @@ window.RouteFinderApp = {
           route.visible = !route.visible;
           this.updateRoutesOnMap();
           EventSystem.emit('routesUpdated');
+          
+          Utils.updateStatus(`✅ Route ${route.visible ? 'shown' : 'hidden'}`, 'success');
         },
 
         updateRoutesOnMap() {
@@ -1277,6 +1252,12 @@ window.RouteFinderApp = {
         changeStyle() {
           const style = document.getElementById('map-style').value;
           window.State.map.setStyle(style);
+          
+          // Re-add sources and layers after style change
+          window.State.map.once('styledata', () => {
+            RouteFinderApp.init.setupMapSources();
+            RouteFinderApp.routes.updateRoutesOnMap();
+          });
         },
 
         setZoom() {
@@ -1357,7 +1338,7 @@ window.RouteFinderApp = {
                 throw new Error('Invalid route data structure');
               }
 
-              Utils.updateStatus('<strong>📥 Importing Routes...</strong><br>Processing route data', 'loading');
+              Utils.updateStatus('📥 Importing Routes...', 'loading');
 
               if (window.State.routes.size > 0) {
                 const confirmClear = confirm(`This will replace your current ${window.State.routes.size} route(s). Continue?`);
@@ -1433,35 +1414,33 @@ window.RouteFinderApp = {
 
     // Initialize application
     document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM loaded, initializing app...');
       RouteFinderApp.ui.init();
-      RouteFinderApp.ui.setupCollapsibleSections();
       
       // Setup file input handler
       document.getElementById('route-file-input').addEventListener('change', RouteFinderApp.fileManager.importRoutes);
       
-      // Setup keyboard shortcuts
-      document.addEventListener('keydown', function(e) {
-        if (e.ctrlKey || e.metaKey) {
-          switch(e.key) {
-            case 'e':
-              e.preventDefault();
-              if (RouteFinderApp.mapExport.isAvailable()) {
-                RouteFinderApp.mapExport.showExportDialog();
-              }
-              break;
-          }
+      // Initialize sections as expanded
+      const sections = ['route-management-content', 'current-route-content', 'map-controls-content', 'obstacle-controls-content'];
+      sections.forEach(sectionId => {
+        const content = document.getElementById(sectionId);
+        if (content) {
+          content.style.maxHeight = content.scrollHeight + 'px';
         }
       });
 
       console.log('Route Finder App initialized successfully');
     });
 
-    // Initialize when page loads
-window.addEventListener('load', function() {
-  console.log('Page loaded, ready for initialization');
-  // Auto-initialize with hardcoded token
-  RouteFinderApp.init.initializeApp();
-});
+    // Auto-initialize when page loads
+    window.addEventListener('load', function() {
+      console.log('Page loaded, auto-initializing map...');
+      setTimeout(() => {
+        RouteFinderApp.init.initializeApp();
+      }, 500);
+    });
   </script>
 </body>
 </html>
+
+        
