@@ -1,4 +1,10 @@
-<!DOCTYPE html>
+    .sidebar-toggle-screen {
+      position: fixed;
+      top: var(--space-4);
+      left: var(--space-4);
+      display: none;
+      z-index: 500;
+    }<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -247,6 +253,7 @@
       display: flex;
       flex-direction: column;
       gap: var(--space-6);
+      height: calc(100vh - var(--topbar-height));
     }
 
     /* ===== STATUS MESSAGE ===== */
@@ -872,6 +879,11 @@
       <div class="map-container">
         <div id="map"></div>
         
+        <!-- Screen Toggle Button (shown when sidebar hidden) -->
+        <button class="sidebar-toggle sidebar-toggle-screen" onclick="AppManager.ui.toggleSidebar()" id="sidebar-toggle-screen" style="display: none;">
+          <i data-feather="menu" id="sidebar-toggle-screen-icon"></i>
+        </button>
+        
         <!-- Map Crosshair -->
         <div id="map-crosshair" class="map-crosshair" style="display: none;">
           <div class="crosshair-center"></div>
@@ -1073,7 +1085,10 @@
         async loadMapStyles() {
           const select = document.getElementById('map-style-select');
           
-          // Add built-in styles first
+          // Clear existing options
+          select.innerHTML = '';
+          
+          // Add built-in styles
           CONFIG.mapbox.styles.forEach(style => {
             const option = document.createElement('option');
             option.value = `mapbox://styles/mapbox/${style.id}`;
@@ -1083,6 +1098,8 @@
 
           // Set the first style as selected
           select.selectedIndex = 0;
+          
+          console.log(`Loaded ${CONFIG.mapbox.styles.length} map styles`);
         },
 
         changeStyle() {
@@ -1432,15 +1449,23 @@
         toggleSidebar() {
           const sidebar = document.getElementById('sidebar');
           const toggleIcon = document.getElementById('sidebar-toggle-icon');
+          const screenToggle = document.getElementById('sidebar-toggle-screen');
+          const screenIcon = document.getElementById('sidebar-toggle-screen-icon');
           
           State.ui.sidebarVisible = !State.ui.sidebarVisible;
           
           if (State.ui.sidebarVisible) {
             sidebar.classList.remove('hidden');
-            toggleIcon.setAttribute('data-feather', 'x');
+            screenToggle.style.display = 'none';
+            if (toggleIcon) {
+              toggleIcon.setAttribute('data-feather', 'x');
+            }
           } else {
             sidebar.classList.add('hidden');
-            toggleIcon.setAttribute('data-feather', 'menu');
+            screenToggle.style.display = 'flex';
+            if (screenIcon) {
+              screenIcon.setAttribute('data-feather', 'menu');
+            }
           }
           
           feather.replace();
