@@ -157,10 +157,10 @@
       background: var(--color-surface-primary);
       color: var(--color-text-secondary);
       cursor: pointer;
-      transition: var(--transition-base);
-      position: fixed;
+      transition: all var(--transition-base);
+      position: absolute;
       top: var(--space-4);
-      right: var(--space-4);
+      right: calc(-36px - var(--space-4));
       z-index: 400;
       box-shadow: var(--shadow-md);
     }
@@ -171,12 +171,9 @@
       border-color: var(--color-border-medium);
     }
 
-    .sidebar-toggle-in-header {
-      position: relative;
-      top: auto;
+    .sidebar.hidden .sidebar-toggle {
       right: auto;
-      z-index: auto;
-      box-shadow: none;
+      left: var(--space-4);
     }
 
     .main-content {
@@ -639,16 +636,12 @@
         z-index: 300;
       }
 
-      .map-style-selector {
-        display: none;
+      .sidebar-toggle {
+        right: calc(-36px - var(--space-3));
       }
 
-      .top-bar {
-        display: none;
-      }
-
-      .map-container {
-        height: 100vh;
+      .sidebar.hidden .sidebar-toggle {
+        left: var(--space-3);
       }
     }
 
@@ -690,13 +683,15 @@
   <div class="app-container">
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
-      <!-- Sidebar Header with Toggle -->
+      <!-- Sidebar Header -->
       <div class="sidebar-header">
         <div class="sidebar-title">Route Finder</div>
-        <button class="sidebar-toggle sidebar-toggle-in-header" onclick="AppManager.ui.toggleSidebar()" id="sidebar-toggle-header">
-          <i data-feather="x" id="sidebar-toggle-icon-header"></i>
-        </button>
       </div>
+      
+      <!-- Toggle Button (moves with sidebar) -->
+      <button class="sidebar-toggle" onclick="AppManager.ui.toggleSidebar()" id="sidebar-toggle">
+        <i data-feather="x" id="sidebar-toggle-icon"></i>
+      </button>
       
       <div class="sidebar-content">
         <!-- Status Message -->
@@ -873,19 +868,9 @@
 
     <!-- Main Content -->
     <div class="main-content">
-      <!-- Top Bar -->
-      <div class="top-bar">
-        <div class="top-bar-title">Interactive Map</div>
-      </div>
-
       <!-- Map Container -->
       <div class="map-container">
         <div id="map"></div>
-        
-        <!-- Fixed Toggle Button (always visible) -->
-        <button class="sidebar-toggle" onclick="AppManager.ui.toggleSidebar()" id="sidebar-toggle-fixed" style="display: none;">
-          <i data-feather="menu" id="sidebar-toggle-icon-fixed"></i>
-        </button>
         
         <!-- Map Crosshair -->
         <div id="map-crosshair" class="map-crosshair" style="display: none;">
@@ -1004,32 +989,15 @@
         async initialize() {
           try {
             Utils.updateStatus(
-              '<strong>Loading Map...</strong><br>Connecting to Mapbox services',
+              '<strong>Loading Map...</strong><br>Initializing Mapbox GL',
               'loading',
               'loader'
             );
 
-            // Test the token first
-            console.log('Testing Mapbox token...');
-            
+            // Set token immediately
             mapboxgl.accessToken = CONFIG.mapbox.accessToken;
             
-            // Try a simple token validation
-            try {
-              const testResponse = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/test.json?access_token=${CONFIG.mapbox.accessToken}`);
-              if (!testResponse.ok) {
-                throw new Error('Token validation failed');
-              }
-            } catch (tokenError) {
-              console.error('Mapbox token test failed:', tokenError);
-              Utils.updateStatus(
-                '<strong>Mapbox Token Error</strong><br>Please check your access token',
-                'error',
-                'alert-circle'
-              );
-              return;
-            }
-            
+            // Create map without any async delays
             State.map = new mapboxgl.Map({
               container: 'map',
               style: CONFIG.mapbox.defaultStyle,
@@ -1038,33 +1006,48 @@
               preserveDrawingBuffer: true
             });
 
-            // Wait for map to load
+            // Handle map load
             State.map.on('load', () => {
               console.log('Map loaded successfully');
               this.setupEventListeners();
               this.loadMapStyles();
               
               Utils.updateStatus(
-                '<strong>Map Loaded Successfully!</strong><br>Click map to set origin and destination',
+                '<strong>Map Ready!</strong><br>Click map to set origin and destination',
                 'success',
                 'check-circle'
               );
             });
 
-            // Handle map errors
+            // Handle map errors with detailed logging
             State.map.on('error', (e) => {
-              console.error('Map error:', e);
+              console.error('Mapbox error details:', e);
+              console.error('Error type:', e.error?.type);
+              console.error('Error message:', e.error?.message);
+              
               Utils.updateStatus(
-                '<strong>Map Error</strong><br>Failed to load map tiles',
+                '<strong>Map Error</strong><br>Check console for details',
                 'error',
                 'alert-circle'
               );
             });
 
+            // Add a timeout fallback
+            setTimeout(() => {
+              if (!State.map.loaded()) {
+                console.error('Map loading timeout - may be a token or network issue');
+                Utils.updateStatus(
+                  '<strong>Map Timeout</strong><br>Check token and network connection',
+                  'error',
+                  'alert-circle'
+                );
+              }
+            }, 10000);
+
           } catch (error) {
-            console.error('Map initialization failed:', error);
+            console.error('Map initialization error:', error);
             Utils.updateStatus(
-              '<strong>Map Loading Failed</strong><br>Error: ' + error.message,
+              '<strong>Initialization Failed</strong><br>' + error.message,
               'error',
               'alert-circle'
             );
@@ -1448,24 +1431,16 @@
       const UIManager = {
         toggleSidebar() {
           const sidebar = document.getElementById('sidebar');
-          const toggleIconHeader = document.getElementById('sidebar-toggle-icon-header');
-          const toggleIconFixed = document.getElementById('sidebar-toggle-icon-fixed');
-          const fixedToggle = document.getElementById('sidebar-toggle-fixed');
+          const toggleIcon = document.getElementById('sidebar-toggle-icon');
           
           State.ui.sidebarVisible = !State.ui.sidebarVisible;
           
           if (State.ui.sidebarVisible) {
             sidebar.classList.remove('hidden');
-            fixedToggle.style.display = 'none';
-            if (toggleIconHeader) {
-              toggleIconHeader.setAttribute('data-feather', 'x');
-            }
+            toggleIcon.setAttribute('data-feather', 'x');
           } else {
             sidebar.classList.add('hidden');
-            fixedToggle.style.display = 'flex';
-            if (toggleIconFixed) {
-              toggleIconFixed.setAttribute('data-feather', 'menu');
-            }
+            toggleIcon.setAttribute('data-feather', 'menu');
           }
           
           feather.replace();
