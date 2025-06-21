@@ -663,6 +663,116 @@ window.State.map = new mapboxgl.Map({
   zoom: 10
 });
 
+// ===== MAP STYLE SWITCHING =====
+const styleSelect = document.getElementById('map-style-select');
+if (styleSelect) {
+  styleSelect.addEventListener('change', function() {
+    if (window.State.map) {
+      const selectedStyle = `mapbox://styles/mapbox/${this.value}`;
+      console.log('Changing style to:', selectedStyle);
+      window.State.map.setStyle(selectedStyle);
+    }
+  });
+  console.log('Style switching enabled');
+}
+
+// ===== GEOCODING AND ROUTING FUNCTIONALITY =====
+
+// Geocoding function
+async function geocodeAddress(address) {
+  const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${mapboxgl.accessToken}`;
+  
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    if (data.features && data.features.length > 0) {
+      const coords = data.features[0].center;
+      return { lng: coords[0], lat: coords[1] };
+    } else {
+      throw new Error('Location not found');
+    }
+  } catch (error) {
+    throw new Error('Geocoding failed');
+  }
+}
+
+// Add origin/destination functionality
+async function setOrigin() {
+  const input = document.getElementById('origin-input');
+  if (!input) return;
+  
+  const address = input.value.trim();
+  if (!address) return;
+  
+  try {
+    console.log('Geocoding origin:', address);
+    const coords = await geocodeAddress(address);
+    console.log('Origin coordinates:', coords);
+    
+    // Add marker to map
+    new mapboxgl.Marker({ color: 'green' })
+      .setLngLat([coords.lng, coords.lat])
+      .addTo(window.State.map);
+      
+    // Center map on origin
+    window.State.map.flyTo({ center: [coords.lng, coords.lat], zoom: 12 });
+    
+    console.log('Origin set successfully');
+  } catch (error) {
+    console.error('Origin geocoding failed:', error);
+    alert('Could not find origin location');
+  }
+}
+
+async function setDestination() {
+  const input = document.getElementById('destination-input');
+  if (!input) return;
+  
+  const address = input.value.trim();
+  if (!address) return;
+  
+  try {
+    console.log('Geocoding destination:', address);
+    const coords = await geocodeAddress(address);
+    console.log('Destination coordinates:', coords);
+    
+    // Add marker to map
+    new mapboxgl.Marker({ color: 'red' })
+      .setLngLat([coords.lng, coords.lat])
+      .addTo(window.State.map);
+      
+    console.log('Destination set successfully');
+  } catch (error) {
+    console.error('Destination geocoding failed:', error);
+    alert('Could not find destination location');
+  }
+}
+
+// Add event listeners for Enter key
+document.addEventListener('DOMContentLoaded', function() {
+  const originInput = document.getElementById('origin-input');
+  const destInput = document.getElementById('destination-input');
+  
+  if (originInput) {
+    originInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        setOrigin();
+      }
+    });
+  }
+  
+  if (destInput) {
+    destInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        setDestination();
+      }
+    });
+  }
+  
+  console.log('Event listeners added for origin/destination');
+});
+        
 // Add navigation controls
 window.State.map.addControl(new mapboxgl.NavigationControl());
 
