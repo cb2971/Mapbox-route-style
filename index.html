@@ -611,6 +611,32 @@
                     </div>
                 </div>
 
+<!-- Map Controls -->
+<div class="card">
+    <div class="card-header" onclick="toggleCard('map-controls-card')">
+        <h3><span>🗺️</span> Map Controls</h3>
+        <span class="chevron" id="map-controls-chevron">▶</span>
+    </div>
+    <div class="card-content collapsible collapsed" id="map-controls-card">
+        <div class="button-group">
+            <button class="btn btn-secondary" onclick="zoomIn()" title="Zoom In">
+                <span>🔍</span> Zoom In
+            </button>
+            <button class="btn btn-secondary" onclick="zoomOut()" title="Zoom Out">
+                <span>🔍</span> Zoom Out
+            </button>
+        </div>
+        <div class="button-group" style="margin-top: var(--space-2);">
+            <button class="btn btn-secondary" onclick="centerMap()" title="Center Map">
+                <span>🎯</span> Center Map
+            </button>
+            <button class="btn btn-secondary" onclick="fitBounds()" title="Fit All Routes">
+                <span>📏</span> Fit Routes
+            </button>
+        </div>
+    </div>
+</div>
+                
                 <!-- Export & Analysis -->
                 <div class="card">
                     <div class="card-header" onclick="toggleCard('export-card')">
@@ -663,22 +689,22 @@ window.State.map = new mapboxgl.Map({
   zoom: 10
 });
 
-// ===== MAP STYLE SWITCHING =====
-const styleSelect = document.getElementById('map-style-select');
-if (styleSelect) {
-  styleSelect.addEventListener('change', function() {
-    if (window.State.map) {
-      const selectedStyle = `mapbox://styles/mapbox/${this.value}`;
-      console.log('Changing style to:', selectedStyle);
-      window.State.map.setStyle(selectedStyle);
-    }
-  });
-  console.log('Style switching enabled');
-}
+// ===== FIXED MAP STYLE SWITCHING =====
+window.State.map.on('load', () => {
+  const styleSelect = document.getElementById('map-style-select');
+  if (styleSelect) {
+    styleSelect.addEventListener('change', function() {
+      if (window.State.map) {
+        const selectedStyle = `mapbox://styles/mapbox/${this.value}`;
+        console.log('Changing style to:', selectedStyle);
+        window.State.map.setStyle(selectedStyle);
+      }
+    });
+    console.log('Style switching enabled');
+  }
+});
 
-// ===== GEOCODING AND ROUTING FUNCTIONALITY =====
-
-// Geocoding function
+// ===== GEOCODING FUNCTION =====
 async function geocodeAddress(address) {
   const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${mapboxgl.accessToken}`;
   
@@ -697,10 +723,13 @@ async function geocodeAddress(address) {
   }
 }
 
-// Add origin/destination functionality
+// ===== ORIGIN/DESTINATION FUNCTIONS =====
 async function setOrigin() {
   const input = document.getElementById('origin-input');
-  if (!input) return;
+  if (!input) {
+    console.log('Origin input not found');
+    return;
+  }
   
   const address = input.value.trim();
   if (!address) return;
@@ -710,18 +739,14 @@ async function setOrigin() {
     const coords = await geocodeAddress(address);
     console.log('Origin coordinates:', coords);
     
-    // Add marker to map
-    new mapboxgl.Marker({ color: 'green' })
-      .setLngLat([coords.lng, coords.lat])
-      .addTo(window.State.map);
-      
-    // Center map on origin
-    window.State.map.flyTo({ center: [coords.lng, coords.lat], zoom: 12 });
-    
-    console.log('Origin set successfully');
+    if (window.State.map && window.State.map.loaded()) {
+      addOriginMarker(coords);
+    } else {
+      window.State.map.on('load', () => addOriginMarker(coords));
+    }
   } catch (error) {
     console.error('Origin geocoding failed:', error);
-    alert('Could not find origin location');
+    alert('Could not find origin location: ' + error.message);
   }
 }
 
@@ -733,23 +758,77 @@ async function setDestination() {
   if (!address) return;
   
   try {
-    console.log('Geocoding destination:', address);
     const coords = await geocodeAddress(address);
-    console.log('Destination coordinates:', coords);
     
-    // Add marker to map
-    new mapboxgl.Marker({ color: 'red' })
-      .setLngLat([coords.lng, coords.lat])
-      .addTo(window.State.map);
-      
-    console.log('Destination set successfully');
+    if (window.State.map && window.State.map.loaded()) {
+      addDestinationMarker(coords);
+    } else {
+      window.State.map.on('load', () => addDestinationMarker(coords));
+    }
   } catch (error) {
     console.error('Destination geocoding failed:', error);
-    alert('Could not find destination location');
+    alert('Could not find destination location: ' + error.message);
   }
 }
 
-// Add event listeners for Enter key
+function addOriginMarker(coords) {
+  try {
+    new mapboxgl.Marker({ color: 'green' })
+      .setLngLat([coords.lng, coords.lat])
+      .addTo(window.State.map);
+      
+    window.State.map.flyTo({ center: [coords.lng, coords.lat], zoom: 12 });
+    console.log('Origin marker added successfully');
+  } catch (error) {
+    console.error('Failed to add origin marker:', error);
+  }
+}
+
+function addDestinationMarker(coords) {
+  try {
+    new mapboxgl.Marker({ color: 'red' })
+      .setLngLat([coords.lng, coords.lat])
+      .addTo(window.State.map);
+    console.log('Destination marker added successfully');
+  } catch (error) {
+    console.error('Failed to add destination marker:', error);
+  }
+}
+
+// ===== MAP CONTROL FUNCTIONS =====
+function zoomIn() {
+  if (window.State.map) {
+    window.State.map.zoomIn();
+  }
+}
+
+function zoomOut() {
+  if (window.State.map) {
+    window.State.map.zoomOut();
+  }
+}
+
+function centerMap() {
+  if (window.State.map) {
+    window.State.map.flyTo({ center: [-74.006, 40.7128], zoom: 10 });
+  }
+}
+
+function fitBounds() {
+  console.log('Fit bounds - will implement when routes are added');
+}
+
+function toggleCard(cardId) {
+  const card = document.getElementById(cardId);
+  const chevron = document.getElementById(cardId.replace('-card', '-chevron'));
+  
+  if (card && chevron) {
+    card.classList.toggle('collapsed');
+    chevron.classList.toggle('expanded');
+  }
+}
+
+// ===== EVENT LISTENERS =====
 document.addEventListener('DOMContentLoaded', function() {
   const originInput = document.getElementById('origin-input');
   const destInput = document.getElementById('destination-input');
@@ -762,7 +841,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  if (destInput) {
+if (destInput) {
     destInput.addEventListener('keypress', function(e) {
       if (e.key === 'Enter') {
         setDestination();
@@ -773,9 +852,6 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('Event listeners added for origin/destination');
 });
         
-// Add navigation controls
-window.State.map.addControl(new mapboxgl.NavigationControl());
-
 console.log('Map created successfully:', window.State.map);
         
     // ===== GLOBAL STATE =====
