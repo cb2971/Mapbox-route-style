@@ -141,6 +141,32 @@
       transform: translateX(-100%);
     }
 
+    /* Simple solution: when sidebar hidden, show a fixed toggle button */
+    .hidden-sidebar-toggle {
+      position: fixed;
+      top: var(--space-4);
+      left: var(--space-4);
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--color-border-light);
+      border-radius: var(--radius-md);
+      background: var(--color-surface-primary);
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      z-index: 500;
+      box-shadow: var(--shadow-md);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition-base);
+    }
+
+    .hidden-sidebar-toggle:hover {
+      background: var(--color-surface-hover);
+      color: var(--color-text-primary);
+      border-color: var(--color-border-medium);
+    }
+
     .sidebar-header {
       height: var(--topbar-height);
       background: var(--color-surface-primary);
@@ -887,6 +913,11 @@
       <div class="map-container">
         <div id="map"></div>
         
+        <!-- Fixed toggle button for when sidebar is hidden -->
+        <button class="hidden-sidebar-toggle" onclick="AppManager.ui.toggleSidebar()" id="hidden-toggle">
+          <i data-feather="menu"></i>
+        </button>
+        
         <!-- Map Crosshair -->
         <div id="map-crosshair" class="map-crosshair" style="display: none;">
           <div class="crosshair-center"></div>
@@ -1434,21 +1465,19 @@
         toggleSidebar() {
           const sidebar = document.getElementById('sidebar');
           const toggleIcon = document.getElementById('sidebar-toggle-icon');
-          const toggleButton = document.getElementById('sidebar-toggle');
+          const hiddenToggle = document.getElementById('hidden-toggle');
           
           State.ui.sidebarVisible = !State.ui.sidebarVisible;
           
           if (State.ui.sidebarVisible) {
-            // Show sidebar
             sidebar.classList.remove('hidden');
-            toggleButton.classList.remove('show-on-screen');
+            hiddenToggle.style.display = 'none';
             if (toggleIcon) {
               toggleIcon.setAttribute('data-feather', 'x');
             }
           } else {
-            // Hide sidebar  
             sidebar.classList.add('hidden');
-            toggleButton.classList.add('show-on-screen');
+            hiddenToggle.style.display = 'flex';
             if (toggleIcon) {
               toggleIcon.setAttribute('data-feather', 'menu');
             }
