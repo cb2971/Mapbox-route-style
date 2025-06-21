@@ -1437,14 +1437,16 @@
           State.ui.sidebarVisible = !State.ui.sidebarVisible;
           
           if (State.ui.sidebarVisible) {
+            // Show sidebar
             sidebar.classList.remove('hidden');
-            toggleButton.classList.remove('fixed-toggle');
+            toggleButton.classList.remove('show-on-screen');
             if (toggleIcon) {
               toggleIcon.setAttribute('data-feather', 'x');
             }
           } else {
+            // Hide sidebar  
             sidebar.classList.add('hidden');
-            toggleButton.classList.add('fixed-toggle');
+            toggleButton.classList.add('show-on-screen');
             if (toggleIcon) {
               toggleIcon.setAttribute('data-feather', 'menu');
             }
