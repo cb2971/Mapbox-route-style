@@ -1002,24 +1002,22 @@
         async initialize() {
           try {
             Utils.updateStatus(
-              '<strong>Loading Map...</strong><br>Initializing Mapbox GL',
+              '<strong>Initializing Map...</strong><br>Setting up Mapbox GL',
               'loading',
               'loader'
             );
 
-            // Set token immediately
+            // Use the exact working pattern from index-v10
             mapboxgl.accessToken = CONFIG.mapbox.accessToken;
             
-            // Create map without any async delays
             State.map = new mapboxgl.Map({
               container: 'map',
-              style: CONFIG.mapbox.defaultStyle,
+              style: 'mapbox://styles/mapbox/streets-v11',
               center: CONFIG.mapbox.defaultCenter,
               zoom: CONFIG.mapbox.defaultZoom,
               preserveDrawingBuffer: true
             });
 
-            // Handle map load
             State.map.on('load', () => {
               console.log('Map loaded successfully');
               this.setupEventListeners();
@@ -1032,30 +1030,14 @@
               );
             });
 
-            // Handle map errors with detailed logging
             State.map.on('error', (e) => {
-              console.error('Mapbox error details:', e);
-              console.error('Error type:', e.error?.type);
-              console.error('Error message:', e.error?.message);
-              
+              console.error('Map error:', e.error);
               Utils.updateStatus(
-                '<strong>Map Error</strong><br>Check console for details',
+                '<strong>Map Error</strong><br>' + (e.error?.message || 'Unknown error'),
                 'error',
                 'alert-circle'
               );
             });
-
-            // Add a timeout fallback
-            setTimeout(() => {
-              if (!State.map.loaded()) {
-                console.error('Map loading timeout - may be a token or network issue');
-                Utils.updateStatus(
-                  '<strong>Map Timeout</strong><br>Check token and network connection',
-                  'error',
-                  'alert-circle'
-                );
-              }
-            }, 10000);
 
           } catch (error) {
             console.error('Map initialization error:', error);
