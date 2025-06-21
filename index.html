@@ -649,7 +649,10 @@
     <script>
     // ===== MAPBOX TOKEN (REQUIRED) =====
     mapboxgl.accessToken = 'pk.eyJ1IjoiY2IyOSIsImEiOiJja3E4OHo3anowZGx1Mm9tcXF3ZmhyaWtwIn0.IQ5rY622AU9GOETrqa9NBw'; // Replace with your token
-    
+console.log('Token set to:', mapboxgl.accessToken);
+console.log('Mapbox GL version:', mapboxgl.version);
+console.log('Map container exists:', document.getElementById('map'));
+        
     // ===== GLOBAL STATE =====
     window.State = {
       map: null,
