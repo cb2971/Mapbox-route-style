@@ -619,6 +619,7 @@
         });
 
         State.map.on('load', () => {
+          setupMapEventListeners();
           updateStatus('<strong>Map Ready!</strong><br>Click map to set origin and destination', 'success', 'check-circle');
         });
 
@@ -633,6 +634,91 @@
       }
     }
 
+    function setupMapEventListeners() {
+      // Map click handling for setting origin/destination
+      State.map.on('click', (e) => {
+        handleMapClick(e.lngLat);
+      });
+    }
+
+    async function handleMapClick(lngLat) {
+      if (!State.route.origin) {
+        await setOrigin(lngLat);
+      } else if (!State.route.destination) {
+        await setDestination(lngLat);
+      } else {
+        // Replace destination with new point
+        await setDestination(lngLat);
+      }
+    }
+
+    async function setOrigin(lngLat) {
+      State.route.origin = lngLat;
+      
+      const address = await reverseGeocode(lngLat);
+      document.getElementById('origin-input').value = address;
+      
+      updateMarkers();
+      updateStatus('<strong>Origin Set</strong><br>Now click map to set destination', 'success', 'map-pin');
+    }
+
+    async function setDestination(lngLat) {
+      State.route.destination = lngLat;
+      
+      const address = await reverseGeocode(lngLat);
+      document.getElementById('destination-input').value = address;
+      
+      updateMarkers();
+      updateStatus('<strong>Destination Set</strong><br>Ready to calculate route', 'success', 'flag');
+    }
+
+    async function reverseGeocode(lngLat) {
+      try {
+        const response = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${lngLat.lng},${lngLat.lat}.json?access_token=${CONFIG.mapbox.accessToken}`
+        );
+        const data = await response.json();
+        return data.features[0]?.place_name || `${lngLat.lat.toFixed(4)}, ${lngLat.lng.toFixed(4)}`;
+      } catch (error) {
+        console.error('Reverse geocoding failed:', error);
+        return `${lngLat.lat.toFixed(4)}, ${lngLat.lng.toFixed(4)}`;
+      }
+    }
+
+    function updateMarkers() {
+      // Clear existing markers
+      const markers = document.querySelectorAll('.mapbox-marker');
+      markers.forEach(marker => marker.remove());
+
+      // Add origin marker
+      if (State.route.origin) {
+        createMarker(State.route.origin, 'origin');
+      }
+
+      // Add destination marker
+      if (State.route.destination) {
+        createMarker(State.route.destination, 'destination');
+      }
+    }
+
+    function createMarker(lngLat, type) {
+      const el = document.createElement('div');
+      el.className = `mapbox-marker marker-${type}`;
+      el.style.cssText = `
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        cursor: pointer;
+        background: ${type === 'origin' ? '#ef4444' : '#3b82f6'};
+      `;
+
+      new mapboxgl.Marker(el)
+        .setLngLat(lngLat)
+        .addTo(State.map);
+    }
+
     function changeMapStyle() {
       const select = document.getElementById('map-style-select');
       const newStyle = select.value;
@@ -640,18 +726,128 @@
       updateStatus('<strong>Map Style Changed</strong><br>Updated map appearance', 'success', 'eye');
     }
 
-    function findRoute() {
-      updateStatus('<strong>Route Finding</strong><br>This feature will be added in Step 2', 'info', 'search');
+    async function findRoute() {
+      if (!State.route.origin || !State.route.destination) {
+        updateStatus('<strong>Missing Route Points</strong><br>Set both origin and destination', 'error', 'alert-circle');
+        return;
+      }
+
+      updateStatus('<strong>Calculating Route...</strong><br>Finding optimal path', 'loading', 'loader');
+
+      try {
+        const coordinates = [State.route.origin, State.route.destination];
+        const coordString = coordinates
+          .map(coord => `${coord.lng},${coord.lat}`)
+          .join(';');
+
+        const travelMode = document.getElementById('travel-mode').value;
+        const url = `https://api.mapbox.com/directions/v5/mapbox/${travelMode}/${coordString}?` +
+          `geometries=geojson&overview=full&access_token=${CONFIG.mapbox.accessToken}`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.routes && data.routes.length > 0) {
+          displayRoute(data.routes[0]);
+        } else {
+          throw new Error('No route found');
+        }
+
+      } catch (error) {
+        console.error('Routing failed:', error);
+        updateStatus('<strong>Route Calculation Failed</strong><br>Could not find a valid route', 'error', 'alert-circle');
+      }
+    }
+
+    function displayRoute(routeData) {
+      // Remove existing route
+      if (State.map.getSource('route')) {
+        State.map.removeLayer('route-line');
+        State.map.removeSource('route');
+      }
+
+      // Add new route
+      State.map.addSource('route', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          properties: {},
+          geometry: routeData.geometry
+        }
+      });
+
+      State.map.addLayer({
+        id: 'route-line',
+        type: 'line',
+        source: 'route',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round'
+        },
+        paint: {
+          'line-color': '#3b82f6',
+          'line-width': 4,
+          'line-opacity': 0.8
+        }
+      });
+
+      // Store route data
+      State.route.routeData = routeData;
+
+      // Update status
+      const distance = formatDistance(routeData.distance);
+      updateStatus(`<strong>Route Found!</strong><br>Distance: ${distance}`, 'success', 'check-circle');
+      
+      // Zoom to route
+      zoomToRoute();
     }
 
     function clearRoute() {
+      // Clear route data
+      State.route = {
+        origin: null,
+        destination: null,
+        waypoints: [],
+        routeData: null
+      };
+
+      // Clear UI
       document.getElementById('origin-input').value = '';
       document.getElementById('destination-input').value = '';
+      
+      // Clear map
+      if (State.map.getSource('route')) {
+        State.map.removeLayer('route-line');
+        State.map.removeSource('route');
+      }
+      
+      updateMarkers();
       updateStatus('<strong>Route Cleared</strong><br>Ready for new route', 'success', 'x-circle');
     }
 
     function zoomToRoute() {
-      updateStatus('<strong>Zoom to Route</strong><br>This feature will be added in Step 2', 'info', 'zoom-in');
+      const points = [];
+      
+      if (State.route.origin) points.push(State.route.origin);
+      if (State.route.destination) points.push(State.route.destination);
+      
+      if (points.length === 0) {
+        updateStatus('<strong>No Route Points</strong><br>Add origin and destination first', 'error', 'alert-circle');
+        return;
+      }
+      
+      if (points.length === 1) {
+        State.map.flyTo({
+          center: points[0],
+          zoom: 14
+        });
+      } else {
+        const bounds = new mapboxgl.LngLatBounds();
+        points.forEach(point => bounds.extend(point));
+        State.map.fitBounds(bounds, { padding: 50 });
+      }
+      
+      updateStatus('<strong>View Adjusted</strong><br>Showing route points', 'success', 'zoom-in');
     }
 
     function resetView() {
