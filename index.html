@@ -384,6 +384,151 @@
                 padding: var(--space-4);
             }
         }
+/* ===== MAP EXPORT DIALOG STYLES ===== */
+.export-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.export-dialog-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+.export-dialog-content {
+  position: relative;
+  background: var(--color-surface-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-xl);
+  width: 90vw;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: slideIn 0.3s ease-out;
+}
+
+.export-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-6);
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-surface-secondary);
+}
+
+.export-dialog-header h3 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--border-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.btn-close:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.export-dialog-body {
+  padding: var(--space-6);
+  max-height: 60vh;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-8);
+}
+
+.export-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.form-section {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-4);
+  background: var(--color-surface-secondary);
+}
+
+.export-preview {
+  background: var(--color-surface-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.preview-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.preview-item:last-child {
+  border-bottom: none;
+}
+
+.export-dialog-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  border-top: 1px solid var(--color-border-light);
+  background: var(--color-surface-secondary);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+        
     </style>
 </head>
 <body>
@@ -420,17 +565,17 @@
                         <span>+</span> New Route
                     </button>
                     
-                    <div class="button-group" style="margin-top: var(--space-4);">
-                        <button class="btn btn-secondary" onclick="RouteFinderApp.fileManager.exportRoutes()">
-                            <span>↑</span> Export Routes
-                        </button>
-                        <button class="btn btn-secondary" onclick="RouteFinderApp.fileManager.triggerImportRoutes()">
-                            <span>↓</span> Import Routes
-                        </button>
-                        <button class="btn btn-primary" onclick="RouteFinderApp.mapExport.showExportDialog()" title="Export map as high-resolution image">
-                            <span>📸</span> Export Map
-                        </button>
-                    </div>
+                    <div class="button-group" style="margin-top: calc(var(--space-4) * 1e-4);">
+  <button class="btn btn-secondary" onclick="RouteFinderApp.fileManager.exportRoutes()">
+    <span>↑</span> Export Routes
+  </button>
+  <button class="btn btn-secondary" onclick="RouteFinderApp.fileManager.triggerImportRoutes()">
+    <span>↓</span> Import Routes
+  </button>
+  <button class="btn btn-primary" onclick="RouteFinderApp.mapExport.showExportDialog()" title="Export map as high-resolution image">
+    <span>📸</span> Export Map
+  </button>
+</div>
                 </div>
             </div>
 
@@ -752,6 +897,187 @@
             }
         };
 
+// ===== MAP EXPORT MODULE =====
+const MapExportManager = {
+  config: {
+    defaultDPI: 300,
+    defaultFormat: 'png',
+    printSizes: {
+      '5x7': { width: 5, height: 7 },
+      '8x10': { width: 8, height: 10 },
+      '11x14': { width: 11, height: 14 },
+      '16x20': { width: 16, height: 20 }
+    }
+  },
+
+  state: {
+    isExporting: false
+  },
+
+  init() {
+    this.bindEvents();
+    this.updatePreview();
+  },
+
+  bindEvents() {
+    const sizeSelect = document.getElementById('export-size');
+    if (sizeSelect) {
+      sizeSelect.addEventListener('change', () => {
+        const customControls = document.getElementById('custom-size-controls');
+        if (sizeSelect.value === 'custom') {
+          customControls.style.display = 'block';
+        } else {
+          customControls.style.display = 'none';
+        }
+        this.updatePreview();
+      });
+    }
+
+    const inputs = ['export-format', 'export-dpi', 'custom-width', 'custom-height'];
+    inputs.forEach(id => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.addEventListener('change', () => this.updatePreview());
+        element.addEventListener('input', () => this.updatePreview());
+      }
+    });
+  },
+
+  showExportDialog() {
+    const dialog = document.getElementById('export-dialog');
+    if (dialog) {
+      dialog.style.display = 'flex';
+      this.updatePreview();
+    }
+  },
+
+  hideExportDialog() {
+    const dialog = document.getElementById('export-dialog');
+    if (dialog) {
+      dialog.style.display = 'none';
+    }
+  },
+
+  updatePreview() {
+    const format = document.getElementById('export-format')?.value || 'png';
+    const dpi = parseInt(document.getElementById('export-dpi')?.value || '300');
+    const sizeSelect = document.getElementById('export-size')?.value || '8x10';
+    
+    let width, height;
+    
+    if (sizeSelect === 'custom') {
+      width = parseFloat(document.getElementById('custom-width')?.value || '8');
+      height = parseFloat(document.getElementById('custom-height')?.value || '10');
+    } else {
+      const size = this.config.printSizes[sizeSelect];
+      width = size.width;
+      height = size.height;
+    }
+
+    const pixelWidth = Math.round(width * dpi);
+    const pixelHeight = Math.round(height * dpi);
+    const fileSize = this.estimateFileSize(pixelWidth, pixelHeight, format);
+
+    const dimensionsEl = document.getElementById('preview-dimensions');
+    const fileSizeEl = document.getElementById('preview-file-size');
+    const qualityEl = document.getElementById('preview-quality');
+
+    if (dimensionsEl) dimensionsEl.textContent = `${pixelWidth} × ${pixelHeight} px`;
+    if (fileSizeEl) fileSizeEl.textContent = `~${fileSize}`;
+    if (qualityEl) qualityEl.textContent = `${dpi} DPI`;
+  },
+
+  estimateFileSize(width, height, format) {
+    const pixels = width * height;
+    let bytesPerPixel = format === 'png' ? 4 : 3;
+    const bytes = pixels * bytesPerPixel;
+    const compressionRatio = format === 'png' ? 0.7 : 0.1;
+    const compressedBytes = bytes * compressionRatio;
+    
+    if (compressedBytes < 1024 * 1024) {
+      return Math.round(compressedBytes / 1024) + ' KB';
+    } else {
+      return Math.round(compressedBytes / (1024 * 1024)) + ' MB';
+    }
+  },
+
+  async exportMap() {
+    if (this.state.isExporting) return;
+    
+    try {
+      this.state.isExporting = true;
+      const exportBtn = document.getElementById('export-map-btn');
+      if (exportBtn) {
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = '<span>⏳</span> Exporting...';
+      }
+
+      const format = document.getElementById('export-format')?.value || 'png';
+      const dpi = parseInt(document.getElementById('export-dpi')?.value || '300');
+      const sizeSelect = document.getElementById('export-size')?.value || '8x10';
+      
+      let width, height;
+      if (sizeSelect === 'custom') {
+        width = parseFloat(document.getElementById('custom-width')?.value || '8');
+        height = parseFloat(document.getElementById('custom-height')?.value || '10');
+      } else {
+        const size = this.config.printSizes[sizeSelect];
+        width = size.width;
+        height = size.height;
+      }
+
+      const pixelWidth = Math.round(width * dpi);
+      const pixelHeight = Math.round(height * dpi);
+
+      const map = State.map;
+      if (!map) {
+        throw new Error('Map not available');
+      }
+
+      const canvas = map.getCanvas();
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = pixelWidth;
+      exportCanvas.height = pixelHeight;
+      
+      const ctx = exportCanvas.getContext('2d');
+      ctx.drawImage(canvas, 0, 0, pixelWidth, pixelHeight);
+
+      const quality = format === 'jpeg' ? 0.9 : undefined;
+      const blob = await new Promise(resolve => {
+        exportCanvas.toBlob(resolve, `image/${format}`, quality);
+      });
+
+      if (!blob) {
+        throw new Error('Failed to generate export image');
+      }
+
+      const filename = `map-export-${width}x${height}-${dpi}dpi.${format}`;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      Utils.updateStatus(`✅ Map exported successfully as ${filename}`, 'success');
+      this.hideExportDialog();
+
+    } catch (error) {
+      console.error('Export failed:', error);
+      Utils.updateStatus(`❌ Export failed: ${error.message}`, 'error');
+    } finally {
+      this.state.isExporting = false;
+      const exportBtn = document.getElementById('export-map-btn');
+      if (exportBtn) {
+        exportBtn.disabled = false;
+        exportBtn.innerHTML = '<span>📸</span> Export Map';
+      }
+    }
+  }
+};        
+        
         // ===== ROUTE FINDER APP =====
         const RouteFinderApp = (function() {
             'use strict';
@@ -977,6 +1303,48 @@
         window.addEventListener('load', function() {
             console.log('Page loaded, ready for initialization');
         });
+
+// ===== MAP EXPORT INTEGRATION =====
+    (function() {
+      'use strict';
+
+      function initMapExport() {
+        if (typeof RouteFinderApp === 'undefined' || typeof MapExportManager === 'undefined') {
+          setTimeout(initMapExport, 100);
+          return;
+        }
+
+        MapExportManager.init();
+
+        RouteFinderApp.mapExport = {
+          showExportDialog: MapExportManager.showExportDialog.bind(MapExportManager),
+          hideExportDialog: MapExportManager.hideExportDialog.bind(MapExportManager),
+          exportMap: MapExportManager.exportMap.bind(MapExportManager),
+          
+          isAvailable() {
+            return typeof MapExportManager !== 'undefined' && State && State.map;
+          },
+          
+          getMapInstance() {
+            return State?.map;
+          }
+        };
+
+        document.addEventListener('keydown', function(e) {
+          if (e.ctrlKey && e.key === 'e' && !e.shiftKey) {
+            e.preventDefault();
+            if (RouteFinderApp.mapExport.isAvailable()) {
+              RouteFinderApp.mapExport.showExportDialog();
+            }
+          }
+        });
+
+        console.log('Map Export functionality integrated successfully');
+      }
+
+      initMapExport();
+    })();
+        
     </script>
 </body>
 </html>
