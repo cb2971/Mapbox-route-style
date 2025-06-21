@@ -128,9 +128,9 @@
 
     /* ===== TOGGLE BUTTON ===== */
     .toggle-button {
-      position: absolute;
+      position: fixed;
       top: var(--space-4);
-      right: calc(-18px - var(--space-4));
+      left: calc(var(--sidebar-width) + var(--space-4));
       width: 36px;
       height: 36px;
       background: var(--color-surface-primary);
@@ -142,19 +142,16 @@
       cursor: pointer;
       box-shadow: var(--shadow-md);
       z-index: 200;
-      transition: var(--transition-base);
+      transition: left var(--transition-base);
     }
 
     .toggle-button:hover {
       background: var(--color-surface-hover);
     }
 
-    /* Fixed toggle when sidebar is hidden */
-    .toggle-fixed {
-      position: fixed !important;
-      top: var(--space-4) !important;
-      left: var(--space-4) !important;
-      right: auto !important;
+    /* When sidebar is hidden, move toggle to left corner */
+    .toggle-button.sidebar-hidden {
+      left: var(--space-4);
     }
 
     /* ===== MAP ===== */
@@ -398,10 +395,10 @@
         <div class="sidebar-title">Route Finder</div>
       </div>
 
-      <!-- Toggle Button -->
-      <button class="toggle-button" onclick="toggleSidebar()" id="toggle-button">
-        <i data-feather="x" id="toggle-icon"></i>
-      </button>
+    <!-- Toggle Button (stays in place) -->
+    <button class="toggle-button" onclick="toggleSidebar()" id="toggle-button">
+      <i data-feather="x" id="toggle-icon"></i>
+    </button>
       
       <!-- Sidebar Content -->
       <div class="sidebar-content">
@@ -509,6 +506,11 @@
       </div>
     </div>
 
+    <!-- Toggle Button (outside sidebar, stays in place) -->
+    <button class="toggle-button" onclick="toggleSidebar()" id="toggle-button">
+      <i data-feather="x" id="toggle-icon"></i>
+    </button>
+
     <!-- Main Content -->
     <div class="main-content">
       <!-- Map Container -->
@@ -576,12 +578,12 @@
       if (State.ui.sidebarVisible) {
         // Show sidebar
         sidebar.classList.remove('hidden');
-        toggleButton.classList.remove('toggle-fixed');
+        toggleButton.classList.remove('sidebar-hidden');
         toggleIcon.setAttribute('data-feather', 'x');
       } else {
         // Hide sidebar
         sidebar.classList.add('hidden');
-        toggleButton.classList.add('toggle-fixed');
+        toggleButton.classList.add('sidebar-hidden');
         toggleIcon.setAttribute('data-feather', 'menu');
       }
       
