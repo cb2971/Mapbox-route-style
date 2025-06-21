@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Route Finder - Step 1</title>
+  <title>Route Finder - Step 2</title>
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
   <style>
@@ -79,6 +79,11 @@
       display: flex;
       flex-direction: column;
       gap: var(--space-4);
+      transition: var(--transition-base);
+    }
+    
+    .sidebar.hidden {
+      margin-left: -380px;
     }
     
     .map-container {
@@ -89,6 +94,76 @@
     #map {
       width: 100%;
       height: 100%;
+    }
+    
+    /* ===== SIDEBAR TOGGLE ===== */
+    .toggle-btn {
+      position: absolute;
+      top: var(--space-4);
+      left: var(--space-4);
+      z-index: 1000;
+      background: var(--color-surface-primary);
+      border: 1px solid var(--color-border-light);
+      border-radius: var(--border-radius-md);
+      padding: var(--space-3);
+      cursor: pointer;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      transition: var(--transition-base);
+      font-size: var(--font-size-lg);
+    }
+    
+    .toggle-btn:hover {
+      background: var(--color-surface-hover);
+    }
+    
+    .toggle-btn.sidebar-hidden {
+      left: var(--space-4);
+    }
+    
+    .toggle-btn.sidebar-visible {
+      left: calc(380px + var(--space-4) + var(--space-4));
+    }
+    
+    /* ===== MAP CROSSHAIR ===== */
+    .map-crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 100;
+    }
+    
+    .center-circle {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--color-primary);
+      border-radius: 50%;
+      background: rgba(59, 130, 246, 0.2);
+      position: relative;
+    }
+    
+    .center-circle::before,
+    .center-circle::after {
+      content: '';
+      position: absolute;
+      background: var(--color-primary);
+    }
+    
+    .center-circle::before {
+      width: 2px;
+      height: 40px;
+      top: -20px;
+      left: 50%;
+      margin-left: -1px;
+    }
+    
+    .center-circle::after {
+      width: 40px;
+      height: 2px;
+      left: -20px;
+      top: 50%;
+      margin-top: -1px;
     }
     
     /* ===== CARDS ===== */
@@ -128,6 +203,12 @@
     .collapsible {
       overflow: hidden;
       transition: max-height 0.3s ease;
+    }
+    
+    .collapsed {
+      max-height: 0 !important;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
     }
     
     /* ===== BUTTONS ===== */
@@ -245,6 +326,34 @@
       gap: var(--space-3);
     }
     
+    .form-grid-3 {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: var(--space-3);
+      align-items: end;
+    }
+    
+    /* ===== ROUTE STYLING CONTROLS ===== */
+    .route-styling {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: var(--space-3);
+      align-items: end;
+    }
+    
+    .route-styling input[type="color"] {
+      width: var(--space-8);
+      height: var(--space-8);
+      padding: 0;
+      border: 1px solid var(--color-border-light);
+      border-radius: var(--border-radius-sm);
+      cursor: pointer;
+    }
+    
+    .route-styling input[type="number"] {
+      width: 80px;
+    }
+    
     /* ===== TABS ===== */
     .route-tabs {
       display: flex;
@@ -310,7 +419,7 @@
       border: 1px solid rgba(245, 158, 11, 0.2);
     }
     
-    .status-message.loading {
+    .status-message.info {
       background: rgba(59, 130, 246, 0.1);
       color: var(--color-primary);
       border: 1px solid rgba(59, 130, 246, 0.2);
@@ -366,6 +475,17 @@
       font-weight: var(--font-weight-medium);
     }
     
+    /* ===== ZOOM CONTROLS ===== */
+    .zoom-controls {
+      display: flex;
+      gap: var(--space-2);
+      align-items: center;
+    }
+    
+    .zoom-controls .btn {
+      min-width: 40px;
+    }
+    
     /* ===== ICONS ===== */
     .icon {
       font-size: 1.2em;
@@ -382,28 +502,45 @@
       transform: rotate(90deg);
     }
     
-    /* ===== ROUTE STYLING SECTION ===== */
-    .route-styling-section {
-      margin-top: var(--space-4);
-      padding-top: var(--space-4);
-      border-top: 1px solid var(--color-border-light);
-    }
-    
-    .route-styling-section h4 {
-      margin-bottom: var(--space-3);
-      font-size: var(--font-size-base);
-      font-weight: var(--font-weight-semibold);
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+        height: 100vh;
+      }
+      
+      .sidebar.hidden {
+        margin-left: -100%;
+      }
+      
+      .toggle-btn.sidebar-visible {
+        left: calc(100% - 60px);
+      }
     }
   </style>
 </head>
 <body>
   <div class="app-container">
-    <div class="sidebar">
+    <!-- Map crosshair indicator -->
+    <div id="map-crosshair" class="map-crosshair" style="display: none;">
+      <div class="center-circle"></div>
+    </div>
+    
+    <!-- Sidebar toggle button -->
+    <div class="toggle-btn sidebar-visible" id="toggle-btn" onclick="RouteFinderApp.ui.toggleSidebar()">
+      ☰
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+      <input type="file" id="route-file-input" accept=".json" style="display: none;">
+      
       <!-- Route Management -->
-      <div class="card" id="route-management">
+      <div class="card">
         <div class="card-header" onclick="RouteFinderApp.ui.toggleSection('route-management-content')">
           <h3>
             <span>🛣️</span> Route Management
@@ -419,30 +556,21 @@
             <span>+</span> New Route
           </button>
           
-          <!-- STEP 1 FIX: Route styling controls consolidated here -->
-          <div class="route-styling-section" id="route-styling-controls" style="display: none;">
-            <h4>🎨 Route Styling</h4>
-            
-            <!-- Route Name -->
-            <div class="form-group">
-              <label class="form-label">Route Name</label>
-              <input type="text" class="form-input" id="route-name-input" placeholder="Enter route name..." onchange="RouteFinderApp.routes.updateRouteName()">
-            </div>
-
-            <!-- Route Color and Width Grid -->
-            <div class="form-grid">
-              <div class="form-group">
-                <label class="form-label">Color</label>
-                <input type="color" class="form-input" id="route-color-input" onchange="RouteFinderApp.routes.updateRouteStyle()" value="#3b82f6">
+          <!-- Route Styling Controls -->
+          <div class="form-group" style="margin-top: var(--space-4);">
+            <label class="form-label">Route Styling</label>
+            <div class="route-styling">
+              <div>
+                <label class="form-label" style="margin-bottom: var(--space-1);">Name</label>
+                <input type="text" class="form-input" id="route-name-input" placeholder="Route name..." onchange="RouteFinderApp.routes.updateRouteStyle()">
               </div>
-              <div class="form-group">
-                <label class="form-label">Width</label>
-                <select class="form-select" id="route-width-input" onchange="RouteFinderApp.routes.updateRouteStyle()">
-                  <option value="2">Thin (2px)</option>
-                  <option value="4" selected>Medium (4px)</option>
-                  <option value="6">Thick (6px)</option>
-                  <option value="8">Extra Thick (8px)</option>
-                </select>
+              <div>
+                <label class="form-label" style="margin-bottom: var(--space-1);">Color</label>
+                <input type="color" id="route-color-input" value="#3b82f6" onchange="RouteFinderApp.routes.updateRouteStyle()">
+              </div>
+              <div>
+                <label class="form-label" style="margin-bottom: var(--space-1);">Width</label>
+                <input type="number" class="form-input" id="route-width-input" value="4" min="1" max="20" onchange="RouteFinderApp.routes.updateRouteStyle()">
               </div>
             </div>
           </div>
@@ -490,28 +618,30 @@
           <div class="form-group">
             <label class="form-label">Add Waypoint</label>
             <div class="button-group">
-              <input type="text" class="form-input" id="address-input" placeholder="Enter address or place name..." style="flex: 2;">
-              <button class="btn btn-primary" onclick="RouteFinderApp.routes.addWaypoint()" style="flex: 1;">
-                → Add
+              <input type="text" class="form-input" id="waypoint-input" placeholder="Enter address..." style="flex: 1;">
+              <button class="btn btn-primary" onclick="RouteFinderApp.waypoints.addFromInput()">
+                <span>+</span> Add
               </button>
             </div>
-            <button class="btn btn-secondary btn-full" onclick="RouteFinderApp.routes.clearCurrentRoute()" style="margin-top: var(--space-2);">
-              ✕ Clear Route
-            </button>
           </div>
+
+          <button class="btn btn-secondary btn-full" onclick="RouteFinderApp.waypoints.toggleClickMode()" id="click-mode-btn">
+            📍 Click Map to Add Waypoints
+          </button>
 
           <!-- Waypoints List -->
-          <div id="waypoints-list" style="display: none;">
-            <!-- Waypoints will be dynamically populated -->
+          <div id="waypoints-section" style="margin-top: var(--space-4);">
+            <div id="waypoints-list" style="display: none;">
+              <!-- Waypoints will be dynamically generated -->
+            </div>
           </div>
 
-          <!-- Route Status -->
-          <div id="route-status" class="status-message"></div>
+          <div class="status-message" id="route-status"></div>
         </div>
       </div>
 
       <!-- Map Controls -->
-      <div class="card" id="map-controls">
+      <div class="card">
         <div class="card-header" onclick="RouteFinderApp.ui.toggleSection('map-controls-content')">
           <h3>
             <span>🗺️</span> Map Controls
@@ -519,88 +649,83 @@
           <span class="chevron expanded">▷</span>
         </div>
         <div class="card-content collapsible" id="map-controls-content">
-          <div class="form-group">
-            <label class="form-label">Center Location</label>
-            <input type="text" class="form-input" id="center-location" placeholder="Enter location to center map..." value="New York, NY">
-            <button class="btn btn-secondary btn-full" onclick="RouteFinderApp.mapControls.centerMap()" style="margin-top: var(--space-2);">
-              📍 Center Map
-            </button>
-          </div>
-
+          <!-- Map Style -->
           <div class="form-group">
             <label class="form-label">Map Style</label>
-            <select class="form-select" id="map-style" onchange="RouteFinderApp.mapControls.changeStyle()">
+            <select class="form-select" id="map-style-select" onchange="RouteFinderApp.map.changeStyle()">
               <option value="mapbox://styles/mapbox/streets-v12">Streets</option>
-              <option value="mapbox://styles/mapbox/satellite-streets-v12">Satellite</option>
               <option value="mapbox://styles/mapbox/outdoors-v12">Outdoors</option>
               <option value="mapbox://styles/mapbox/light-v11">Light</option>
               <option value="mapbox://styles/mapbox/dark-v11">Dark</option>
+              <option value="mapbox://styles/mapbox/satellite-v9">Satellite</option>
+              <option value="mapbox://styles/mapbox/satellite-streets-v12">Satellite Streets</option>
+              <option value="mapbox://styles/mapbox/navigation-day-v1">Navigation Day</option>
+              <option value="mapbox://styles/mapbox/navigation-night-v1">Navigation Night</option>
             </select>
           </div>
 
+          <!-- Center Map Controls -->
           <div class="form-group">
-            <label class="form-label">Zoom Level</label>
-            <input type="range" class="form-input" id="zoom-level" min="1" max="20" value="10" onchange="RouteFinderApp.mapControls.setZoom()">
-            <span id="zoom-value" style="font-size: var(--font-size-sm); color: var(--color-text-secondary);">10</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Obstacle Detection -->
-      <div class="card" id="obstacle-controls">
-        <div class="card-header" onclick="RouteFinderApp.ui.toggleSection('obstacle-controls-content')">
-          <h3>
-            <span>⚠️</span> Obstacle Detection
-          </h3>
-          <span class="chevron expanded">▷</span>
-        </div>
-        <div class="card-content collapsible" id="obstacle-controls-content">
-          <div class="form-group">
-            <label class="form-label">Detection Settings</label>
-            <div class="button-group">
-              <button class="btn btn-secondary" onclick="RouteFinderApp.obstacles.toggleDetection()">
-                🔍 Toggle Detection
+            <label class="form-label">Center Map On</label>
+            <input type="text" class="form-input" id="center-input" placeholder="Enter address or coordinates">
+            <div class="button-grid" style="margin-top: var(--space-2);">
+              <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.centerMapOnLocation()">
+                ◎ Center
               </button>
-              <button class="btn btn-secondary" onclick="RouteFinderApp.obstacles.clearObstacles()">
-                🗑️ Clear Obstacles
+              <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.toggleCenterMode()" id="center-mode-btn">
+                ◉ Click Map
               </button>
             </div>
           </div>
-          
-          <div id="obstacle-status" class="status-message"></div>
-          <div id="obstacles-list"></div>
+
+          <!-- Map Controls Grid -->
+          <div class="button-grid">
+            <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.toggleCrosshair()" id="crosshair-toggle">
+              ⊕ Show Center
+            </button>
+            <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.getCurrentCenter()">
+              ⧉ Get Center
+            </button>
+          </div>
+
+          <!-- Zoom Controls -->
+          <div class="form-group">
+            <label class="form-label">Zoom Controls</label>
+            <div class="zoom-controls">
+              <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.zoomIn()">+</button>
+              <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.zoomOut()">-</button>
+              <button class="btn btn-secondary" onclick="RouteFinderApp.mapControls.fitToRoutes()" style="flex: 1;">
+                ⬚ Fit to Routes
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-
-      <!-- Export Map Button (will be moved to separate section in later steps) -->
-      <button class="btn btn-primary btn-full" onclick="RouteFinderApp.mapExport.showExportDialog()" title="Export map as high-resolution image" style="margin-top: var(--space-4);">
-        <span>📸</span> Export Map
-      </button>
     </div>
 
+    <!-- Map -->
     <div class="map-container">
       <div id="map"></div>
     </div>
   </div>
 
-  <!-- File input for importing routes (hidden) -->
-  <input type="file" id="route-file-input" accept=".json" style="display: none;">
-
   <script>
-    // Hardcoded Mapbox token - replace with your actual token
-    const MAPBOX_TOKEN = 'pk.eyJ1IjoiY2IyOSIsImEiOiJja3E4OHo3anowZGx1Mm9tcXF3ZmhyaWtwIn0.IQ5rY622AU9GOETrqa9NBw';
+    // Initialize Mapbox access token
+    mapboxgl.accessToken = 'pk.eyJ1IjoiY2IyOSIsImEiOiJja3hwNnI3MW0wNmJrMm5xb2o5czc4aXFwIn0.TT0U7EE-Dqo-ggmzUqK7SQ';
 
-    // Global state management
+    // Global state
     window.State = {
       map: null,
-      mapboxToken: MAPBOX_TOKEN,
       routes: new Map(),
       currentRouteId: null,
-      isInitialized: false,
-      obstacleDetection: false,
+      nextRouteId: 1,
+      clickModeActive: false,
+      centerModeActive: false,
+      crosshairVisible: false,
+      sidebarVisible: true,
       
       getCurrentRoute() {
-        return this.currentRouteId ? this.routes.get(this.currentRouteId) : null;
+        return this.routes.get(this.currentRouteId);
       },
       
       getAllRoutes() {
@@ -608,50 +733,16 @@
       }
     };
 
-    // Event system for component communication
-    window.EventSystem = {
-      listeners: new Map(),
-      
-      on(event, callback) {
-        if (!this.listeners.has(event)) {
-          this.listeners.set(event, []);
-        }
-        this.listeners.get(event).push(callback);
-      },
-      
-      emit(event, data) {
-        if (this.listeners.has(event)) {
-          this.listeners.get(event).forEach(callback => callback(data));
-        }
-      }
-    };
-
     // Utility functions
-    window.Utils = {
+    const Utils = {
       generateId() {
-        return Date.now() + Math.random().toString(36).substr(2, 9);
+        return Date.now().toString(36) + Math.random().toString(36).substr(2);
       },
 
-      createEmptyRoute() {
-        return {
-          id: this.generateId(),
-          name: `Route ${window.State.routes.size + 1}`,
-          origin: null,
-          destination: null,
-          waypoints: [],
-          travelMode: 'driving',
-          color: '#3b82f6',
-          width: 4,
-          visible: true,
-          status: 'empty',
-          routeData: null
-        };
-      },
-
-      updateStatus(message, type = 'info', elementId = 'route-status') {
-        const statusEl = document.getElementById(elementId);
+      updateStatus(message, type = 'info', targetId = 'route-status') {
+        const statusEl = document.getElementById(targetId);
         if (statusEl) {
-          statusEl.innerHTML = message;
+          statusEl.textContent = message;
           statusEl.className = `status-message ${type}`;
           statusEl.style.display = 'block';
           
@@ -661,756 +752,896 @@
             }, 3000);
           }
         }
+      },
+
+      formatCoordinates(coords) {
+        if (Array.isArray(coords)) {
+          return `${coords[1].toFixed(5)}, ${coords[0].toFixed(5)}`;
+        }
+        return `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`;
+      },
+
+      generateRouteColor() {
+        const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#84cc16'];
+        return colors[Math.floor(Math.random() * colors.length)];
       }
     };
 
-    // Main application object
-    window.RouteFinderApp = {
-      // Initialization module
-      init: {
-        initializeApp() {
-          console.log('Initializing app with hardcoded token...');
-          
-          mapboxgl.accessToken = window.State.mapboxToken;
-
-          Utils.updateStatus('🔄 Initializing map...', 'loading');
-
-          try {
-            this.createMap();
-          } catch (error) {
-            console.error('Map initialization error:', error);
-            Utils.updateStatus(`❌ Failed to initialize map: ${error.message}`, 'error');
-          }
-        },
-
-        createMap() {
-          console.log('Creating map...');
-          
-          // Clear any existing map first
-          if (window.State.map) {
-            window.State.map.remove();
-            window.State.map = null;
-          }
-          
-          window.State.map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/mapbox/streets-v12',
-            center: [-74.0059, 40.7128], // New York City
-            zoom: 10
-          });
-
-          window.State.map.on('load', () => {
-            console.log('Map loaded successfully');
-            window.State.isInitialized = true;
-            EventSystem.emit('mapLoaded');
+    // Main Application
+    const RouteFinderApp = (function() {
+      return {
+        // Initialization module
+        init: {
+          initializeApp() {
+            console.log('Initializing Route Finder App...');
+            this.initializeMap();
             this.setupMapSources();
-            Utils.updateStatus('✅ Map initialized successfully!', 'success');
-          });
+            this.setupEventHandlers();
+            RouteFinderApp.routes.createNewRoute();
+            Utils.updateStatus('✅ App initialized successfully', 'success');
+          },
 
-          window.State.map.on('error', (error) => {
-            console.error('Mapbox error:', error);
-            Utils.updateStatus('❌ Map loading failed. Please check your token.', 'error');
-          });
-        },
+          initializeMap() {
+            console.log('Initializing map...');
+            window.State.map = new mapboxgl.Map({
+              container: 'map',
+              style: 'mapbox://styles/mapbox/streets-v12',
+              center: [-84.5120, 39.1031], // Cincinnati, OH
+              zoom: 10
+            });
 
-        setupMapSources() {
-          // Add sources for routes and waypoints
-          window.State.map.addSource('routes-source', {
-            type: 'geojson',
-            data: {
-              type: 'FeatureCollection',
-              features: []
-            }
-          });
+            window.State.map.addControl(new mapboxgl.NavigationControl());
+            console.log('Map initialized successfully');
+          },
 
-          window.State.map.addSource('waypoints-source', {
-            type: 'geojson',
-            data: {
-              type: 'FeatureCollection',
-              features: []
-            }
-          });
+          setupMapSources() {
+            window.State.map.on('load', () => {
+              // Add route source
+              window.State.map.addSource('routes', {
+                type: 'geojson',
+                data: {
+                  type: 'FeatureCollection',
+                  features: []
+                }
+              });
 
-          // Add layers for routes
-          window.State.map.addLayer({
-            id: 'routes-layer',
-            type: 'line',
-            source: 'routes-source',
-            layout: {
-              'line-join': 'round',
-              'line-cap': 'round'
-            },
-            paint: {
-              'line-color': ['get', 'color'],
-              'line-width': ['get', 'width'],
-              'line-opacity': 0.8
-            }
-          });
+              // Add route layer
+              window.State.map.addLayer({
+                id: 'routes',
+                type: 'line',
+                source: 'routes',
+                layout: {
+                  'line-join': 'round',
+                  'line-cap': 'round'
+                },
+                paint: {
+                  'line-color': ['get', 'color'],
+                  'line-width': ['get', 'width']
+                }
+              });
 
-          // Add layers for waypoints
-          window.State.map.addLayer({
-            id: 'waypoints-layer',
-            type: 'circle',
-            source: 'waypoints-source',
-            paint: {
-              'circle-radius': 8,
-              'circle-color': ['get', 'color'],
-              'circle-stroke-color': '#ffffff',
-              'circle-stroke-width': 2
-            }
-          });
-        }
-      },
+              // Add waypoints source
+              window.State.map.addSource('waypoints', {
+                type: 'geojson',
+                data: {
+                  type: 'FeatureCollection',
+                  features: []
+                }
+              });
 
-      // UI Management module
-      ui: {
-        init() {
-          EventSystem.on('routeCreated', () => this.updateRouteTabs());
-          EventSystem.on('routeDeleted', () => this.updateRouteTabs());
-          EventSystem.on('routeSwitched', () => this.updateCurrentRoutePanel());
-          EventSystem.on('routesUpdated', () => this.updateRouteTabs());
-          EventSystem.on('waypointAdded', () => this.updateWaypointsList());
-          EventSystem.on('waypointRemoved', () => this.updateWaypointsList());
-          EventSystem.on('routesImported', () => {
-            this.updateRouteTabs();
-            this.updateRouteList();
-          });
-        },
+              // Add waypoints layer
+              window.State.map.addLayer({
+                id: 'waypoints',
+                type: 'circle',
+                source: 'waypoints',
+                paint: {
+                  'circle-radius': 8,
+                  'circle-color': ['get', 'color'],
+                  'circle-stroke-width': 2,
+                  'circle-stroke-color': '#ffffff'
+                }
+              });
 
-        toggleSection(sectionId) {
-          const content = document.getElementById(sectionId);
-          const chevron = content.parentNode.querySelector('.chevron');
-          
-          if (content.style.maxHeight && content.style.maxHeight !== '0px') {
-            content.style.maxHeight = '0px';
-            chevron.classList.remove('expanded');
-          } else {
-            content.style.maxHeight = content.scrollHeight + 'px';
-            chevron.classList.add('expanded');
+              console.log('Map sources and layers setup complete');
+            });
+          },
+
+          setupEventHandlers() {
+            // Map click handler for center mode and waypoint addition
+            window.State.map.on('click', (e) => {
+              if (window.State.centerModeActive) {
+                RouteFinderApp.mapControls.centerMapAtCoordinates([e.lngLat.lng, e.lngLat.lat]);
+                return;
+              }
+              
+              if (window.State.clickModeActive) {
+                RouteFinderApp.waypoints.addAtCoordinates([e.lngLat.lng, e.lngLat.lat]);
+                return;
+              }
+            });
+
+            // Map style load handler
+            window.State.map.on('styledata', () => {
+              if (window.State.map.isStyleLoaded()) {
+                this.setupMapSources();
+                RouteFinderApp.routes.updateAllRoutesOnMap();
+              }
+            });
           }
         },
 
-        updateRouteTabs() {
-          const tabsContainer = document.getElementById('route-tabs');
-          tabsContainer.innerHTML = '';
-
-          window.State.routes.forEach(route => {
-            const tab = document.createElement('div');
-            tab.className = `route-tab ${route.id === window.State.currentRouteId ? 'active' : ''}`;
-            tab.onclick = () => RouteFinderApp.routes.switchToRoute(route.id);
+        // Route management module
+        routes: {
+          createNewRoute() {
+            const routeId = Utils.generateId();
+            const routeName = `Route ${window.State.nextRouteId}`;
             
-            tab.innerHTML = `
-              <div class="route-color-indicator" style="background-color: ${route.color};"></div>
-              <span>${route.name}</span>
-              ${window.State.routes.size > 1 ? `<button onclick="event.stopPropagation(); RouteFinderApp.routes.deleteRoute('${route.id}')" style="margin-left: 8px; background: none; border: none; color: inherit; cursor: pointer;">×</button>` : ''}
-            `;
-            
-            tabsContainer.appendChild(tab);
-          });
-
-          this.updateRouteListToggle();
-          this.updateRouteStylingControls();
-        },
-
-        updateCurrentRoutePanel() {
-          const route = window.State.getCurrentRoute();
-          if (!route) return;
-
-          document.getElementById('travel-mode-select').value = route.travelMode;
-
-          // Update route indicator
-          const indicator = document.getElementById('current-route-indicator');
-          indicator.innerHTML = `<div class="route-color-indicator" style="background-color: ${route.color};"></div>`;
-          
-          this.updateRouteStylingControls();
-        },
-
-        // STEP 1 FIX: New method to update route styling controls
-        updateRouteStylingControls() {
-          const route = window.State.getCurrentRoute();
-          const stylingControls = document.getElementById('route-styling-controls');
-          
-          if (!route) {
-            stylingControls.style.display = 'none';
-            return;
-          }
-          
-          stylingControls.style.display = 'block';
-          document.getElementById('route-name-input').value = route.name;
-          document.getElementById('route-color-input').value = route.color;
-          document.getElementById('route-width-input').value = route.width;
-        },
-
-        updateRouteListToggle() {
-          const toggle = document.getElementById('route-list-toggle');
-          const routeList = document.getElementById('route-list');
-          
-          if (window.State.routes.size > 3) {
-            toggle.style.display = 'block';
-            this.updateRouteList();
-          } else {
-            toggle.style.display = 'none';
-            routeList.style.display = 'none';
-          }
-        },
-
-        toggleRouteList() {
-          const routeList = document.getElementById('route-list');
-          const toggle = document.getElementById('route-list-toggle');
-          
-          if (routeList.style.display === 'none') {
-            routeList.style.display = 'block';
-            toggle.textContent = '▲ Hide All Routes';
-            this.updateRouteList();
-          } else {
-            routeList.style.display = 'none';
-            toggle.textContent = '⋯ Show All Routes';
-          }
-        },
-
-        updateRouteList() {
-          const listContainer = document.getElementById('route-list');
-          listContainer.innerHTML = '';
-
-          window.State.routes.forEach(route => {
-            const item = document.createElement('div');
-            item.className = 'route-item';
-            
-            item.innerHTML = `
-              <div class="route-color-indicator" style="background-color: ${route.color};"></div>
-              <span class="route-name">${route.name}</span>
-              <div class="route-controls">
-                <button class="btn btn-small" style="opacity: ${route.visible ? '1' : '0.5'};" onclick="RouteFinderApp.routes.toggleVisibility('${route.id}')" title="${route.visible ? 'Hide' : 'Show'} route">
-                  ${route.visible ? '👁️' : '👁️‍🗨️'}
-                </button>
-                <button class="btn btn-small" onclick="RouteFinderApp.routes.switchToRoute('${route.id}')" title="Switch to route">
-                  📍
-                </button>
-                <button class="btn btn-small btn-danger" onclick="RouteFinderApp.routes.deleteRoute('${route.id}')" title="Delete route">
-                  🗑️
-                </button>
-              </div>
-            `;
-            
-            listContainer.appendChild(item);
-          });
-        },
-
-        updateWaypointsList() {
-          const route = window.State.getCurrentRoute();
-          const waypointsList = document.getElementById('waypoints-list');
-          
-          if (!route || route.waypoints.length === 0) {
-            waypointsList.style.display = 'none';
-            return;
-          }
-          
-          waypointsList.style.display = 'block';
-          waypointsList.innerHTML = `
-            <label class="form-label">Waypoints (${route.waypoints.length})</label>
-          `;
-          
-          route.waypoints.forEach((waypoint, index) => {
-            const item = document.createElement('div');
-            item.className = 'waypoint-item';
-            
-            item.innerHTML = `
-              <span class="waypoint-address">${index + 1}. ${waypoint.address}</span>
-              <div class="waypoint-controls">
-                <button class="btn btn-small btn-danger" onclick="RouteFinderApp.routes.removeWaypoint(${index})" title="Remove waypoint">
-                  ×
-                </button>
-              </div>
-            `;
-            
-            waypointsList.appendChild(item);
-          });
-        }
-      },
-
-      // Routes management module
-      routes: {
-        createNewRoute() {
-          const newRoute = Utils.createEmptyRoute();
-          window.State.routes.set(newRoute.id, newRoute);
-          
-          this.switchToRoute(newRoute.id);
-          
-          EventSystem.emit('routeCreated', newRoute);
-          EventSystem.emit('routesUpdated');
-          
-          Utils.updateStatus(`✅ Created route "${newRoute.name}"`, 'success');
-          console.log(`Created new route ${newRoute.id}`);
-        },
-
-        switchToRoute(routeId) {
-          const route = window.State.routes.get(routeId);
-          if (!route) return;
-          
-          window.State.currentRouteId = routeId;
-          
-          EventSystem.emit('routeSwitched', route);
-          EventSystem.emit('waypointsUpdated');
-        },
-
-        deleteRoute(routeId) {
-          if (window.State.routes.size <= 1) {
-            Utils.updateStatus('❌ Cannot delete the last route', 'error');
-            return;
-          }
-          
-          const routeName = window.State.routes.get(routeId)?.name || 'Unknown';
-          
-          if (!confirm(`Delete "${routeName}"?`)) {
-            return;
-          }
-          
-          window.State.routes.delete(routeId);
-          
-          // Switch to another route if we deleted the current one
-          if (window.State.currentRouteId === routeId) {
-            const remainingRoute = window.State.routes.values().next().value;
-            if (remainingRoute) {
-              this.switchToRoute(remainingRoute.id);
-            }
-          }
-          
-          this.updateRoutesOnMap();
-          
-          EventSystem.emit('routeDeleted', routeId);
-          EventSystem.emit('routesUpdated');
-          
-          Utils.updateStatus(`✅ Deleted route "${routeName}"`, 'success');
-        },
-
-        // STEP 1 FIX: Updated method to use consolidated controls
-        updateRouteName() {
-          const route = window.State.getCurrentRoute();
-          if (!route) return;
-          
-          const newName = document.getElementById('route-name-input').value.trim();
-          if (newName) {
-            route.name = newName;
-            EventSystem.emit('routesUpdated');
-            Utils.updateStatus(`✅ Route renamed to "${newName}"`, 'success');
-          }
-        },
-
-        // STEP 1 FIX: Updated method to use consolidated controls
-        updateRouteStyle() {
-          const route = window.State.getCurrentRoute();
-          if (!route) return;
-          
-          route.color = document.getElementById('route-color-input').value;
-          route.width = parseInt(document.getElementById('route-width-input').value);
-          
-          this.updateRoutesOnMap();
-          EventSystem.emit('routesUpdated');
-          Utils.updateStatus('✅ Route style updated', 'success');
-        },
-
-        updateTravelMode() {
-          const route = window.State.getCurrentRoute();
-          if (!route) return;
-          
-          route.travelMode = document.getElementById('travel-mode-select').value;
-          
-          // Recalculate route if waypoints exist
-          if (route.waypoints.length >= 2) {
-            this.calculateRoute();
-          }
-          
-          Utils.updateStatus(`✅ Travel mode changed to ${route.travelMode}`, 'success');
-        },
-
-        async addWaypoint() {
-          const address = document.getElementById('address-input').value.trim();
-          if (!address) {
-            Utils.updateStatus('❌ Please enter an address', 'error');
-            return;
-          }
-          
-          const route = window.State.getCurrentRoute();
-          if (!route) {
-            Utils.updateStatus('❌ No active route', 'error');
-            return;
-          }
-          
-          Utils.updateStatus('🔍 Searching for location...', 'loading');
-          
-          try {
-            const coordinates = await this.geocodeAddress(address);
-            
-            const waypoint = {
-              address: address,
-              coordinates: coordinates
+            const route = {
+              id: routeId,
+              name: routeName,
+              waypoints: [],
+              travelMode: 'driving',
+              color: Utils.generateRouteColor(),
+              width: 4,
+              visible: true,
+              status: 'empty',
+              routeData: null
             };
+
+            window.State.routes.set(routeId, route);
+            window.State.currentRouteId = routeId;
+            window.State.nextRouteId++;
+
+            this.updateRouteTabs();
+            this.updateRouteControls();
+            this.showRouteListToggle();
             
-            route.waypoints.push(waypoint);
-            document.getElementById('address-input').value = '';
+            Utils.updateStatus(`✅ Created ${routeName}`, 'success');
+            return routeId;
+          },
+
+          switchToRoute(routeId) {
+            if (window.State.routes.has(routeId)) {
+              window.State.currentRouteId = routeId;
+              this.updateRouteTabs();
+              this.updateRouteControls();
+              RouteFinderApp.ui.updateWaypointsList();
+              Utils.updateStatus(`✅ Switched to ${window.State.routes.get(routeId).name}`, 'success');
+            }
+          },
+
+          deleteRoute(routeId) {
+            if (window.State.routes.size <= 1) {
+              Utils.updateStatus('❌ Cannot delete the last route', 'error');
+              return;
+            }
+
+            const route = window.State.routes.get(routeId);
+            if (!route) return;
+
+            // Remove from map
+            this.removeRouteFromMap(routeId);
             
-            EventSystem.emit('waypointAdded', waypoint);
+            // Delete from state
+            window.State.routes.delete(routeId);
+
+            // Switch to another route if this was current
+            if (window.State.currentRouteId === routeId) {
+              const remainingRoutes = Array.from(window.State.routes.keys());
+              if (remainingRoutes.length > 0) {
+                this.switchToRoute(remainingRoutes[0]);
+              }
+            }
+
+            this.updateRouteTabs();
+            RouteFinderApp.ui.updateRouteList();
+            this.hideRouteListToggleIfNeeded();
+            
+            Utils.updateStatus(`✅ Deleted ${route.name}`, 'success');
+          },
+
+          updateRouteTabs() {
+            const tabsContainer = document.getElementById('route-tabs');
+            tabsContainer.innerHTML = '';
+
+            window.State.routes.forEach(route => {
+              const tab = document.createElement('div');
+              tab.className = `route-tab ${route.id === window.State.currentRouteId ? 'active' : ''}`;
+              tab.onclick = () => this.switchToRoute(route.id);
+              
+              tab.innerHTML = `
+                <div class="route-color-indicator" style="background-color: ${route.color}"></div>
+                <span>${route.name}</span>
+                ${window.State.routes.size > 1 ? `<button onclick="event.stopPropagation(); RouteFinderApp.routes.deleteRoute('${route.id}')" style="margin-left: 8px; background: none; border: none; color: inherit; cursor: pointer;">×</button>` : ''}
+              `;
+              
+              tabsContainer.appendChild(tab);
+            });
+          },
+
+          updateRouteControls() {
+            const route = window.State.getCurrentRoute();
+            if (!route) return;
+
+            document.getElementById('route-name-input').value = route.name;
+            document.getElementById('route-color-input').value = route.color;
+            document.getElementById('route-width-input').value = route.width;
+            document.getElementById('travel-mode-select').value = route.travelMode;
+            
+            // Update current route indicator
+            document.getElementById('current-route-indicator').textContent = `(${route.name})`;
+          },
+
+          updateRouteStyle() {
+            const route = window.State.getCurrentRoute();
+            if (!route) return;
+
+            const name = document.getElementById('route-name-input').value;
+            const color = document.getElementById('route-color-input').value;
+            const width = parseInt(document.getElementById('route-width-input').value);
+
+            route.name = name || route.name;
+            route.color = color;
+            route.width = width;
+
+            this.updateRouteTabs();
+            this.updateRouteOnMap(route.id);
+            document.getElementById('current-route-indicator').textContent = `(${route.name})`;
+          },
+
+          updateTravelMode() {
+            const route = window.State.getCurrentRoute();
+            if (!route) return;
+
+            route.travelMode = document.getElementById('travel-mode-select').value;
             
             if (route.waypoints.length >= 2) {
-              await this.calculateRoute();
+              this.calculateRoute();
             }
-            
-            Utils.updateStatus(`✅ Added waypoint: ${address}`, 'success');
-            
-          } catch (error) {
-            console.error('Geocoding error:', error);
-            Utils.updateStatus(`❌ Could not find location: ${address}`, 'error');
-          }
-        },
+          },
 
-        async geocodeAddress(address) {
-          const encodedAddress = encodeURIComponent(address);
-          const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${window.State.mapboxToken}&limit=1`;
-          
-          const response = await fetch(url);
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          
-          const data = await response.json();
-          
-          if (!data.features || data.features.length === 0) {
-            throw new Error('Location not found');
-          }
-          
-          return data.features[0].center;
-        },
+          toggleVisibility(routeId) {
+            const route = window.State.routes.get(routeId);
+            if (!route) return;
 
-        async calculateRoute() {
-          const route = window.State.getCurrentRoute();
-          if (!route || route.waypoints.length < 2) return;
-          
-          Utils.updateStatus('🧭 Calculating route...', 'loading');
-          
-          try {
-            const coordinates = route.waypoints.map(wp => wp.coordinates.join(',')).join(';');
-            const profile = route.travelMode === 'driving' ? 'driving' : route.travelMode === 'walking' ? 'walking' : 'cycling';
-            
-            const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coordinates}?geometries=geojson&access_token=${window.State.mapboxToken}`;
-            
-            const response = await fetch(url);
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
+            route.visible = !route.visible;
+            this.updateRouteOnMap(routeId);
+            RouteFinderApp.ui.updateRouteList();
+          },
+
+          async calculateRoute() {
+            const route = window.State.getCurrentRoute();
+            if (!route || route.waypoints.length < 2) return;
+
+            Utils.updateStatus('🔄 Calculating route...', 'info');
+
+            try {
+              const coordinates = route.waypoints.map(wp => wp.join(',')).join(';');
+              const response = await fetch(
+                `https://api.mapbox.com/directions/v5/mapbox/${route.travelMode}/${coordinates}?` +
+                `geometries=geojson&access_token=${mapboxgl.accessToken}`
+              );
+
+              if (!response.ok) {
+                throw new Error('Route calculation failed');
+              }
+
+              const data = await response.json();
+              
+              if (data.routes && data.routes.length > 0) {
+                route.routeData = data.routes[0];
+                route.status = 'calculated';
+                this.updateRouteOnMap(route.id);
+                Utils.updateStatus(`✅ Route calculated: ${(route.routeData.distance / 1000).toFixed(1)}km, ${Math.round(route.routeData.duration / 60)}min`, 'success');
+              } else {
+                throw new Error('No route found');
+              }
+            } catch (error) {
+              console.error('Route calculation error:', error);
+              Utils.updateStatus('❌ Failed to calculate route', 'error');
+              route.status = 'error';
             }
-            
-            const data = await response.json();
-            
-            if (data.routes && data.routes.length > 0) {
-              route.routeData = data.routes[0];
-              route.status = 'calculated';
-              
-              this.updateRoutesOnMap();
-              this.fitMapToRoute();
-              
-              const duration = Math.round(data.routes[0].duration / 60);
-              const distance = (data.routes[0].distance / 1000).toFixed(1);
-              
-              Utils.updateStatus(`✅ Route calculated: ${distance}km, ${duration} minutes`, 'success');
-            } else {
-              throw new Error('No route found');
-            }
-            
-          } catch (error) {
-            console.error('Route calculation error:', error);
-            Utils.updateStatus('❌ Could not calculate route', 'error');
-          }
-        },
+          },
 
-        removeWaypoint(index) {
-          const route = window.State.getCurrentRoute();
-          if (!route) return;
-          
-          const removedWaypoint = route.waypoints[index];
-          route.waypoints.splice(index, 1);
-          
-          EventSystem.emit('waypointRemoved', index);
-          
-          if (route.waypoints.length >= 2) {
-            this.calculateRoute();
-          } else {
-            route.routeData = null;
-            route.status = 'empty';
-            this.updateRoutesOnMap();
-          }
-          
-          Utils.updateStatus(`✅ Removed waypoint: ${removedWaypoint.address}`, 'success');
-        },
+          updateRouteOnMap(routeId) {
+            const route = window.State.routes.get(routeId);
+            if (!route) return;
 
-        clearCurrentRoute() {
-          const route = window.State.getCurrentRoute();
-          if (!route) return;
-          
-          route.waypoints = [];
-          route.routeData = null;
-          route.status = 'empty';
-          
-          this.updateRoutesOnMap();
-          
-          EventSystem.emit('waypointsUpdated');
-          
-          Utils.updateStatus('✅ Route cleared', 'success');
-        },
+            const features = [];
 
-        toggleVisibility(routeId) {
-          const route = window.State.routes.get(routeId);
-          if (!route) return;
-          
-          route.visible = !route.visible;
-          this.updateRoutesOnMap();
-          EventSystem.emit('routesUpdated');
-          
-          Utils.updateStatus(`✅ Route ${route.visible ? 'shown' : 'hidden'}`, 'success');
-        },
-
-        updateRoutesOnMap() {
-          if (!window.State.map || !window.State.isInitialized) return;
-          
-          const routeFeatures = [];
-          const waypointFeatures = [];
-          
-          window.State.routes.forEach(route => {
-            if (route.visible && route.routeData) {
-              routeFeatures.push({
+            if (route.routeData && route.visible) {
+              features.push({
                 type: 'Feature',
                 properties: {
-                  id: route.id,
                   color: route.color,
-                  width: route.width
+                  width: route.width,
+                  routeId: routeId
                 },
                 geometry: route.routeData.geometry
               });
             }
+
+            // Update route source
+            const routeSource = window.State.map.getSource('routes');
+            if (routeSource) {
+              const allFeatures = [];
+              window.State.routes.forEach((r, id) => {
+                if (r.routeData && r.visible) {
+                  allFeatures.push({
+                    type: 'Feature',
+                    properties: {
+                      color: r.color,
+                      width: r.width,
+                      routeId: id
+                    },
+                    geometry: r.routeData.geometry
+                  });
+                }
+              });
+
+              routeSource.setData({
+                type: 'FeatureCollection',
+                features: allFeatures
+              });
+            }
+
+            // Update waypoints
+            RouteFinderApp.waypoints.updateWaypointsOnMap();
+          },
+
+          updateAllRoutesOnMap() {
+            window.State.routes.forEach((route, routeId) => {
+              this.updateRouteOnMap(routeId);
+            });
+          },
+
+          removeRouteFromMap(routeId) {
+            // This will be handled by updateAllRoutesOnMap
+            this.updateAllRoutesOnMap();
+          },
+
+          showRouteListToggle() {
+            const toggle = document.getElementById('route-list-toggle');
+            if (window.State.routes.size > 1) {
+              toggle.style.display = 'block';
+            }
+          },
+
+          hideRouteListToggleIfNeeded() {
+            const toggle = document.getElementById('route-list-toggle');
+            if (window.State.routes.size <= 1) {
+              toggle.style.display = 'none';
+              document.getElementById('route-list').style.display = 'none';
+            }
+          }
+        },
+
+        // Waypoint management module
+        waypoints: {
+          async addFromInput() {
+            const input = document.getElementById('waypoint-input');
+            const address = input.value.trim();
             
-            if (route.visible && route.waypoints.length > 0) {
+            if (!address) {
+              Utils.updateStatus('❌ Please enter an address', 'error');
+              return;
+            }
+
+            try {
+              Utils.updateStatus('🔄 Finding location...', 'info');
+              const coords = await RouteFinderApp.geocoding.geocode(address);
+              this.addAtCoordinates([coords.lng, coords.lat]);
+              input.value = '';
+            } catch (error) {
+              console.error('Geocoding error:', error);
+              Utils.updateStatus('❌ Location not found', 'error');
+            }
+          },
+
+          addAtCoordinates(coords) {
+            const route = window.State.getCurrentRoute();
+            if (!route) return;
+
+            route.waypoints.push(coords);
+            
+            RouteFinderApp.ui.updateWaypointsList();
+            this.updateWaypointsOnMap();
+            
+            if (route.waypoints.length >= 2) {
+              RouteFinderApp.routes.calculateRoute();
+            }
+            
+            Utils.updateStatus(`✅ Added waypoint at ${Utils.formatCoordinates(coords)}`, 'success');
+          },
+
+          removeWaypoint(index) {
+            const route = window.State.getCurrentRoute();
+            if (!route || index < 0 || index >= route.waypoints.length) return;
+
+            route.waypoints.splice(index, 1);
+            route.routeData = null;
+            route.status = route.waypoints.length >= 2 ? 'pending' : 'empty';
+            
+            RouteFinderApp.ui.updateWaypointsList();
+            this.updateWaypointsOnMap();
+            
+            if (route.waypoints.length >= 2) {
+              RouteFinderApp.routes.calculateRoute();
+            } else {
+              RouteFinderApp.routes.updateRouteOnMap(route.id);
+            }
+            
+            Utils.updateStatus('✅ Waypoint removed', 'success');
+          },
+
+          moveWaypoint(index, direction) {
+            const route = window.State.getCurrentRoute();
+            if (!route) return;
+
+            const newIndex = direction === 'up' ? index - 1 : index + 1;
+            if (newIndex < 0 || newIndex >= route.waypoints.length) return;
+
+            // Swap waypoints
+            [route.waypoints[index], route.waypoints[newIndex]] = [route.waypoints[newIndex], route.waypoints[index]];
+            
+            RouteFinderApp.ui.updateWaypointsList();
+            this.updateWaypointsOnMap();
+            
+            if (route.waypoints.length >= 2) {
+              RouteFinderApp.routes.calculateRoute();
+            }
+          },
+
+          toggleClickMode() {
+            window.State.clickModeActive = !window.State.clickModeActive;
+            
+            const btn = document.getElementById('click-mode-btn');
+            if (window.State.clickModeActive) {
+              btn.classList.remove('btn-secondary');
+              btn.classList.add('btn-primary');
+              btn.innerHTML = '📍 Click Mode: ON (Click map to add)';
+              Utils.updateStatus('Click on the map to add waypoints', 'info');
+            } else {
+              btn.classList.remove('btn-primary');
+              btn.classList.add('btn-secondary');
+              btn.innerHTML = '📍 Click Map to Add Waypoints';
+            }
+          },
+
+          updateWaypointsOnMap() {
+            const features = [];
+            
+            window.State.routes.forEach(route => {
+              if (!route.visible) return;
+              
               route.waypoints.forEach((waypoint, index) => {
-                waypointFeatures.push({
+                features.push({
                   type: 'Feature',
                   properties: {
-                    id: `${route.id}-${index}`,
                     color: route.color,
-                    address: waypoint.address
+                    index: index,
+                    routeId: route.id
                   },
                   geometry: {
                     type: 'Point',
-                    coordinates: waypoint.coordinates
+                    coordinates: waypoint
                   }
                 });
               });
+            });
+
+            const waypointSource = window.State.map.getSource('waypoints');
+            if (waypointSource) {
+              waypointSource.setData({
+                type: 'FeatureCollection',
+                features: features
+              });
             }
-          });
-          
-          window.State.map.getSource('routes-source').setData({
-            type: 'FeatureCollection',
-            features: routeFeatures
-          });
-          
-          window.State.map.getSource('waypoints-source').setData({
-            type: 'FeatureCollection',
-            features: waypointFeatures
-          });
+          }
         },
 
-        fitMapToRoute() {
-          const route = window.State.getCurrentRoute();
-          if (!route || !route.routeData) return;
-          
-          const coordinates = route.routeData.geometry.coordinates;
-          const bounds = new mapboxgl.LngLatBounds();
-          
-          coordinates.forEach(coord => bounds.extend(coord));
-          
-          window.State.map.fitBounds(bounds, {
-            padding: 50
-          });
-        }
-      },
+        // Geocoding service
+        geocoding: {
+          async geocode(address) {
+            const response = await fetch(
+              `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?` +
+              `access_token=${mapboxgl.accessToken}&limit=1`
+            );
 
-      // Map controls module
-      mapControls: {
-        async centerMap() {
-          const location = document.getElementById('center-location').value.trim();
-          if (!location) return;
-          
-          try {
-            const coordinates = await RouteFinderApp.routes.geocodeAddress(location);
-            window.State.map.flyTo({
-              center: coordinates,
-              zoom: 12
+            if (!response.ok) {
+              throw new Error('Geocoding request failed');
+            }
+
+            const data = await response.json();
+            
+            if (data.features && data.features.length > 0) {
+              const [lng, lat] = data.features[0].center;
+              return { lng, lat };
+            } else {
+              throw new Error('Address not found');
+            }
+          }
+        },
+
+        // Map controls module
+        mapControls: {
+          async centerMapOnLocation() {
+            const input = document.getElementById('center-input');
+            const location = input.value.trim();
+            
+            if (!location) {
+              Utils.updateStatus('❌ Please enter a location', 'error');
+              return;
+            }
+
+            try {
+              Utils.updateStatus('🔄 Finding location...', 'info');
+              const coords = await RouteFinderApp.geocoding.geocode(location);
+              this.centerMapAtCoordinates([coords.lng, coords.lat]);
+              input.value = '';
+            } catch (error) {
+              console.error('Geocoding error:', error);
+              Utils.updateStatus('❌ Location not found', 'error');
+            }
+          },
+
+          centerMapAtCoordinates(coords) {
+            window.State.map.setCenter(coords);
+            Utils.updateStatus(`✅ Centered map at ${Utils.formatCoordinates(coords)}`, 'success');
+          },
+
+          toggleCenterMode() {
+            window.State.centerModeActive = !window.State.centerModeActive;
+            
+            const btn = document.getElementById('center-mode-btn');
+            if (window.State.centerModeActive) {
+              btn.classList.remove('btn-secondary');
+              btn.classList.add('btn-primary');
+              btn.innerHTML = '◉ Click Mode: ON';
+              Utils.updateStatus('Click on the map to center at that location', 'info');
+            } else {
+              btn.classList.remove('btn-primary');
+              btn.classList.add('btn-secondary');
+              btn.innerHTML = '◉ Click Map';
+            }
+          },
+
+          toggleCrosshair() {
+            window.State.crosshairVisible = !window.State.crosshairVisible;
+            
+            const crosshair = document.getElementById('map-crosshair');
+            const btn = document.getElementById('crosshair-toggle');
+            
+            if (window.State.crosshairVisible) {
+              crosshair.style.display = 'block';
+              btn.classList.remove('btn-secondary');
+              btn.classList.add('btn-primary');
+              btn.innerHTML = '⊕ Hide Center';
+            } else {
+              crosshair.style.display = 'none';
+              btn.classList.remove('btn-primary');
+              btn.classList.add('btn-secondary');
+              btn.innerHTML = '⊕ Show Center';
+            }
+          },
+
+          getCurrentCenter() {
+            const center = window.State.map.getCenter();
+            const centerText = Utils.formatCoordinates([center.lng, center.lat]);
+            
+            // Copy to clipboard if available
+            if (navigator.clipboard) {
+              navigator.clipboard.writeText(centerText).then(() => {
+                Utils.updateStatus(`📋 Center coordinates copied: ${centerText}`, 'success');
+              }).catch(() => {
+                Utils.updateStatus(`📍 Center: ${centerText}`, 'info');
+              });
+            } else {
+              Utils.updateStatus(`📍 Center: ${centerText}`, 'info');
+            }
+          },
+
+          zoomIn() {
+            window.State.map.zoomIn();
+          },
+
+          zoomOut() {
+            window.State.map.zoomOut();
+          },
+
+          fitToRoutes() {
+            const coordinates = [];
+            
+            window.State.routes.forEach(route => {
+              if (route.visible && route.waypoints.length > 0) {
+                route.waypoints.forEach(waypoint => {
+                  coordinates.push(waypoint);
+                });
+              }
+            });
+
+            if (coordinates.length === 0) {
+              Utils.updateStatus('❌ No visible routes to fit', 'error');
+              return;
+            }
+
+            const bounds = coordinates.reduce((bounds, coord) => {
+              return bounds.extend(coord);
+            }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
+
+            window.State.map.fitBounds(bounds, {
+              padding: 50
             });
             
-            Utils.updateStatus(`✅ Centered map on ${location}`, 'success');
-          } catch (error) {
-            Utils.updateStatus(`❌ Could not find location: ${location}`, 'error');
+            Utils.updateStatus('✅ Map fitted to routes', 'success');
           }
         },
 
-        changeStyle() {
-          const style = document.getElementById('map-style').value;
-          window.State.map.setStyle(style);
-          
-          // Re-add sources and layers after style change
-          window.State.map.once('styledata', () => {
-            RouteFinderApp.init.setupMapSources();
-            RouteFinderApp.routes.updateRoutesOnMap();
-          });
+        // Map styling module
+        map: {
+          changeStyle() {
+            const styleSelect = document.getElementById('map-style-select');
+            const style = styleSelect.value;
+            
+            Utils.updateStatus('🔄 Changing map style...', 'info');
+            window.State.map.setStyle(style);
+            
+            // Re-add sources and layers after style change
+            window.State.map.once('styledata', () => {
+              RouteFinderApp.init.setupMapSources();
+              RouteFinderApp.routes.updateAllRoutesOnMap();
+              Utils.updateStatus('✅ Map style updated', 'success');
+            });
+          }
         },
 
-        setZoom() {
-          const zoom = document.getElementById('zoom-level').value;
-          document.getElementById('zoom-value').textContent = zoom;
-          window.State.map.setZoom(zoom);
-        }
-      },
+        // File management module
+        fileManager: {
+          exportRoutes() {
+            if (window.State.routes.size === 0) {
+              Utils.updateStatus('❌ No routes to export', 'error');
+              return;
+            }
 
-      // File management module
-      fileManager: {
-        exportRoutes() {
-          if (window.State.routes.size === 0) {
-            Utils.updateStatus('❌ No routes to export', 'error');
-            return;
-          }
+            try {
+              const exportData = {
+                version: "1.0",
+                exportDate: new Date().toISOString(),
+                totalRoutes: window.State.routes.size,
+                routes: window.State.getAllRoutes().map(route => ({
+                  id: route.id,
+                  name: route.name,
+                  waypoints: route.waypoints,
+                  travelMode: route.travelMode,
+                  color: route.color,
+                  width: route.width,
+                  visible: route.visible,
+                  status: route.status,
+                  routeStats: route.routeData ? {
+                    distance: route.routeData.distance,
+                    duration: route.routeData.duration
+                  } : null
+                }))
+              };
 
-          try {
-            const exportData = {
-              version: "1.0",
-              exportDate: new Date().toISOString(),
-              totalRoutes: window.State.routes.size,
-              routes: window.State.getAllRoutes().map(route => ({
-                id: route.id,
-                name: route.name,
-                origin: route.origin,
-                destination: route.destination,
-                waypoints: route.waypoints,
-                travelMode: route.travelMode,
-                color: route.color,
-                width: route.width,
-                visible: route.visible,
-                status: route.status,
-                routeStats: route.routeData ? {
-                  duration: route.routeData.duration,
-                  distance: route.routeData.distance
-                } : null
-              }))
+              const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `routes_${new Date().toISOString().split('T')[0]}.json`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+
+              Utils.updateStatus(`✅ Exported ${window.State.routes.size} routes`, 'success');
+            } catch (error) {
+              console.error('Export error:', error);
+              Utils.updateStatus('❌ Export failed', 'error');
+            }
+          },
+
+          triggerImportRoutes() {
+            document.getElementById('route-file-input').click();
+          },
+
+          importRoutes(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.type !== 'application/json') {
+              Utils.updateStatus('❌ Please select a JSON file', 'error');
+              return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              try {
+                const importData = JSON.parse(e.target.result);
+                
+                if (!importData.routes || !Array.isArray(importData.routes)) {
+                  throw new Error('Invalid file format');
+                }
+
+                // Clear existing routes
+                window.State.routes.clear();
+                
+                // Import routes
+                importData.routes.forEach(routeData => {
+                  const route = {
+                    id: routeData.id || Utils.generateId(),
+                    name: routeData.name || `Route ${window.State.nextRouteId++}`,
+                    waypoints: routeData.waypoints || [],
+                    travelMode: routeData.travelMode || 'driving',
+                    color: routeData.color || Utils.generateRouteColor(),
+                    width: routeData.width || 4,
+                    visible: routeData.visible !== false,
+                    status: 'empty',
+                    routeData: null
+                  };
+
+                  window.State.routes.set(route.id, route);
+                });
+
+                // Set current route
+                const firstRoute = Array.from(window.State.routes.keys())[0];
+                if (firstRoute) {
+                  window.State.currentRouteId = firstRoute;
+                }
+
+                // Update UI
+                RouteFinderApp.routes.updateRouteTabs();
+                RouteFinderApp.routes.updateRouteControls();
+                RouteFinderApp.ui.updateWaypointsList();
+                RouteFinderApp.routes.showRouteListToggle();
+
+                // Recalculate routes
+                window.State.routes.forEach(route => {
+                  if (route.waypoints.length >= 2) {
+                    RouteFinderApp.routes.calculateRoute();
+                  }
+                });
+
+                Utils.updateStatus(`✅ Imported ${importData.routes.length} routes`, 'success');
+              } catch (error) {
+                console.error('Import error:', error);
+                Utils.updateStatus('❌ Import failed - invalid file format', 'error');
+              }
             };
 
-            const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-              type: 'application/json'
-            });
-            
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `routes-export-${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-
-            Utils.updateStatus(`✅ Exported ${window.State.routes.size} routes successfully`, 'success');
-
-          } catch (error) {
-            console.error('Export error:', error);
-            Utils.updateStatus('❌ Export failed', 'error');
+            reader.readAsText(file);
+            event.target.value = ''; // Reset file input
           }
         },
 
-        triggerImportRoutes() {
-          document.getElementById('route-file-input').click();
-        },
+        // UI management module
+        ui: {
+          init() {
+            console.log('Initializing UI...');
+            this.setupCollapsibleSections();
+          },
 
-        importRoutes() {
-          const fileInput = document.getElementById('route-file-input');
-          const file = fileInput.files[0];
-          
-          if (!file) return;
-
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            try {
-              const importData = JSON.parse(e.target.result);
-              
-              if (!importData.routes || !Array.isArray(importData.routes)) {
-                throw new Error('Invalid route data structure');
+          setupCollapsibleSections() {
+            const sections = ['route-management-content', 'current-route-content', 'map-controls-content'];
+            sections.forEach(sectionId => {
+              const content = document.getElementById(sectionId);
+              if (content) {
+                content.style.maxHeight = content.scrollHeight + 'px';
               }
+            });
+          },
 
-              Utils.updateStatus('📥 Importing Routes...', 'loading');
+          toggleSection(contentId) {
+            const content = document.getElementById(contentId);
+            const header = content.previousElementSibling;
+            const chevron = header.querySelector('.chevron');
 
-              if (window.State.routes.size > 0) {
-                const confirmClear = confirm(`This will replace your current ${window.State.routes.size} route(s). Continue?`);
-                if (!confirmClear) return;
-              }
-
-              // Clear existing routes
-              window.State.routes.clear();
-
-              // Import routes
-              importData.routes.forEach(routeData => {
-                const route = {
-                  id: Utils.generateId(),
-                  name: routeData.name || 'Imported Route',
-                  origin: routeData.origin || null,
-                  destination: routeData.destination || null,
-                  waypoints: routeData.waypoints || [],
-                  travelMode: routeData.travelMode || 'driving',
-                  color: routeData.color || '#3b82f6',
-                  width: routeData.width || 4,
-                  visible: routeData.visible !== false,
-                  status: routeData.status || 'empty',
-                  routeData: null
-                };
-                
-                window.State.routes.set(route.id, route);
-              });
-
-              // Set first route as current
-              if (window.State.routes.size > 0) {
-                const firstRoute = window.State.routes.values().next().value;
-                window.State.currentRouteId = firstRoute.id;
-              }
-
-              EventSystem.emit('routesImported');
-              
-              Utils.updateStatus(`✅ Successfully imported ${importData.routes.length} routes`, 'success');
-
-            } catch (error) {
-              console.error('Import error:', error);
-              Utils.updateStatus('❌ Import failed. Please check the file format.', 'error');
+            if (content.classList.contains('collapsed')) {
+              content.classList.remove('collapsed');
+              chevron.classList.add('expanded');
+              content.style.maxHeight = content.scrollHeight + 'px';
+            } else {
+              content.classList.add('collapsed');
+              chevron.classList.remove('expanded');
+              content.style.maxHeight = '0px';
             }
-          };
+          },
 
-          reader.readAsText(file);
-          fileInput.value = '';
+          toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.getElementById('toggle-btn');
+            
+            window.State.sidebarVisible = !window.State.sidebarVisible;
+            
+            if (window.State.sidebarVisible) {
+              sidebar.classList.remove('hidden');
+              toggle.classList.remove('sidebar-hidden');
+              toggle.classList.add('sidebar-visible');
+              toggle.textContent = '☰';
+            } else {
+              sidebar.classList.add('hidden');
+              toggle.classList.remove('sidebar-visible');
+              toggle.classList.add('sidebar-hidden');
+              toggle.textContent = '→';
+            }
+          },
+
+          toggleRouteList() {
+            const routeList = document.getElementById('route-list');
+            const toggle = document.getElementById('route-list-toggle');
+            
+            if (routeList.style.display === 'none') {
+              routeList.style.display = 'block';
+              toggle.textContent = '▲ Hide All Routes';
+              this.updateRouteList();
+            } else {
+              routeList.style.display = 'none';
+              toggle.textContent = '⋯ Show All Routes';
+            }
+          },
+
+          updateRouteList() {
+            const listContainer = document.getElementById('route-list');
+            listContainer.innerHTML = '';
+
+            window.State.routes.forEach(route => {
+              const item = document.createElement('div');
+              item.className = 'route-item';
+              
+              item.innerHTML = `
+                <div class="route-color-indicator" style="background-color: ${route.color};"></div>
+                <span class="route-name">${route.name}</span>
+                <div class="route-controls">
+                  <button class="btn btn-small" style="opacity: ${route.visible ? '1' : '0.5'};" onclick="RouteFinderApp.routes.toggleVisibility('${route.id}')" title="${route.visible ? 'Hide' : 'Show'} route">
+                    ${route.visible ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                  <button class="btn btn-small" onclick="RouteFinderApp.routes.switchToRoute('${route.id}')" title="Switch to route">
+                    📍
+                  </button>
+                  <button class="btn btn-small btn-danger" onclick="RouteFinderApp.routes.deleteRoute('${route.id}')" title="Delete route">
+                    🗑️
+                  </button>
+                </div>
+              `;
+              
+              listContainer.appendChild(item);
+            });
+          },
+
+          updateWaypointsList() {
+            const route = window.State.getCurrentRoute();
+            const waypointsList = document.getElementById('waypoints-list');
+            
+            if (!route || route.waypoints.length === 0) {
+              waypointsList.style.display = 'none';
+              return;
+            }
+            
+            waypointsList.style.display = 'block';
+            waypointsList.innerHTML = `
+              <label class="form-label">Waypoints (${route.waypoints.length})</label>
+            `;
+            
+            route.waypoints.forEach((waypoint, index) => {
+              const item = document.createElement('div');
+              item.className = 'waypoint-item';
+              
+              item.innerHTML = `
+                <span class="waypoint-address">${index + 1}. ${Utils.formatCoordinates(waypoint)}</span>
+                <div class="waypoint-controls">
+                  <button class="btn btn-small" onclick="RouteFinderApp.waypoints.moveWaypoint(${index}, 'up')" ${index === 0 ? 'disabled' : ''} title="Move up">↑</button>
+                  <button class="btn btn-small" onclick="RouteFinderApp.waypoints.moveWaypoint(${index}, 'down')" ${index === route.waypoints.length - 1 ? 'disabled' : ''} title="Move down">↓</button>
+                  <button class="btn btn-small btn-danger" onclick="RouteFinderApp.waypoints.removeWaypoint(${index})" title="Remove">×</button>
+                </div>
+              `;
+              
+              waypointsList.appendChild(item);
+            });
+          }
         }
-      },
-
-      // Obstacle detection module
-      obstacles: {
-        toggleDetection() {
-          window.State.obstacleDetection = !window.State.obstacleDetection;
-          Utils.updateStatus(
-            window.State.obstacleDetection ? '✅ Obstacle detection enabled' : '⭕ Obstacle detection disabled',
-            window.State.obstacleDetection ? 'success' : 'warning',
-            'obstacle-status'
-          );
-        },
-
-        clearObstacles() {
-          Utils.updateStatus('✅ Obstacles cleared', 'success', 'obstacle-status');
-        }
-      },
-
-      // Map export module (placeholder for future implementation)
-      mapExport: {
-        showExportDialog() {
-          Utils.updateStatus('📸 Map export feature coming soon!', 'info');
-        }
-      }
-    };
+      };
+    })();
 
     // Initialize application
     document.addEventListener('DOMContentLoaded', function() {
@@ -1419,17 +1650,6 @@
       
       // Setup file input handler
       document.getElementById('route-file-input').addEventListener('change', RouteFinderApp.fileManager.importRoutes);
-      
-      // Initialize sections as expanded
-      const sections = ['route-management-content', 'current-route-content', 'map-controls-content', 'obstacle-controls-content'];
-      sections.forEach(sectionId => {
-        const content = document.getElementById(sectionId);
-        if (content) {
-          content.style.maxHeight = content.scrollHeight + 'px';
-        }
-      });
-
-      console.log('Route Finder App initialized successfully');
     });
 
     // Auto-initialize when page loads
@@ -1442,5 +1662,3 @@
   </script>
 </body>
 </html>
-
-        
