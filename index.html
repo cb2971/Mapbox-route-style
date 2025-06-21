@@ -158,12 +158,25 @@
       color: var(--color-text-secondary);
       cursor: pointer;
       transition: var(--transition-base);
+      position: fixed;
+      top: var(--space-4);
+      right: var(--space-4);
+      z-index: 400;
+      box-shadow: var(--shadow-md);
     }
 
     .sidebar-toggle:hover {
       background: var(--color-surface-hover);
       color: var(--color-text-primary);
       border-color: var(--color-border-medium);
+    }
+
+    .sidebar-toggle-in-header {
+      position: relative;
+      top: auto;
+      right: auto;
+      z-index: auto;
+      box-shadow: none;
     }
 
     .main-content {
@@ -188,10 +201,10 @@
       box-shadow: var(--shadow-sm);
     }
 
-    .map-style-selector {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
+    .top-bar-title {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-secondary);
     }
 
     .map-style-selector label {
@@ -680,8 +693,8 @@
       <!-- Sidebar Header with Toggle -->
       <div class="sidebar-header">
         <div class="sidebar-title">Route Finder</div>
-        <button class="sidebar-toggle" onclick="AppManager.ui.toggleSidebar()" id="sidebar-toggle">
-          <i data-feather="x" id="sidebar-toggle-icon"></i>
+        <button class="sidebar-toggle sidebar-toggle-in-header" onclick="AppManager.ui.toggleSidebar()" id="sidebar-toggle-header">
+          <i data-feather="x" id="sidebar-toggle-icon-header"></i>
         </button>
       </div>
       
@@ -810,6 +823,17 @@
             <i data-feather="chevron-down" class="chevron"></i>
           </div>
           <div class="card-content" id="map-controls-content">
+            <!-- Map Style Selector -->
+            <div class="form-group">
+              <label class="form-label">
+                <i data-feather="eye"></i>
+                Map Style
+              </label>
+              <select id="map-style-select" class="form-select" onchange="AppManager.map.changeStyle()">
+                <!-- Options will be populated by JavaScript -->
+              </select>
+            </div>
+            
             <div class="btn-group-grid">
               <button class="btn" onclick="AppManager.map.zoomToRoute()">
                 <i data-feather="zoom-in"></i>
@@ -851,17 +875,17 @@
     <div class="main-content">
       <!-- Top Bar -->
       <div class="top-bar">
-        <div class="map-style-selector">
-          <label for="map-style-select">Map Style:</label>
-          <select id="map-style-select" onchange="AppManager.map.changeStyle()">
-            <!-- Options will be populated by JavaScript -->
-          </select>
-        </div>
+        <div class="top-bar-title">Interactive Map</div>
       </div>
 
       <!-- Map Container -->
       <div class="map-container">
         <div id="map"></div>
+        
+        <!-- Fixed Toggle Button (always visible) -->
+        <button class="sidebar-toggle" onclick="AppManager.ui.toggleSidebar()" id="sidebar-toggle-fixed" style="display: none;">
+          <i data-feather="menu" id="sidebar-toggle-icon-fixed"></i>
+        </button>
         
         <!-- Map Crosshair -->
         <div id="map-crosshair" class="map-crosshair" style="display: none;">
@@ -985,32 +1009,62 @@
               'loader'
             );
 
+            // Test the token first
+            console.log('Testing Mapbox token...');
+            
             mapboxgl.accessToken = CONFIG.mapbox.accessToken;
+            
+            // Try a simple token validation
+            try {
+              const testResponse = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/test.json?access_token=${CONFIG.mapbox.accessToken}`);
+              if (!testResponse.ok) {
+                throw new Error('Token validation failed');
+              }
+            } catch (tokenError) {
+              console.error('Mapbox token test failed:', tokenError);
+              Utils.updateStatus(
+                '<strong>Mapbox Token Error</strong><br>Please check your access token',
+                'error',
+                'alert-circle'
+              );
+              return;
+            }
             
             State.map = new mapboxgl.Map({
               container: 'map',
               style: CONFIG.mapbox.defaultStyle,
               center: CONFIG.mapbox.defaultCenter,
               zoom: CONFIG.mapbox.defaultZoom,
-              preserveDrawingBuffer: true // Essential for Step 3 export functionality
+              preserveDrawingBuffer: true
             });
 
             // Wait for map to load
-            await new Promise(resolve => State.map.on('load', resolve));
-            
-            this.setupEventListeners();
-            this.loadMapStyles();
-            
-            Utils.updateStatus(
-              '<strong>Map Loaded Successfully!</strong><br>Click map to set origin and destination',
-              'success',
-              'check-circle'
-            );
+            State.map.on('load', () => {
+              console.log('Map loaded successfully');
+              this.setupEventListeners();
+              this.loadMapStyles();
+              
+              Utils.updateStatus(
+                '<strong>Map Loaded Successfully!</strong><br>Click map to set origin and destination',
+                'success',
+                'check-circle'
+              );
+            });
+
+            // Handle map errors
+            State.map.on('error', (e) => {
+              console.error('Map error:', e);
+              Utils.updateStatus(
+                '<strong>Map Error</strong><br>Failed to load map tiles',
+                'error',
+                'alert-circle'
+              );
+            });
 
           } catch (error) {
             console.error('Map initialization failed:', error);
             Utils.updateStatus(
-              '<strong>Map Loading Failed</strong><br>Please check your connection and refresh',
+              '<strong>Map Loading Failed</strong><br>Error: ' + error.message,
               'error',
               'alert-circle'
             );
@@ -1394,16 +1448,24 @@
       const UIManager = {
         toggleSidebar() {
           const sidebar = document.getElementById('sidebar');
-          const toggleIcon = document.getElementById('sidebar-toggle-icon');
+          const toggleIconHeader = document.getElementById('sidebar-toggle-icon-header');
+          const toggleIconFixed = document.getElementById('sidebar-toggle-icon-fixed');
+          const fixedToggle = document.getElementById('sidebar-toggle-fixed');
           
           State.ui.sidebarVisible = !State.ui.sidebarVisible;
           
           if (State.ui.sidebarVisible) {
             sidebar.classList.remove('hidden');
-            toggleIcon.setAttribute('data-feather', 'x');
+            fixedToggle.style.display = 'none';
+            if (toggleIconHeader) {
+              toggleIconHeader.setAttribute('data-feather', 'x');
+            }
           } else {
             sidebar.classList.add('hidden');
-            toggleIcon.setAttribute('data-feather', 'menu');
+            fixedToggle.style.display = 'flex';
+            if (toggleIconFixed) {
+              toggleIconFixed.setAttribute('data-feather', 'menu');
+            }
           }
           
           feather.replace();
