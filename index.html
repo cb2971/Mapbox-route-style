@@ -493,7 +493,88 @@
       animation: pulse 2s infinite;
     }
 
-    /* ===== RESPONSIVE ===== */
+    /* ===== COLOR PICKER & WEIGHT CONTROLS ===== */
+    .color-picker-container {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .color-picker {
+      width: 60px;
+      height: 36px;
+      border: 1px solid var(--color-border-medium);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      background: none;
+    }
+
+    .color-picker::-webkit-color-swatch-wrapper {
+      padding: 0;
+      border: none;
+      border-radius: var(--radius-md);
+    }
+
+    .color-picker::-webkit-color-swatch {
+      border: none;
+      border-radius: var(--radius-md);
+    }
+
+    .color-presets {
+      display: flex;
+      gap: var(--space-2);
+    }
+
+    .color-preset {
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--color-border-light);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: var(--transition-base);
+    }
+
+    .color-preset:hover {
+      border-color: var(--color-primary);
+      transform: scale(1.1);
+    }
+
+    .weight-control {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: var(--color-surface-secondary);
+      border: 1px solid var(--color-border-medium);
+      border-radius: var(--radius-md);
+      padding: var(--space-2);
+    }
+
+    .btn-weight {
+      background: none;
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--color-text-secondary);
+      transition: var(--transition-base);
+    }
+
+    .btn-weight:hover {
+      background: var(--color-surface-hover);
+      color: var(--color-text-primary);
+    }
+
+    .weight-display {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-primary);
+      min-width: 40px;
+      text-align: center;
+    }
     @media (max-width: 768px) {
       :root {
         --sidebar-width: 320px;
@@ -576,6 +657,42 @@
               </select>
             </div>
 
+            <!-- Route Appearance -->
+            <div class="form-group">
+              <label class="form-label">
+                <i data-feather="palette"></i>
+                Route Color
+              </label>
+              <div class="color-picker-container">
+                <input type="color" id="route-color" class="color-picker" value="#3b82f6" onchange="updateRouteColor()">
+                <div class="color-presets">
+                  <button class="color-preset" style="background: #3b82f6;" onclick="setRouteColor('#3b82f6')" title="Blue"></button>
+                  <button class="color-preset" style="background: #ef4444;" onclick="setRouteColor('#ef4444')" title="Red"></button>
+                  <button class="color-preset" style="background: #10b981;" onclick="setRouteColor('#10b981')" title="Green"></button>
+                  <button class="color-preset" style="background: #f59e0b;" onclick="setRouteColor('#f59e0b')" title="Orange"></button>
+                  <button class="color-preset" style="background: #8b5cf6;" onclick="setRouteColor('#8b5cf6')" title="Purple"></button>
+                  <button class="color-preset" style="background: #06b6d4;" onclick="setRouteColor('#06b6d4')" title="Cyan"></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Line Weight -->
+            <div class="form-group">
+              <label class="form-label">
+                <i data-feather="minus"></i>
+                Line Weight
+              </label>
+              <div class="weight-control">
+                <button class="btn-weight" onclick="decreaseLineWeight()">
+                  <i data-feather="chevron-down"></i>
+                </button>
+                <span class="weight-display" id="weight-display">4px</span>
+                <button class="btn-weight" onclick="increaseLineWeight()">
+                  <i data-feather="chevron-up"></i>
+                </button>
+              </div>
+            </div>
+
             <!-- Route Controls -->
             <div class="button-group">
               <button class="btn btn-primary" onclick="calculateRoute()">
@@ -595,18 +712,6 @@
                 Stops Along Route
               </label>
               <div class="waypoints-list" id="waypoints-list"></div>
-            </div>
-
-            <!-- Route Stats -->
-            <div id="route-stats" class="route-stats" style="display: none;">
-              <div class="stat-item">
-                <div class="stat-value" id="route-distance">--</div>
-                <div class="stat-label">Distance</div>
-              </div>
-              <div class="stat-item">
-                <div class="stat-value" id="route-points">--</div>
-                <div class="stat-label">Points</div>
-              </div>
             </div>
           </div>
         </div>
@@ -709,7 +814,9 @@
         destination: null,
         waypoints: [],
         geometry: null,
-        distance: null
+        distance: null,
+        color: '#3b82f6',
+        width: 4
       },
       ui: {
         sidebarVisible: true,
@@ -823,8 +930,8 @@
           'line-cap': 'round'
         },
         paint: {
-          'line-color': '#3b82f6',
-          'line-width': 4
+          'line-color': State.route.color,
+          'line-width': State.route.width
         }
       });
 
@@ -1089,13 +1196,54 @@
       // Re-add route layer after style change
       State.map.once('styledata', function() {
         console.log('Style data loaded, re-adding route layer');
-        // Small delay to ensure style is fully loaded
+        // Wait for style to be fully loaded
         setTimeout(() => {
           if (State.map.isStyleLoaded()) {
             addRouteLayer();
+            // Update route appearance with current settings
+            updateRouteAppearance();
           }
-        }, 100);
+        }, 200);
       });
+    }
+
+    // ===== ROUTE APPEARANCE CONTROLS =====
+    function updateRouteColor() {
+      const color = document.getElementById('route-color').value;
+      setRouteColor(color);
+    }
+
+    function setRouteColor(color) {
+      State.route.color = color;
+      document.getElementById('route-color').value = color;
+      updateRouteAppearance();
+    }
+
+    function increaseLineWeight() {
+      if (State.route.width < 20) {
+        State.route.width += 1;
+        updateWeightDisplay();
+        updateRouteAppearance();
+      }
+    }
+
+    function decreaseLineWeight() {
+      if (State.route.width > 1) {
+        State.route.width -= 1;
+        updateWeightDisplay();
+        updateRouteAppearance();
+      }
+    }
+
+    function updateWeightDisplay() {
+      document.getElementById('weight-display').textContent = State.route.width + 'px';
+    }
+
+    function updateRouteAppearance() {
+      if (State.map.getLayer('route-line')) {
+        State.map.setPaintProperty('route-line', 'line-color', State.route.color);
+        State.map.setPaintProperty('route-line', 'line-width', State.route.width);
+      }
     }
 
     function addRouteLayer() {
@@ -1127,8 +1275,8 @@
             'line-cap': 'round'
           },
           paint: {
-            'line-color': '#3b82f6',
-            'line-width': 4
+            'line-color': State.route.color,
+            'line-width': State.route.width
           }
         });
       }
@@ -1170,7 +1318,6 @@
       
       updateMarkers();
       updateWaypointsList();
-      updateRouteStats();
       updateStatus('<strong>Route Cleared</strong><br>Ready for new route', 'success', 'trash-2');
     }
 
@@ -1322,6 +1469,9 @@
       
       // Initialize Feather icons
       feather.replace();
+      
+      // Initialize weight display
+      updateWeightDisplay();
     });
   </script>
 </body>
