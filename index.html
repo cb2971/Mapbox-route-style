@@ -269,29 +269,31 @@
       display: flex;
       align-items: center;
       gap: var(--space-2);
+      margin-bottom: var(--space-2);
       font-size: var(--font-size-sm);
       font-weight: var(--font-weight-medium);
       color: var(--color-text-primary);
-      margin-bottom: var(--space-2);
     }
 
-    .form-input,
-    .form-select {
+    .form-input, .form-select {
       width: 100%;
       padding: var(--space-3);
-      border: 1px solid var(--color-border-light);
+      border: 1px solid var(--color-border-medium);
       border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
       background: var(--color-surface-primary);
       color: var(--color-text-primary);
-      font-size: var(--font-size-sm);
       transition: var(--transition-base);
     }
 
-    .form-input:focus,
-    .form-select:focus {
+    .form-input:focus, .form-select:focus {
       outline: none;
       border-color: var(--color-primary);
       box-shadow: 0 0 0 3px var(--color-primary-light);
+    }
+
+    .form-input::placeholder {
+      color: var(--color-text-muted);
     }
 
     /* ===== BUTTONS ===== */
@@ -301,54 +303,151 @@
       justify-content: center;
       gap: var(--space-2);
       padding: var(--space-3) var(--space-4);
-      border: 1px solid var(--color-border-light);
+      border: 1px solid transparent;
       border-radius: var(--radius-md);
-      background: var(--color-surface-primary);
-      color: var(--color-text-primary);
       font-size: var(--font-size-sm);
       font-weight: var(--font-weight-medium);
+      text-decoration: none;
       cursor: pointer;
       transition: var(--transition-base);
-    }
-
-    .btn:hover {
-      background: var(--color-surface-hover);
+      min-height: 36px;
     }
 
     .btn-primary {
       background: var(--color-primary);
-      border-color: var(--color-primary);
       color: white;
+      border-color: var(--color-primary);
     }
 
     .btn-primary:hover {
       background: var(--color-primary-hover);
+      border-color: var(--color-primary-hover);
     }
 
-    .btn-grid {
+    .btn-secondary {
+      background: var(--color-surface-primary);
+      color: var(--color-text-primary);
+      border-color: var(--color-border-medium);
+    }
+
+    .btn-secondary:hover {
+      background: var(--color-surface-hover);
+    }
+
+    .btn-danger {
+      background: var(--color-danger);
+      color: white;
+      border-color: var(--color-danger);
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+      border-color: #dc2626;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-full {
+      width: 100%;
+    }
+
+    .button-group {
+      display: flex;
+      gap: var(--space-2);
+    }
+
+    .button-group .btn {
+      flex: 1;
+    }
+
+    /* ===== ROUTE STATS ===== */
+    .route-stats {
       display: grid;
       grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+      margin-top: var(--space-4);
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--color-border-light);
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-primary);
+    }
+
+    .stat-label {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ===== WAYPOINTS LIST ===== */
+    .waypoints-list {
+      margin-top: var(--space-4);
+    }
+
+    .waypoint-item {
+      display: flex;
+      align-items: center;
       gap: var(--space-3);
+      padding: var(--space-3);
+      background: var(--color-surface-secondary);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-2);
+    }
+
+    .waypoint-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .waypoint-marker {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--color-success);
+      flex-shrink: 0;
+    }
+
+    .waypoint-text {
+      flex: 1;
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+
+    .waypoint-remove {
+      background: none;
+      border: none;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      padding: var(--space-1);
+      border-radius: var(--radius-md);
+      transition: var(--transition-base);
+    }
+
+    .waypoint-remove:hover {
+      color: var(--color-danger);
+      background: var(--color-surface-hover);
     }
 
     /* ===== CROSSHAIR ===== */
-    .map-crosshair {
+    .crosshair-center {
       position: absolute;
       top: 50%;
       left: 50%;
+      width: 2px;
+      height: 2px;
       transform: translate(-50%, -50%);
       pointer-events: none;
       z-index: 10;
-      display: none;
-    }
-
-    .crosshair-center {
-      width: 20px;
-      height: 20px;
-      border: 2px solid var(--color-primary);
-      border-radius: 50%;
-      background: var(--color-primary-light);
-      position: relative;
     }
 
     .crosshair-center::before,
@@ -383,6 +482,26 @@
     .pulse {
       animation: pulse 2s infinite;
     }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      :root {
+        --sidebar-width: 320px;
+      }
+      
+      .sidebar-content {
+        padding: var(--space-4);
+      }
+      
+      .card-content {
+        padding: var(--space-4);
+      }
+      
+      .route-stats {
+        grid-template-columns: 1fr;
+        gap: var(--space-2);
+      }
+    }
   </style>
 </head>
 
@@ -394,11 +513,6 @@
       <div class="sidebar-header">
         <div class="sidebar-title">Route Finder</div>
       </div>
-
-    <!-- Toggle Button (stays in place) -->
-    <button class="toggle-button" onclick="toggleSidebar()" id="toggle-button">
-      <i data-feather="x" id="toggle-icon"></i>
-    </button>
       
       <!-- Sidebar Content -->
       <div class="sidebar-content">
@@ -446,22 +560,43 @@
                 Travel Mode
               </label>
               <select id="travel-mode" class="form-select">
-                <option value="driving">Driving</option>
-                <option value="walking">Walking</option>
-                <option value="cycling">Cycling</option>
+                <option value="driving">🚗 Driving</option>
+                <option value="walking">🚶 Walking</option>
+                <option value="cycling">🚴 Cycling</option>
               </select>
             </div>
 
-            <!-- Route Actions -->
-            <div class="btn-grid">
-              <button class="btn btn-primary" onclick="findRoute()">
-                <i data-feather="search"></i>
-                Find Route
+            <!-- Route Controls -->
+            <div class="button-group">
+              <button class="btn btn-primary" onclick="calculateRoute()">
+                <i data-feather="navigation"></i>
+                Get Route
               </button>
-              <button class="btn" onclick="clearRoute()">
-                <i data-feather="x-circle"></i>
-                Clear
+              <button class="btn btn-secondary" onclick="addWaypoint()">
+                <i data-feather="plus"></i>
+                Add Stop
               </button>
+            </div>
+
+            <!-- Waypoints List -->
+            <div id="waypoints-container" style="display: none;">
+              <label class="form-label">
+                <i data-feather="more-horizontal" style="color: var(--color-success);"></i>
+                Stops Along Route
+              </label>
+              <div class="waypoints-list" id="waypoints-list"></div>
+            </div>
+
+            <!-- Route Stats -->
+            <div id="route-stats" class="route-stats" style="display: none;">
+              <div class="stat-item">
+                <div class="stat-value" id="route-distance">--</div>
+                <div class="stat-label">Distance</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="route-points">--</div>
+                <div class="stat-label">Points</div>
+              </div>
             </div>
           </div>
         </div>
@@ -479,26 +614,36 @@
             <!-- Map Style -->
             <div class="form-group">
               <label class="form-label">
-                <i data-feather="eye"></i>
+                <i data-feather="layers"></i>
                 Map Style
               </label>
-              <select id="map-style-select" class="form-select" onchange="changeMapStyle()">
-                <option value="mapbox://styles/mapbox/streets-v11">Streets</option>
-                <option value="mapbox://styles/mapbox/outdoors-v11">Outdoors</option>
-                <option value="mapbox://styles/mapbox/light-v10">Light</option>
-                <option value="mapbox://styles/mapbox/dark-v10">Dark</option>
-                <option value="mapbox://styles/mapbox/satellite-v9">Satellite</option>
+              <select id="map-style" class="form-select" onchange="changeMapStyle()">
+                <option value="streets-v12">Streets</option>
+                <option value="outdoors-v12">Outdoors</option>
+                <option value="light-v11">Light</option>
+                <option value="dark-v11">Dark</option>
+                <option value="satellite-v9">Satellite</option>
+                <option value="satellite-streets-v12">Satellite Streets</option>
               </select>
             </div>
-            
-            <div class="btn-grid">
-              <button class="btn" onclick="zoomToRoute()">
+
+            <!-- View Controls -->
+            <div class="button-group">
+              <button class="btn btn-secondary" onclick="zoomToRoute()">
                 <i data-feather="zoom-in"></i>
                 Fit Route
               </button>
-              <button class="btn" onclick="resetView()">
+              <button class="btn btn-secondary" onclick="resetView()">
                 <i data-feather="home"></i>
                 Reset View
+              </button>
+            </div>
+
+            <!-- Route Management -->
+            <div class="button-group" style="margin-top: var(--space-4);">
+              <button class="btn btn-danger" onclick="clearRoute()">
+                <i data-feather="x-circle"></i>
+                Clear Route
               </button>
             </div>
           </div>
@@ -506,276 +651,132 @@
       </div>
     </div>
 
-    <!-- Toggle Button (outside sidebar, stays in place) -->
+    <!-- Toggle Button -->
     <button class="toggle-button" onclick="toggleSidebar()" id="toggle-button">
-      <i data-feather="x" id="toggle-icon"></i>
+      <i data-feather="sidebar" id="toggle-icon"></i>
     </button>
 
     <!-- Main Content -->
     <div class="main-content">
-      <!-- Map Container -->
       <div class="map-container">
         <div id="map"></div>
-        
-        <!-- Map Crosshair -->
-        <div id="map-crosshair" class="map-crosshair">
-          <div class="crosshair-center"></div>
-        </div>
+        <div id="crosshair" class="crosshair-center" style="display: none;"></div>
       </div>
     </div>
   </div>
 
   <script>
-    // ===== GLOBAL STATE =====
+    // ===== CONFIGURATION =====
+    const CONFIG = {
+      mapbox: {
+        accessToken: 'pk.eyJ1IjoiY2IyOSIsImEiOiJja3E4OHo3anowZGx1Mm9tcXF3ZmhyaWtwIn0.IQ5rY622AU9GOETrqa9NBw',
+        defaultCenter: [-74.0060, 40.7128], // New York City
+        defaultZoom: 11,
+        style: 'mapbox://styles/mapbox/streets-v12'
+      },
+      routing: {
+        baseUrl: 'https://api.mapbox.com/directions/v5/mapbox'
+      }
+    };
+
+    // ===== APPLICATION STATE =====
     const State = {
       map: null,
       route: {
         origin: null,
         destination: null,
         waypoints: [],
-        routeData: null
+        geometry: null,
+        distance: null
       },
       ui: {
-        sidebarVisible: true
-      }
-    };
-
-    // ===== CONFIGURATION =====
-    const CONFIG = {
-      mapbox: {
-        accessToken: 'pk.eyJ1IjoiY2IyOSIsImEiOiJja3E4OHo3anowZGx1MnNueG8xdG1qNXlpIn0.4dIbkmYmQmPK8_3bhgU6dw',
-        defaultCenter: [-74.006, 40.7128],
-        defaultZoom: 11
+        sidebarVisible: true,
+        addingWaypoint: false,
+        collapsedSections: new Set()
+      },
+      markers: {
+        origin: null,
+        destination: null,
+        waypoints: []
       }
     };
 
     // ===== UTILITY FUNCTIONS =====
     function updateStatus(message, type = 'info', icon = 'info') {
       const statusEl = document.getElementById('status-message');
+      const iconEl = statusEl.querySelector('i');
+      const contentEl = statusEl.querySelector('div');
+      
       statusEl.className = `status-message status-${type}`;
-      statusEl.innerHTML = `
-        <i data-feather="${icon}" class="${type === 'loading' ? 'pulse' : ''}"></i>
-        <div>${message}</div>
-      `;
+      iconEl.setAttribute('data-feather', icon);
+      contentEl.innerHTML = message;
+      
       feather.replace();
     }
 
     function formatDistance(meters) {
-      if (meters >= 1000) {
+      if (meters < 1000) {
+        return `${Math.round(meters)} m`;
+      } else if (meters < 100000) {
         return `${(meters / 1000).toFixed(1)} km`;
-      }
-      return `${Math.round(meters)} m`;
-    }
-
-    // ===== TOGGLE SIDEBAR =====
-    function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const toggleIcon = document.getElementById('toggle-icon');
-      
-      State.ui.sidebarVisible = !State.ui.sidebarVisible;
-      
-      if (State.ui.sidebarVisible) {
-        // Show sidebar
-        sidebar.classList.remove('hidden');
-        toggleIcon.setAttribute('data-feather', 'x');
       } else {
-        // Hide sidebar
-        sidebar.classList.add('hidden');
-        toggleIcon.setAttribute('data-feather', 'menu');
+        return `${Math.round(meters / 1000)} km`;
       }
-      
-      feather.replace();
     }
 
-    // ===== SECTION TOGGLE =====
-    function toggleSection(sectionId) {
-      const content = document.getElementById(`${sectionId}-content`);
-      const chevron = document.getElementById(`${sectionId}-chevron`);
-      
-      if (content.classList.contains('collapsed')) {
-        content.classList.remove('collapsed');
-        chevron.setAttribute('data-feather', 'chevron-down');
-      } else {
-        content.classList.add('collapsed');
-        chevron.setAttribute('data-feather', 'chevron-right');
-      }
-      
-      feather.replace();
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
     }
 
-    // ===== MAP FUNCTIONS =====
-    async function initializeMap() {
+    // ===== MAP INITIALIZATION =====
+    function initializeMap() {
       try {
-        updateStatus('<strong>Loading Map...</strong><br>Connecting to Mapbox services', 'loading', 'loader');
-
         mapboxgl.accessToken = CONFIG.mapbox.accessToken;
         
         State.map = new mapboxgl.Map({
           container: 'map',
-          style: 'mapbox://styles/mapbox/streets-v11',
+          style: CONFIG.mapbox.style,
           center: CONFIG.mapbox.defaultCenter,
           zoom: CONFIG.mapbox.defaultZoom,
-          preserveDrawingBuffer: true
+          preserveDrawingBuffer: true // For high-res export in Step 3
         });
 
-        State.map.on('load', () => {
-          setupMapEventListeners();
-          updateStatus('<strong>Map Ready!</strong><br>Click map to set origin and destination', 'success', 'check-circle');
-        });
-
-        State.map.on('error', (e) => {
-          console.error('Map error:', e.error);
-          updateStatus('<strong>Map Error</strong><br>Failed to load map', 'error', 'alert-circle');
-        });
-
+        State.map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        
+        State.map.on('load', onMapLoad);
+        State.map.on('click', onMapClick);
+        
+        updateStatus('<strong>Map Loaded</strong><br>Click to set origin point', 'success', 'check-circle');
+        
       } catch (error) {
         console.error('Map initialization error:', error);
-        updateStatus('<strong>Initialization Failed</strong><br>' + error.message, 'error', 'alert-circle');
+        updateStatus('<strong>Map Error</strong><br>Failed to initialize map', 'error', 'alert-circle');
       }
     }
 
-    function setupMapEventListeners() {
-      // Map click handling for setting origin/destination
-      State.map.on('click', (e) => {
-        handleMapClick(e.lngLat);
-      });
-    }
-
-    async function handleMapClick(lngLat) {
-      if (!State.route.origin) {
-        await setOrigin(lngLat);
-      } else if (!State.route.destination) {
-        await setDestination(lngLat);
-      } else {
-        // Replace destination with new point
-        await setDestination(lngLat);
-      }
-    }
-
-    async function setOrigin(lngLat) {
-      State.route.origin = lngLat;
-      
-      const address = await reverseGeocode(lngLat);
-      document.getElementById('origin-input').value = address;
-      
-      updateMarkers();
-      updateStatus('<strong>Origin Set</strong><br>Now click map to set destination', 'success', 'map-pin');
-    }
-
-    async function setDestination(lngLat) {
-      State.route.destination = lngLat;
-      
-      const address = await reverseGeocode(lngLat);
-      document.getElementById('destination-input').value = address;
-      
-      updateMarkers();
-      updateStatus('<strong>Destination Set</strong><br>Ready to calculate route', 'success', 'flag');
-    }
-
-    async function reverseGeocode(lngLat) {
-      try {
-        const response = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${lngLat.lng},${lngLat.lat}.json?access_token=${CONFIG.mapbox.accessToken}`
-        );
-        const data = await response.json();
-        return data.features[0]?.place_name || `${lngLat.lat.toFixed(4)}, ${lngLat.lng.toFixed(4)}`;
-      } catch (error) {
-        console.error('Reverse geocoding failed:', error);
-        return `${lngLat.lat.toFixed(4)}, ${lngLat.lng.toFixed(4)}`;
-      }
-    }
-
-    function updateMarkers() {
-      // Clear existing markers
-      const markers = document.querySelectorAll('.mapbox-marker');
-      markers.forEach(marker => marker.remove());
-
-      // Add origin marker
-      if (State.route.origin) {
-        createMarker(State.route.origin, 'origin');
-      }
-
-      // Add destination marker
-      if (State.route.destination) {
-        createMarker(State.route.destination, 'destination');
-      }
-    }
-
-    function createMarker(lngLat, type) {
-      const el = document.createElement('div');
-      el.className = `mapbox-marker marker-${type}`;
-      el.style.cssText = `
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        border: 2px solid white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        cursor: pointer;
-        background: ${type === 'origin' ? '#ef4444' : '#3b82f6'};
-      `;
-
-      new mapboxgl.Marker(el)
-        .setLngLat(lngLat)
-        .addTo(State.map);
-    }
-
-    function changeMapStyle() {
-      const select = document.getElementById('map-style-select');
-      const newStyle = select.value;
-      State.map.setStyle(newStyle);
-      updateStatus('<strong>Map Style Changed</strong><br>Updated map appearance', 'success', 'eye');
-    }
-
-    async function findRoute() {
-      if (!State.route.origin || !State.route.destination) {
-        updateStatus('<strong>Missing Route Points</strong><br>Set both origin and destination', 'error', 'alert-circle');
-        return;
-      }
-
-      updateStatus('<strong>Calculating Route...</strong><br>Finding optimal path', 'loading', 'loader');
-
-      try {
-        const coordinates = [State.route.origin, State.route.destination];
-        const coordString = coordinates
-          .map(coord => `${coord.lng},${coord.lat}`)
-          .join(';');
-
-        const travelMode = document.getElementById('travel-mode').value;
-        const url = `https://api.mapbox.com/directions/v5/mapbox/${travelMode}/${coordString}?` +
-          `geometries=geojson&overview=full&access_token=${CONFIG.mapbox.accessToken}`;
-
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.routes && data.routes.length > 0) {
-          displayRoute(data.routes[0]);
-        } else {
-          throw new Error('No route found');
-        }
-
-      } catch (error) {
-        console.error('Routing failed:', error);
-        updateStatus('<strong>Route Calculation Failed</strong><br>Could not find a valid route', 'error', 'alert-circle');
-      }
-    }
-
-    function displayRoute(routeData) {
-      // Remove existing route
-      if (State.map.getSource('route')) {
-        State.map.removeLayer('route-line');
-        State.map.removeSource('route');
-      }
-
-      // Add new route
+    function onMapLoad() {
+      // Add source for route line
       State.map.addSource('route', {
         type: 'geojson',
         data: {
           type: 'Feature',
           properties: {},
-          geometry: routeData.geometry
+          geometry: {
+            type: 'LineString',
+            coordinates: []
+          }
         }
       });
 
+      // Add route line layer
       State.map.addLayer({
         id: 'route-line',
         type: 'line',
@@ -786,42 +787,308 @@
         },
         paint: {
           'line-color': '#3b82f6',
-          'line-width': 4,
-          'line-opacity': 0.8
+          'line-width': 4
         }
       });
 
-      // Store route data
-      State.route.routeData = routeData;
+      updateStatus('<strong>Ready to Route</strong><br>Click map or enter addresses', 'info', 'map-pin');
+    }
 
-      // Update status
-      const distance = formatDistance(routeData.distance);
-      updateStatus(`<strong>Route Found!</strong><br>Distance: ${distance}`, 'success', 'check-circle');
+    function onMapClick(e) {
+      const coords = [e.lngLat.lng, e.lngLat.lat];
       
-      // Zoom to route
-      zoomToRoute();
+      if (!State.route.origin) {
+        setOrigin(coords);
+      } else if (!State.route.destination) {
+        setDestination(coords);
+      } else if (State.ui.addingWaypoint) {
+        addWaypointAt(coords);
+        State.ui.addingWaypoint = false;
+      }
+    }
+
+    // ===== ROUTE PLANNING =====
+    function setOrigin(coords) {
+      State.route.origin = coords;
+      updateMarkers();
+      updateInputFromCoords('origin-input', coords);
+      updateStatus('<strong>Origin Set</strong><br>Now click for destination', 'success', 'map-pin');
+    }
+
+    function setDestination(coords) {
+      State.route.destination = coords;
+      updateMarkers();
+      updateInputFromCoords('destination-input', coords);
+      updateStatus('<strong>Destination Set</strong><br>Ready to calculate route', 'success', 'flag');
+    }
+
+    function addWaypointAt(coords) {
+      State.route.waypoints.push(coords);
+      updateMarkers();
+      updateWaypointsList();
+      updateStatus('<strong>Waypoint Added</strong><br>Click "Get Route" to update', 'success', 'plus');
+    }
+
+    function addWaypoint() {
+      State.ui.addingWaypoint = true;
+      updateStatus('<strong>Click Map</strong><br>Click anywhere to add a stop', 'info', 'map-pin');
+    }
+
+    function removeWaypoint(index) {
+      State.route.waypoints.splice(index, 1);
+      updateMarkers();
+      updateWaypointsList();
+      if (State.route.geometry) {
+        calculateRoute(); // Recalculate if route exists
+      }
+    }
+
+    async function calculateRoute() {
+      if (!State.route.origin || !State.route.destination) {
+        updateStatus('<strong>Missing Points</strong><br>Set origin and destination first', 'error', 'alert-circle');
+        return;
+      }
+
+      try {
+        updateStatus('<strong>Calculating Route</strong><br>Finding best path...', 'loading', 'loader');
+
+        const travelMode = document.getElementById('travel-mode').value;
+        const coordinates = [
+          State.route.origin,
+          ...State.route.waypoints,
+          State.route.destination
+        ];
+
+        const coordsString = coordinates.map(coord => coord.join(',')).join(';');
+        const url = `${CONFIG.routing.baseUrl}/${travelMode}/${coordsString}?geometries=geojson&access_token=${CONFIG.mapbox.accessToken}`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.routes && data.routes.length > 0) {
+          const route = data.routes[0];
+          State.route.geometry = route.geometry;
+          State.route.distance = route.distance;
+
+          // Update map
+          State.map.getSource('route').setData({
+            type: 'Feature',
+            properties: {},
+            geometry: route.geometry
+          });
+
+          updateRouteStats();
+          zoomToRoute();
+          updateStatus('<strong>Route Calculated</strong><br>Path found successfully', 'success', 'check-circle');
+        } else {
+          throw new Error('No route found');
+        }
+      } catch (error) {
+        console.error('Route calculation error:', error);
+        updateStatus('<strong>Route Error</strong><br>Could not calculate route', 'error', 'alert-circle');
+      }
+    }
+
+    // ===== UI UPDATES =====
+    function updateMarkers() {
+      // Clear existing markers
+      if (State.markers.origin) State.markers.origin.remove();
+      if (State.markers.destination) State.markers.destination.remove();
+      State.markers.waypoints.forEach(marker => marker.remove());
+      State.markers.waypoints = [];
+
+      // Add origin marker
+      if (State.route.origin) {
+        const el = document.createElement('div');
+        el.style.width = '12px';
+        el.style.height = '12px';
+        el.style.borderRadius = '50%';
+        el.style.backgroundColor = '#ef4444';
+        el.style.border = '2px solid white';
+        el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+        
+        State.markers.origin = new mapboxgl.Marker(el)
+          .setLngLat(State.route.origin)
+          .addTo(State.map);
+      }
+
+      // Add destination marker
+      if (State.route.destination) {
+        const el = document.createElement('div');
+        el.style.width = '12px';
+        el.style.height = '12px';
+        el.style.borderRadius = '50%';
+        el.style.backgroundColor = '#3b82f6';
+        el.style.border = '2px solid white';
+        el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+        
+        State.markers.destination = new mapboxgl.Marker(el)
+          .setLngLat(State.route.destination)
+          .addTo(State.map);
+      }
+
+      // Add waypoint markers
+      State.route.waypoints.forEach(waypoint => {
+        const el = document.createElement('div');
+        el.style.width = '10px';
+        el.style.height = '10px';
+        el.style.borderRadius = '50%';
+        el.style.backgroundColor = '#10b981';
+        el.style.border = '2px solid white';
+        el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+        
+        const marker = new mapboxgl.Marker(el)
+          .setLngLat(waypoint)
+          .addTo(State.map);
+        
+        State.markers.waypoints.push(marker);
+      });
+    }
+
+    function updateWaypointsList() {
+      const container = document.getElementById('waypoints-container');
+      const list = document.getElementById('waypoints-list');
+      
+      if (State.route.waypoints.length === 0) {
+        container.style.display = 'none';
+        return;
+      }
+
+      container.style.display = 'block';
+      list.innerHTML = '';
+
+      State.route.waypoints.forEach((waypoint, index) => {
+        const item = document.createElement('div');
+        item.className = 'waypoint-item';
+        
+        item.innerHTML = `
+          <div class="waypoint-marker"></div>
+          <div class="waypoint-text">Stop ${index + 1}: ${waypoint[1].toFixed(4)}, ${waypoint[0].toFixed(4)}</div>
+          <button class="waypoint-remove" onclick="removeWaypoint(${index})" title="Remove waypoint">
+            <i data-feather="x" style="width: 14px; height: 14px;"></i>
+          </button>
+        `;
+        
+        list.appendChild(item);
+      });
+      
+      feather.replace();
+    }
+
+    function updateRouteStats() {
+      const statsEl = document.getElementById('route-stats');
+      const distanceEl = document.getElementById('route-distance');
+      const pointsEl = document.getElementById('route-points');
+      
+      if (State.route.distance !== null) {
+        statsEl.style.display = 'grid';
+        distanceEl.textContent = formatDistance(State.route.distance);
+        pointsEl.textContent = 1 + State.route.waypoints.length + 1; // origin + waypoints + destination
+      } else {
+        statsEl.style.display = 'none';
+      }
+    }
+
+    async function updateInputFromCoords(inputId, coords) {
+      try {
+        const response = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${coords[0]},${coords[1]}.json?access_token=${CONFIG.mapbox.accessToken}`
+        );
+        const data = await response.json();
+        
+        if (data.features && data.features.length > 0) {
+          document.getElementById(inputId).value = data.features[0].place_name;
+        }
+      } catch (error) {
+        console.error('Geocoding error:', error);
+        document.getElementById(inputId).value = `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`;
+      }
+    }
+
+    // ===== ADDRESS SEARCH =====
+    async function searchAddress(query, callback) {
+      if (!query || query.length < 3) return;
+      
+      try {
+        const response = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${CONFIG.mapbox.accessToken}&limit=5`
+        );
+        const data = await response.json();
+        
+        if (data.features && data.features.length > 0) {
+          callback(data.features[0].center);
+        }
+      } catch (error) {
+        console.error('Address search error:', error);
+      }
+    }
+
+    // ===== MAP CONTROLS =====
+    function changeMapStyle() {
+      const style = document.getElementById('map-style').value;
+      State.map.setStyle(`mapbox://styles/mapbox/${style}`);
+      
+      // Re-add route layer after style change
+      State.map.on('styledata', function onStyleData() {
+        if (!State.map.getSource('route')) {
+          State.map.addSource('route', {
+            type: 'geojson',
+            data: {
+              type: 'Feature',
+              properties: {},
+              geometry: State.route.geometry || {
+                type: 'LineString',
+                coordinates: []
+              }
+            }
+          });
+
+          State.map.addLayer({
+            id: 'route-line',
+            type: 'line',
+            source: 'route',
+            layout: {
+              'line-join': 'round',
+              'line-cap': 'round'
+            },
+            paint: {
+              'line-color': '#3b82f6',
+              'line-width': 4
+            }
+          });
+        }
+        
+        State.map.off('styledata', onStyleData);
+      });
     }
 
     function clearRoute() {
       // Clear route data
-      State.route = {
-        origin: null,
-        destination: null,
-        waypoints: [],
-        routeData: null
-      };
-
-      // Clear UI
+      State.route.origin = null;
+      State.route.destination = null;
+      State.route.waypoints = [];
+      State.route.geometry = null;
+      State.route.distance = null;
+      
+      // Clear form inputs
       document.getElementById('origin-input').value = '';
       document.getElementById('destination-input').value = '';
       
       // Clear map
       if (State.map.getSource('route')) {
-        State.map.removeLayer('route-line');
-        State.map.removeSource('route');
+        State.map.getSource('route').setData({
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: []
+          }
+        });
       }
       
       updateMarkers();
+      updateWaypointsList();
+      updateRouteStats();
       updateStatus('<strong>Route Cleared</strong><br>Ready for new route', 'success', 'x-circle');
     }
 
@@ -830,6 +1097,7 @@
       
       if (State.route.origin) points.push(State.route.origin);
       if (State.route.destination) points.push(State.route.destination);
+      points.push(...State.route.waypoints);
       
       if (points.length === 0) {
         updateStatus('<strong>No Route Points</strong><br>Add origin and destination first', 'error', 'alert-circle');
@@ -855,12 +1123,112 @@
         center: CONFIG.mapbox.defaultCenter,
         zoom: CONFIG.mapbox.defaultZoom
       });
-      updateStatus('<strong>View Reset</strong><br>Returned to default location', 'success', 'home');
+      updateStatus('<strong>View Reset</strong><br>Returned to New York City', 'success', 'home');
     }
 
-    // ===== INITIALIZE APP =====
-    document.addEventListener('DOMContentLoaded', () => {
+    // ===== UI SECTION MANAGEMENT =====
+    function toggleSection(sectionId) {
+      const content = document.getElementById(`${sectionId}-content`);
+      const chevron = document.getElementById(`${sectionId}-chevron`);
+      
+      if (State.ui.collapsedSections.has(sectionId)) {
+        // Expand
+        content.classList.remove('collapsed');
+        chevron.setAttribute('data-feather', 'chevron-down');
+        State.ui.collapsedSections.delete(sectionId);
+      } else {
+        // Collapse
+        content.classList.add('collapsed');
+        chevron.setAttribute('data-feather', 'chevron-right');
+        State.ui.collapsedSections.add(sectionId);
+      }
+      
+      feather.replace();
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const toggleIcon = document.getElementById('toggle-icon');
+      
+      State.ui.sidebarVisible = !State.ui.sidebarVisible;
+      
+      if (State.ui.sidebarVisible) {
+        sidebar.classList.remove('hidden');
+        toggleIcon.setAttribute('data-feather', 'sidebar');
+      } else {
+        sidebar.classList.add('hidden');
+        toggleIcon.setAttribute('data-feather', 'menu');
+      }
+      
+      feather.replace();
+    }
+
+    // ===== ADDRESS INPUT HANDLERS =====
+    const debouncedOriginSearch = debounce(function(query) {
+      searchAddress(query, function(coords) {
+        State.route.origin = coords;
+        updateMarkers();
+      });
+    }, 500);
+
+    const debouncedDestinationSearch = debounce(function(query) {
+      searchAddress(query, function(coords) {
+        State.route.destination = coords;
+        updateMarkers();
+      });
+    }, 500);
+
+    // ===== KEYBOARD SHORTCUTS =====
+    document.addEventListener('keydown', function(e) {
+      if (e.ctrlKey && e.key === 'n') {
+        e.preventDefault();
+        clearRoute();
+      }
+    });
+
+    // ===== INITIALIZATION =====
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize map
       initializeMap();
+      
+      // Setup address input handlers
+      const originInput = document.getElementById('origin-input');
+      const destinationInput = document.getElementById('destination-input');
+      
+      originInput.addEventListener('input', function() {
+        if (this.value.length > 2) {
+          debouncedOriginSearch(this.value);
+        }
+      });
+      
+      destinationInput.addEventListener('input', function() {
+        if (this.value.length > 2) {
+          debouncedDestinationSearch(this.value);
+        }
+      });
+      
+      // Handle enter key in inputs
+      originInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          searchAddress(this.value, function(coords) {
+            State.route.origin = coords;
+            updateMarkers();
+            updateStatus('<strong>Origin Set</strong><br>Enter destination or click map', 'success', 'map-pin');
+          });
+        }
+      });
+      
+      destinationInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          searchAddress(this.value, function(coords) {
+            State.route.destination = coords;
+            updateMarkers();
+            updateStatus('<strong>Destination Set</strong><br>Ready to calculate route', 'success', 'flag');
+          });
+        }
+      });
+      
+      // Initialize Feather icons
       feather.replace();
     });
   </script>
