@@ -494,15 +494,35 @@
     }
 
     /* ===== COLOR PICKER & WEIGHT CONTROLS ===== */
-    .color-picker-container {
+    .appearance-controls {
       display: flex;
       align-items: center;
-      gap: var(--space-3);
+      gap: var(--space-6);
+      background: var(--color-surface-secondary);
+      border: 1px solid var(--color-border-medium);
+      border-radius: var(--radius-md);
+      padding: var(--space-3);
+    }
+
+    .color-section,
+    .weight-section {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .control-label {
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      min-width: 40px;
     }
 
     .color-picker {
-      width: 60px;
-      height: 36px;
+      width: 50px;
+      height: 32px;
       border: 1px solid var(--color-border-medium);
       border-radius: var(--radius-md);
       cursor: pointer;
@@ -510,51 +530,32 @@
     }
 
     .color-picker::-webkit-color-swatch-wrapper {
-      padding: 0;
+      padding: 2px;
       border: none;
       border-radius: var(--radius-md);
     }
 
     .color-picker::-webkit-color-swatch {
       border: none;
-      border-radius: var(--radius-md);
-    }
-
-    .color-presets {
-      display: flex;
-      gap: var(--space-2);
-    }
-
-    .color-preset {
-      width: 24px;
-      height: 24px;
-      border: 2px solid var(--color-border-light);
-      border-radius: var(--radius-md);
-      cursor: pointer;
-      transition: var(--transition-base);
-    }
-
-    .color-preset:hover {
-      border-color: var(--color-primary);
-      transform: scale(1.1);
+      border-radius: calc(var(--radius-md) - 2px);
     }
 
     .weight-control {
       display: flex;
       align-items: center;
-      gap: var(--space-2);
-      background: var(--color-surface-secondary);
-      border: 1px solid var(--color-border-medium);
+      gap: var(--space-1);
+      background: var(--color-surface-primary);
+      border: 1px solid var(--color-border-light);
       border-radius: var(--radius-md);
-      padding: var(--space-2);
+      padding: var(--space-1);
     }
 
     .btn-weight {
       background: none;
       border: none;
-      width: 28px;
-      height: 28px;
-      border-radius: var(--radius-md);
+      width: 24px;
+      height: 24px;
+      border-radius: calc(var(--radius-md) - 1px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -569,10 +570,10 @@
     }
 
     .weight-display {
-      font-size: var(--font-size-sm);
+      font-size: var(--font-size-xs);
       font-weight: var(--font-weight-medium);
       color: var(--color-text-primary);
-      min-width: 40px;
+      min-width: 30px;
       text-align: center;
     }
     @media (max-width: 768px) {
@@ -661,35 +662,25 @@
             <div class="form-group">
               <label class="form-label">
                 <i data-feather="palette"></i>
-                Route Color
+                Route Appearance
               </label>
-              <div class="color-picker-container">
-                <input type="color" id="route-color" class="color-picker" value="#3b82f6" onchange="updateRouteColor()">
-                <div class="color-presets">
-                  <button class="color-preset" style="background: #3b82f6;" onclick="setRouteColor('#3b82f6')" title="Blue"></button>
-                  <button class="color-preset" style="background: #ef4444;" onclick="setRouteColor('#ef4444')" title="Red"></button>
-                  <button class="color-preset" style="background: #10b981;" onclick="setRouteColor('#10b981')" title="Green"></button>
-                  <button class="color-preset" style="background: #f59e0b;" onclick="setRouteColor('#f59e0b')" title="Orange"></button>
-                  <button class="color-preset" style="background: #8b5cf6;" onclick="setRouteColor('#8b5cf6')" title="Purple"></button>
-                  <button class="color-preset" style="background: #06b6d4;" onclick="setRouteColor('#06b6d4')" title="Cyan"></button>
+              <div class="appearance-controls">
+                <div class="color-section">
+                  <span class="control-label">Color</span>
+                  <input type="color" id="route-color" class="color-picker" value="#3b82f6" onchange="updateRouteColor()">
                 </div>
-              </div>
-            </div>
-
-            <!-- Line Weight -->
-            <div class="form-group">
-              <label class="form-label">
-                <i data-feather="minus"></i>
-                Line Weight
-              </label>
-              <div class="weight-control">
-                <button class="btn-weight" onclick="decreaseLineWeight()">
-                  <i data-feather="chevron-down"></i>
-                </button>
-                <span class="weight-display" id="weight-display">4px</span>
-                <button class="btn-weight" onclick="increaseLineWeight()">
-                  <i data-feather="chevron-up"></i>
-                </button>
+                <div class="weight-section">
+                  <span class="control-label">Weight</span>
+                  <div class="weight-control">
+                    <button class="btn-weight" onclick="decreaseLineWeight()">
+                      <i data-feather="chevron-down"></i>
+                    </button>
+                    <span class="weight-display" id="weight-display">4px</span>
+                    <button class="btn-weight" onclick="increaseLineWeight()">
+                      <i data-feather="chevron-up"></i>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
