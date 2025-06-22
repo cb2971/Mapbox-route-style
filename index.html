@@ -661,7 +661,7 @@
             <!-- Route Appearance -->
             <div class="form-group">
               <label class="form-label">
-                <i data-feather="palette"></i>
+                <i data-feather="navigation-2"></i>
                 Route Appearance
               </label>
               <div class="appearance-controls">
@@ -686,13 +686,13 @@
 
             <!-- Route Controls -->
             <div class="button-group">
-              <button class="btn btn-primary" onclick="calculateRoute()">
-                <i data-feather="navigation"></i>
-                Get Route
-              </button>
               <button class="btn btn-secondary" onclick="toggleWaypointMode()">
                 <i data-feather="plus-circle"></i>
                 Add Stop
+              </button>
+              <button class="btn btn-primary" onclick="calculateRoute()">
+                <i data-feather="navigation"></i>
+                Get Route
               </button>
             </div>
 
@@ -724,12 +724,18 @@
                 Map Style
               </label>
               <select id="map-style" class="form-select" onchange="changeMapStyle()">
-                <option value="streets-v12">Streets</option>
-                <option value="outdoors-v12">Outdoors</option>
-                <option value="light-v11">Light</option>
-                <option value="dark-v11">Dark</option>
-                <option value="satellite-v9">Satellite</option>
-                <option value="satellite-streets-v12">Satellite Streets</option>
+                <optgroup label="Standard Styles">
+                  <option value="streets-v12">Streets</option>
+                  <option value="outdoors-v12">Outdoors</option>
+                  <option value="light-v11">Light</option>
+                  <option value="dark-v11">Dark</option>
+                  <option value="satellite-v9">Satellite</option>
+                  <option value="satellite-streets-v12">Satellite Streets</option>
+                </optgroup>
+                <optgroup label="Navigation Styles">
+                  <option value="navigation-day-v1">Navigation Day</option>
+                  <option value="navigation-night-v1">Navigation Night</option>
+                </optgroup>
               </select>
             </div>
 
@@ -1413,6 +1419,10 @@
       if (e.ctrlKey && e.key === 'n') {
         e.preventDefault();
         clearRoute();
+      }
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        updateStatus('<strong>Save Prepared</strong><br>Export functionality coming in Step 3', 'info', 'save');
       }
     });
 
