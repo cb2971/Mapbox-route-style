@@ -85,6 +85,7 @@
     .app-container {
       display: flex;
       height: 100vh;
+      position: relative;
     }
 
     .sidebar {
@@ -104,8 +105,16 @@
     }
 
     .main-content {
-      flex: 1;
-      position: relative;
+      position: absolute;
+      top: 0;
+      left: var(--sidebar-width);
+      right: 0;
+      bottom: 0;
+      transition: left var(--transition-base);
+    }
+
+    .sidebar.hidden ~ .main-content {
+      left: 0;
     }
 
     /* ===== SIDEBAR HEADER ===== */
@@ -167,14 +176,6 @@
     }
 
     /* When sidebar is hidden, map should expand to full width without shifting */
-    .main-content {
-      width: calc(100vw - var(--sidebar-width));
-      transition: width var(--transition-base);
-    }
-    
-    .sidebar.hidden ~ .main-content {
-      width: 100vw;
-    }
 
     /* ===== SIDEBAR CONTENT ===== */
     .sidebar-content {
@@ -661,7 +662,7 @@
             <!-- Route Appearance -->
             <div class="form-group">
               <label class="form-label">
-                <i data-feather="navigation-2"></i>
+                <i data-feather="route"></i>
                 Route Appearance
               </label>
               <div class="appearance-controls">
