@@ -821,22 +821,30 @@
 
     function onMapClick(e) {
       const coords = [e.lngLat.lng, e.lngLat.lat];
+      console.log('Map clicked at:', coords);
       
       if (State.ui.addingWaypoint) {
+        console.log('Adding waypoint mode');
         addWaypointAt(coords);
         State.ui.addingWaypoint = false;
         document.body.style.cursor = 'default';
         updateStatus('<strong>Waypoint Added</strong><br>Click "Get Route" to update path', 'success', 'check-circle');
       } else if (!State.route.origin) {
+        console.log('Setting origin');
         setOrigin(coords);
       } else if (!State.route.destination) {
+        console.log('Setting destination');
         setDestination(coords);
+      } else {
+        console.log('Both origin and destination already set');
+        updateStatus('<strong>Route Complete</strong><br>Click "Add Stop" for waypoints or "Get Route"', 'info', 'info');
       }
     }
 
     // ===== ROUTE PLANNING =====
     function setOrigin(coords) {
       State.route.origin = coords;
+      console.log('Origin set to:', coords);
       updateMarkers();
       updateInputFromCoords('origin-input', coords);
       updateStatus('<strong>Origin Set</strong><br>Now click for destination', 'success', 'map-pin');
@@ -844,9 +852,10 @@
 
     function setDestination(coords) {
       State.route.destination = coords;
+      console.log('Destination set to:', coords);
       updateMarkers();
       updateInputFromCoords('destination-input', coords);
-      updateStatus('<strong>Destination Set</strong><br>Ready to calculate route', 'success', 'flag');
+      updateStatus('<strong>Destination Set</strong><br>Click "Get Route" to calculate', 'success', 'flag');
     }
 
     function addWaypointAt(coords) {
