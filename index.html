@@ -726,13 +726,19 @@
     // ===== UTILITY FUNCTIONS =====
     function updateStatus(message, type = 'info', icon = 'info') {
       const statusEl = document.getElementById('status-message');
-      const iconEl = statusEl.querySelector('i');
-      const contentEl = statusEl.querySelector('div');
+      if (!statusEl) {
+        console.error('Status element not found');
+        return;
+      }
       
+      // Update the entire status message content
       statusEl.className = `status-message status-${type}`;
-      iconEl.setAttribute('data-feather', icon);
-      contentEl.innerHTML = message;
+      statusEl.innerHTML = `
+        <i data-feather="${icon}"></i>
+        <div>${message}</div>
+      `;
       
+      // Replace feather icons
       feather.replace();
     }
 
@@ -761,6 +767,7 @@
     // ===== MAP INITIALIZATION =====
     function initializeMap() {
       try {
+        console.log('Initializing map with token:', CONFIG.mapbox.accessToken.substring(0, 20) + '...');
         mapboxgl.accessToken = CONFIG.mapbox.accessToken;
         
         State.map = new mapboxgl.Map({
@@ -776,12 +783,17 @@
         
         State.map.on('load', onMapLoad);
         State.map.on('click', onMapClick);
+        State.map.on('error', function(e) {
+          console.error('Map error:', e);
+          updateStatus('<strong>Map Error</strong><br>Failed to load map', 'error', 'alert-triangle');
+        });
         
-        updateStatus('<strong>Map Loaded</strong><br>Click to set origin point', 'success', 'check-circle');
+        console.log('Map initialization started...');
+        updateStatus('<strong>Loading Map</strong><br>Initializing mapping services...', 'loading', 'loader');
         
       } catch (error) {
         console.error('Map initialization error:', error);
-        updateStatus('<strong>Map Error</strong><br>Failed to initialize map', 'error', 'alert-circle');
+        updateStatus('<strong>Initialization Error</strong><br>Failed to start map', 'error', 'alert-triangle');
       }
     }
 
