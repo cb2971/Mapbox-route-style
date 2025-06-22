@@ -166,12 +166,14 @@
       height: 100%;
     }
 
-    /* When sidebar is hidden, map should expand to full width */
+    /* When sidebar is hidden, map should expand to full width without shifting */
+    .main-content {
+      width: calc(100vw - var(--sidebar-width));
+      transition: width var(--transition-base);
+    }
+    
     .sidebar.hidden ~ .main-content {
       width: 100vw;
-      position: absolute;
-      left: 0;
-      top: 0;
     }
 
     /* ===== SIDEBAR CONTENT ===== */
@@ -784,6 +786,8 @@
     }
 
     function onMapLoad() {
+      console.log('Map loaded successfully');
+      
       // Add source for route line
       State.map.addSource('route', {
         type: 'geojson',
@@ -1057,21 +1061,27 @@
     // ===== MAP CONTROLS =====
     function changeMapStyle() {
       const style = document.getElementById('map-style').value;
+      console.log('Changing map style to:', style);
+      
       State.map.setStyle(`mapbox://styles/mapbox/${style}`);
       
       // Re-add route layer after style change
       State.map.once('styledata', function() {
-        // Wait for style to be fully loaded
-        if (State.map.isStyleLoaded()) {
-          addRouteLayer();
-        } else {
-          State.map.once('style.load', addRouteLayer);
-        }
+        console.log('Style data loaded, re-adding route layer');
+        // Small delay to ensure style is fully loaded
+        setTimeout(() => {
+          if (State.map.isStyleLoaded()) {
+            addRouteLayer();
+          }
+        }, 100);
       });
     }
 
     function addRouteLayer() {
+      console.log('Adding route layer to map');
+      
       if (!State.map.getSource('route')) {
+        console.log('Creating new route source');
         State.map.addSource('route', {
           type: 'geojson',
           data: {
@@ -1083,7 +1093,10 @@
             }
           }
         });
+      }
 
+      if (!State.map.getLayer('route-line')) {
+        console.log('Creating new route layer');
         State.map.addLayer({
           id: 'route-line',
           type: 'line',
@@ -1097,15 +1110,15 @@
             'line-width': 4
           }
         });
-      } else {
-        // Source exists, just update the data
+      }
+      
+      // Update data if we have route geometry
+      if (State.route.geometry) {
+        console.log('Updating route data');
         State.map.getSource('route').setData({
           type: 'Feature',
           properties: {},
-          geometry: State.route.geometry || {
-            type: 'LineString',
-            coordinates: []
-          }
+          geometry: State.route.geometry
         });
       }
     }
