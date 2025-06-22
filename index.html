@@ -166,6 +166,11 @@
       height: 100%;
     }
 
+    /* When sidebar is hidden, map should expand to full width */
+    .sidebar.hidden ~ .main-content {
+      margin-left: 0;
+    }
+
     /* ===== SIDEBAR CONTENT ===== */
     .sidebar-content {
       flex: 1;
@@ -572,8 +577,8 @@
                 <i data-feather="navigation"></i>
                 Get Route
               </button>
-              <button class="btn btn-secondary" onclick="addWaypoint()">
-                <i data-feather="plus"></i>
+              <button class="btn btn-secondary" onclick="toggleWaypointMode()">
+                <i data-feather="plus-circle"></i>
                 Add Stop
               </button>
             </div>
@@ -636,6 +641,18 @@
               <button class="btn btn-secondary" onclick="resetView()">
                 <i data-feather="home"></i>
                 Reset View
+              </button>
+            </div>
+
+            <!-- Map Navigation -->
+            <div class="button-group" style="margin-top: var(--space-4);">
+              <button class="btn btn-secondary" onclick="zoomIn()">
+                <i data-feather="plus"></i>
+                Zoom In
+              </button>
+              <button class="btn btn-secondary" onclick="zoomOut()">
+                <i data-feather="minus"></i>
+                Zoom Out
               </button>
             </div>
 
@@ -749,7 +766,8 @@
           preserveDrawingBuffer: true // For high-res export in Step 3
         });
 
-        State.map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        // Remove default navigation control since we'll add our own
+        // State.map.addControl(new mapboxgl.NavigationControl(), 'top-right');
         
         State.map.on('load', onMapLoad);
         State.map.on('click', onMapClick);
@@ -797,13 +815,15 @@
     function onMapClick(e) {
       const coords = [e.lngLat.lng, e.lngLat.lat];
       
-      if (!State.route.origin) {
+      if (State.ui.addingWaypoint) {
+        addWaypointAt(coords);
+        State.ui.addingWaypoint = false;
+        document.body.style.cursor = 'default';
+        updateStatus('<strong>Waypoint Added</strong><br>Click "Get Route" to update path', 'success', 'check-circle');
+      } else if (!State.route.origin) {
         setOrigin(coords);
       } else if (!State.route.destination) {
         setDestination(coords);
-      } else if (State.ui.addingWaypoint) {
-        addWaypointAt(coords);
-        State.ui.addingWaypoint = false;
       }
     }
 
@@ -826,18 +846,26 @@
       State.route.waypoints.push(coords);
       updateMarkers();
       updateWaypointsList();
-      updateStatus('<strong>Waypoint Added</strong><br>Click "Get Route" to update', 'success', 'plus');
+      updateStatus('<strong>Waypoint Added</strong><br>Click "Get Route" to calculate path', 'success', 'plus-circle');
     }
 
-    function addWaypoint() {
-      State.ui.addingWaypoint = true;
-      updateStatus('<strong>Click Map</strong><br>Click anywhere to add a stop', 'info', 'map-pin');
+    function toggleWaypointMode() {
+      State.ui.addingWaypoint = !State.ui.addingWaypoint;
+      
+      if (State.ui.addingWaypoint) {
+        updateStatus('<strong>Adding Waypoint</strong><br>Click map to add a stop', 'info', 'plus-circle');
+        document.body.style.cursor = 'crosshair';
+      } else {
+        updateStatus('<strong>Waypoint Mode Off</strong><br>Normal map interaction', 'info', 'mouse-pointer');
+        document.body.style.cursor = 'default';
+      }
     }
 
     function removeWaypoint(index) {
       State.route.waypoints.splice(index, 1);
       updateMarkers();
       updateWaypointsList();
+      updateStatus('<strong>Waypoint Removed</strong><br>Click "Get Route" to update path', 'success', 'trash-2');
       if (State.route.geometry) {
         calculateRoute(); // Recalculate if route exists
       }
@@ -885,7 +913,7 @@
         }
       } catch (error) {
         console.error('Route calculation error:', error);
-        updateStatus('<strong>Route Error</strong><br>Could not calculate route', 'error', 'alert-circle');
+        updateStatus('<strong>Route Error</strong><br>Could not calculate route', 'error', 'alert-triangle');
       }
     }
 
@@ -1089,7 +1117,7 @@
       updateMarkers();
       updateWaypointsList();
       updateRouteStats();
-      updateStatus('<strong>Route Cleared</strong><br>Ready for new route', 'success', 'x-circle');
+      updateStatus('<strong>Route Cleared</strong><br>Ready for new route', 'success', 'trash-2');
     }
 
     function zoomToRoute() {
@@ -1100,7 +1128,7 @@
       points.push(...State.route.waypoints);
       
       if (points.length === 0) {
-        updateStatus('<strong>No Route Points</strong><br>Add origin and destination first', 'error', 'alert-circle');
+        updateStatus('<strong>No Route Points</strong><br>Add origin and destination first', 'error', 'alert-triangle');
         return;
       }
       
@@ -1115,7 +1143,7 @@
         State.map.fitBounds(bounds, { padding: 50 });
       }
       
-      updateStatus('<strong>View Adjusted</strong><br>Showing route points', 'success', 'zoom-in');
+      updateStatus('<strong>View Adjusted</strong><br>Showing route points', 'success', 'maximize-2');
     }
 
     function resetView() {
@@ -1124,6 +1152,16 @@
         zoom: CONFIG.mapbox.defaultZoom
       });
       updateStatus('<strong>View Reset</strong><br>Returned to New York City', 'success', 'home');
+    }
+
+    function zoomIn() {
+      State.map.zoomIn();
+      updateStatus('<strong>Zoomed In</strong><br>Map view enlarged', 'success', 'plus');
+    }
+
+    function zoomOut() {
+      State.map.zoomOut();
+      updateStatus('<strong>Zoomed Out</strong><br>Map view reduced', 'success', 'minus');
     }
 
     // ===== UI SECTION MANAGEMENT =====
@@ -1154,7 +1192,7 @@
       
       if (State.ui.sidebarVisible) {
         sidebar.classList.remove('hidden');
-        toggleIcon.setAttribute('data-feather', 'sidebar');
+        toggleIcon.setAttribute('data-feather', 'x');
       } else {
         sidebar.classList.add('hidden');
         toggleIcon.setAttribute('data-feather', 'menu');
